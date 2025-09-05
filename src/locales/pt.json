@@ -1,0 +1,19 @@
+{
+    "auth": {
+        "signInTitle": "Entrar",
+        "signUpTitle": "Criar conta",
+        "fullName": "Nome completo",
+        "email": "Email",
+        "password": "Senha",
+        "signIn": "Entrar",
+        "signUp": "Registrar-se",
+        "or": "ou",
+        "google": "Continuar com Google",
+        "apple": "Continuar com Apple",
+        "haveAccount": "Não tem uma conta?",
+        "goSignUp": "Cadastre-se",
+        "errorSignIn": "Erro ao entrar",
+        "errorSignUp": "Erro ao criar conta"
+    }
+}
+  

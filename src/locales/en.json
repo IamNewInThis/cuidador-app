@@ -1,0 +1,18 @@
+{
+    "auth": {
+        "signInTitle": "Sign In",
+        "signUpTitle": "Sign Up",
+        "fullName": "Full Name",
+        "email": "Email",
+        "password": "Password",
+        "signIn": "Sign In",
+        "signUp": "Create Account",
+        "or": "or",
+        "google": "Sign in with Google",
+        "apple": "Sign in with Apple",
+        "haveAccount": "Don't have an account?",
+        "goSignUp": "Sign Up",
+        "errorSignIn": "Error signing in",
+        "errorSignUp": "Error creating account"
+    }
+}
