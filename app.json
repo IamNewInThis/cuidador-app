@@ -25,6 +25,12 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d4cf8bc9-65fd-4f49-a415-c9b96ec68391"
+      }
+    },
+    "owner": "takeeko"
   }
 }
