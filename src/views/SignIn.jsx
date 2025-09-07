@@ -78,7 +78,7 @@ const SignIn = () => {
             />
 
             <Text className="text-center text-gray-500 mt-6">
-                Don't have an account?{' '}
+                <Text>{t('auth.haveAccount')}</Text>
                 <Text
                     className="text-blue-500 font-bold"
                     onPress={() => navigation.navigate('SignUp')}
