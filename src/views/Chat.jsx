@@ -1,4 +1,5 @@
-import { View, Text, SafeAreaView, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useState } from 'react';
 import Entypo from '@expo/vector-icons/Entypo';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,10 +28,10 @@ const Chat = () => {
 
     // Mensajes estáticos de ejemplo
     const [messages, setMessages] = useState([
-        {id: Date.now().toString(), role: 'assistant', text: 'Hola, ¿en qué puedo ayudarte hoy?'},
+        { id: Date.now().toString(), role: 'assistant', text: 'Hola, ¿en qué puedo ayudarte hoy?' },
     ]);
 
-    const handleOnSendMessage = async() =>{
+    const handleOnSendMessage = async () => {
         if (message.trim() === '') {
             return;
         }
@@ -38,15 +39,15 @@ const Chat = () => {
         // Verificar que el usuario esté autenticado
         if (!session?.access_token) {
             console.error("No hay sesión activa o token de acceso");
-            const errorMsg = {id: Date.now().toString(), role: 'assistant', text: 'Error: Debes iniciar sesión para usar el chat.'};
+            const errorMsg = { id: Date.now().toString(), role: 'assistant', text: 'Error: Debes iniciar sesión para usar el chat.' };
             setMessages(prevMessages => [...prevMessages, errorMsg]);
             return;
         }
-        
+
         console.log("Mensaje enviado:", message);
-        const userMsg = {id: Date.now().toString(), role: 'user', text: message};
+        const userMsg = { id: Date.now().toString(), role: 'user', text: message };
         setMessages(prevMessages => [...prevMessages, userMsg]);
-        
+
         // POST API
         try {
             const res = await fetch('http://localhost:3000/api/chat/pplx', {
@@ -64,14 +65,14 @@ const Chat = () => {
             const data = await res.json();
             console.log("Respuesta del API:", data?.answer || data);
 
-            const lumiMsg = {id: Date.now().toString(), role: 'assistant', text: data?.answer || "Lo siento, no pude obtener una respuesta."};
+            const lumiMsg = { id: Date.now().toString(), role: 'assistant', text: data?.answer || "Lo siento, no pude obtener una respuesta." };
             setMessages(prevMessages => [...prevMessages, lumiMsg]);
         } catch (error) {
             console.error("Error al enviar el mensaje:", error);
-            const errorMsg = {id: Date.now().toString(), role: 'assistant', text: 'Error al conectar con el servidor.'};
+            const errorMsg = { id: Date.now().toString(), role: 'assistant', text: 'Error al conectar con el servidor.' };
             setMessages(prevMessages => [...prevMessages, errorMsg]);
         }
-        
+
         // Limpiamos el input
         setMessage('');
     }
@@ -79,18 +80,22 @@ const Chat = () => {
     return (
         <SafeAreaView className="flex-1 bg-white">
             <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                className="flex-1"
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : "height"} // 👈 aquí
+                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} // 👈 offset extra para iOS
             >
                 {/* Contenedor del chat */}
-                <ScrollView className="flex-1 px-4 pt-4">
-                    {messages.map((msg) => (
-                        msg.role === 'user' ? (
+                <ScrollView
+                    className="flex-1 px-4 pt-4"
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {messages.map((msg) =>
+                        msg.role === "user" ? (
                             <UserMessage key={msg.id} text={msg.text} />
                         ) : (
                             <AssistantMessage key={msg.id} text={msg.text} />
                         )
-                    ))}
+                    )}
                 </ScrollView>
 
                 {/* Input de texto y botón de enviar */}
@@ -112,6 +117,7 @@ const Chat = () => {
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
+
     );
 }
 

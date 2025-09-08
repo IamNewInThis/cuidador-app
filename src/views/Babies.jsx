@@ -1,6 +1,7 @@
-import { View, Text, Platform } from "react-native";
+import { View, Text, Platform, SafeAreaView } from "react-native";
 import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
+import { Picker } from "@react-native-picker/picker";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -12,12 +13,22 @@ const Babies = () => {
     const { user } = useAuth();
     const [name, setName] = useState("");
     const [birthdate, setBirthdate] = useState(new Date());
+    const [gender, setGender] = useState("");
+    const [weight, setWeight] = useState("");
+    const [height, setHeight] = useState("");
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const handleCreate = async () => {
         setLoading(true);
-        const { data, error } = await createBaby(user.id, { name });
+        const babyData = {
+            name,
+            birthdate,
+            gender: gender || null,
+            weight: weight ? parseInt(weight) : null,
+            height: height ? parseInt(height) : null
+        };
+        const { data, error } = await createBaby(user.id, babyData);
         setLoading(false);
 
         if (error) {
@@ -25,30 +36,54 @@ const Babies = () => {
         } else {
             console.log("Bebé creado:", data);
             setName("");
+            setGender("");
+            setWeight("");
+            setHeight("");
         }
     };
 
     return (
-        <View className="w-full px-4">
-            <Text className="text-xl font-bold text-blue-500">Babies</Text>
-
-            <Button
-                title="Home"
-                onPress={() => navigation.navigate("Home")}
-                className="mb-4 bg-gray-100 border border-gray-300"
-            />
-
+        <SafeAreaView className="flex-1 items-center justify-center bg-white">
             <Input
                 placeholder="Nombre"
                 value={name}
                 onChangeText={setName}
-                className="mbwater: mb-2"
+                className="mb-4"
             />
 
             <Button
                 title={`Nacimiento: ${birthdate.toLocaleDateString()}`}
                 onPress={() => setShowDatePicker(true)}
                 className="mb-4 bg-gray-100 border border-gray-300"
+            />
+
+            <View className="mb-4 w-full max-w-xs border border-gray-300 rounded">
+                <Picker
+                    selectedValue={gender}
+                    onValueChange={(itemValue) => setGender(itemValue)}
+                    style={{ height: 50 }}
+                >
+                    <Picker.Item label="Seleccionar género" value="" />
+                    <Picker.Item label="Masculino" value="male" />
+                    <Picker.Item label="Femenino" value="female" />
+                    <Picker.Item label="Otro" value="other" />
+                </Picker>
+            </View>
+
+            <Input
+                placeholder="Peso (gramos)"
+                value={weight}
+                onChangeText={setWeight}
+                keyboardType="numeric"
+                className="mb-4"
+            />
+
+            <Input
+                placeholder="Altura (centímetros)"
+                value={height}
+                onChangeText={setHeight}
+                keyboardType="numeric"
+                className="mb-4"
             />
 
             {showDatePicker && (
@@ -69,7 +104,13 @@ const Babies = () => {
                 disabled={loading}
                 className="mb-4 bg-gray-100 border border-gray-300"
             />
-        </View>
+
+            <Button
+                title="Ir a Home"
+                onPress={() => navigation.navigate("Home")}
+                className="mb-4 bg-gray-100 border border-gray-300"
+            />
+        </SafeAreaView>
     );
 };
 
