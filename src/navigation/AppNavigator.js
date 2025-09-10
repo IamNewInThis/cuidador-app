@@ -9,6 +9,8 @@ import SignIn from '../views/SignIn';
 import SignUp from '../views/SignUp';
 import Babies from '../views/Babies';
 import ListBabies from '../views/ListBabies';
+import BabyDetail from '../views/BabyDetail';
+import ProfileSettings from '../views/ProfileSettings';
 
 const Stack = createStackNavigator();
 
@@ -26,6 +28,8 @@ export default function AppNavigator() {
             <Stack.Screen name="SignUp" component={SignUp} />
             <Stack.Screen name="Babies" component={Babies} />
             <Stack.Screen name="ListBabies" component={ListBabies} />
+            <Stack.Screen name="BabyDetail" component={BabyDetail} />
+            <Stack.Screen name="ProfileSettings" component={ProfileSettings} />
         </Stack.Navigator>
     );
 }

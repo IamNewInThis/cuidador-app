@@ -50,7 +50,7 @@ const Chat = () => {
 
         // POST API
         try {
-            const res = await fetch('http://localhost:3000/api/chat/pplx', {
+            const res = await fetch('http://192.168.1.135:3000/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

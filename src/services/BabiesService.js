@@ -42,3 +42,43 @@ export async function createBaby(userId, baby) {
         return { data: null, error };
     }
 }
+
+export async function updateBaby(userId, babyId, updates) {
+    try {
+        const { data, error } = await supabase
+            .from("babies")
+            .update({
+                name: updates.name,
+                birthdate: updates.birthdate ?? null,
+                gender: updates.gender ?? null,
+                weight: updates.weight ?? null,
+                height: updates.height ?? null,
+                routines: updates.routines ?? null,
+                preferences: updates.preferences ?? null,
+            })
+            .eq("id", babyId)
+            .eq("user_id", userId)
+            .select("*")
+            .single();
+
+        if (error) throw error;
+        return { data, error: null };
+    } catch (error) {
+        return { data: null, error };
+    }
+}
+
+export async function deleteBaby(userId, babyId) {
+    try {
+        const { error } = await supabase
+            .from("babies")
+            .delete()
+            .eq("id", babyId)
+            .eq("user_id", userId);
+
+        if (error) throw error;
+        return { error: null };
+    } catch (error) {
+        return { error };
+    }
+}

@@ -26,6 +26,12 @@ const Home = () => {
                 onPress={() => navigation.navigate('ListBabies')}
                 className="mt-4 bg-gray-100 border border-gray-300"
             />
+
+            <Button
+                title="Ir a Profile Settings"
+                onPress={() => navigation.navigate('ProfileSettings')}
+                className="mt-4 bg-gray-100 border border-gray-300"
+            />
         </SafeAreaView>
     )
 }

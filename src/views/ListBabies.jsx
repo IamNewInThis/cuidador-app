@@ -1,7 +1,7 @@
 import { View, Text, FlatList, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useState, useEffect } from 'react'
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import Button from '../components/Button';
 import { getBabies } from '../services/BabiesService';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,7 @@ const ListBabies = () => {
     const { user } = useAuth();
     const [babies, setBabies] = useState([]);
     const [loading, setLoading] = useState(true);
+    const isFocused = useIsFocused();
 
     const fetchBabies = async () => {
         if (!user?.id) return;
@@ -27,12 +28,18 @@ const ListBabies = () => {
     };
 
     useEffect(() => {
-        fetchBabies();
-    }, [user?.id]);
+        if (isFocused) {
+            fetchBabies();
+        }
+    }, [isFocused, user?.id]);
+
+    const openDetail = (baby) => {
+        navigation.navigate('BabyDetail', { baby });
+    };
 
     const renderBaby = ({ item }) => (
         <View className="bg-white p-4 mb-3 mx-4 rounded-lg border border-gray-200 shadow-sm">
-            <Text className="text-lg font-bold text-gray-800 mb-2">{item.name}</Text>
+            <Text className="text-lg font-bold text-gray-800 mb-2" onPress={() => openDetail(item)}>{item.name}</Text>
             <Text className="text-sm text-gray-600 mb-1">
                 Nacimiento: {new Date(item.birthdate).toLocaleDateString()}
             </Text>
@@ -51,6 +58,9 @@ const ListBabies = () => {
                     Altura: {item.height} centímetros
                 </Text>
             )}
+            <View className="mt-3">
+                <Button title="Ver / Editar" onPress={() => openDetail(item)} className="bg-blue-500 border border-blue-500" />
+            </View>
         </View>
     );
 

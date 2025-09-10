@@ -4,6 +4,8 @@ import { View, Text, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView } 
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Input from '../components/Input';
 import Button from '../components/Button';
+import PhoneInput from '../components/PhoneInput';
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -14,11 +16,14 @@ const SignUp = () => {
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [phone, setPhone] = useState('');
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [birthdate, setBirthdate] = useState(new Date());
     const {t} = useTranslation();
 
     const onSubmit = async () => {
         try {
-            await signUp({ email: email.trim(), password, full_name: fullName.trim() });
+            await signUp({ email: email.trim(), password, full_name: fullName.trim(), phone: phone.trim(), birthdate: birthdate.toISOString() });
             navigation.navigate('Home');
         } catch (_) { /* authError ya está seteado en el contexto */ }
     };
@@ -47,6 +52,24 @@ const SignUp = () => {
                             autoCapitalize="none"
                             className="mb-4"
                         />
+                        <PhoneInput value={phone} onChangeText={setPhone} className="mb-6" />
+
+                        <Button
+                            title={`Nacimiento: ${birthdate.toLocaleDateString()}`}
+                            onPress={() => setShowDatePicker(true)}
+                            className="mb-4 bg-gray-100 border border-gray-300"
+                        />
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={birthdate}
+                                mode="date"
+                                display={Platform.OS === "ios" ? "spinner" : "default"}
+                                onChange={(event, date) => {
+                                    setShowDatePicker(false);
+                                    if (date) setBirthdate(date);
+                                }}
+                            />
+                        )}
                         <Input
                             placeholder={t('auth.password')}
                             value={password}
