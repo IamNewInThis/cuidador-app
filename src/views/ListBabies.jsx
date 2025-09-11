@@ -50,7 +50,7 @@ const ListBabies = () => {
             )}
             {item.weight && (
                 <Text className="text-sm text-gray-600 mb-1">
-                    Peso: {item.weight} gramos
+                    Peso: {item.weight} kilos
                 </Text>
             )}
             {item.height && (

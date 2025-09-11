@@ -71,7 +71,7 @@ const Babies = () => {
             </View>
 
             <Input
-                placeholder="Peso (gramos)"
+                placeholder="Peso (Kilos)"
                 value={weight}
                 onChangeText={setWeight}
                 keyboardType="numeric"

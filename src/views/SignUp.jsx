@@ -6,6 +6,7 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import PhoneInput from '../components/PhoneInput';
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { Picker } from "@react-native-picker/picker";
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -19,11 +20,13 @@ const SignUp = () => {
     const [phone, setPhone] = useState('');
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [birthdate, setBirthdate] = useState(new Date());
+    const [relationToBaby, setRelationToBaby] = useState('');
+    const [country, setCountry] = useState('');
     const {t} = useTranslation();
 
     const onSubmit = async () => {
         try {
-            await signUp({ email: email.trim(), password, full_name: fullName.trim(), phone: phone.trim(), birthdate: birthdate.toISOString() });
+            await signUp({ email: email.trim(), password, full_name: fullName.trim(), phone: phone.trim(), birthdate: birthdate.toISOString(), relation_to_baby: relationToBaby, country: country });
             navigation.navigate('Home');
         } catch (_) { /* authError ya está seteado en el contexto */ }
     };
@@ -70,6 +73,43 @@ const SignUp = () => {
                                 }}
                             />
                         )}
+
+                        <View className="mb-4 w-full max-w-xs border border-gray-300 rounded">
+                            <Picker
+                                selectedValue={relationToBaby}
+                                onValueChange={(itemValue) => setRelationToBaby(itemValue)}
+                                style={{ height: 50 }}
+                            >
+                                <Picker.Item label="Seleccionar relación" value="" />
+                                <Picker.Item label="Madre" value="mother" />
+                                <Picker.Item label="Padre" value="father" />
+                                <Picker.Item label="Hermano" value="brother" />
+                                <Picker.Item label="Hermana" value="sister" />
+                                <Picker.Item label="Abuela" value="grandmother" />
+                                <Picker.Item label="Abuelo" value="grandfather" />
+                                <Picker.Item label="Tío" value="uncle" />
+                                <Picker.Item label="Tía" value="aunt" />
+                                <Picker.Item label="Primo" value="cousin" />
+                                <Picker.Item label="Prima" value="cousin" />
+                                <Picker.Item label="Otros" value="other" />
+                            </Picker>
+                        </View>
+                        
+                        
+                        <View className="mb-4 w-full max-w-xs border border-gray-300 rounded">
+                            <Picker
+                                selectedValue={country}
+                                onValueChange={(itemValue) => setCountry(itemValue)}
+                                style={{ height: 50 }}
+                            >
+                                <Picker.Item label="Seleccionar país" value="" />
+                                <Picker.Item label="Chile" value="CL" />
+                                <Picker.Item label="Brasil" value="BR" />
+                                <Picker.Item label="Estados Unidos" value="US" />
+                            </Picker>
+                        </View>
+
+
                         <Input
                             placeholder={t('auth.password')}
                             value={password}

@@ -20,22 +20,23 @@
     "expo": "~53.0.20",
     "expo-dev-client": "~5.2.4",
     "expo-status-bar": "~2.2.3",
-    "lucide-react-native": "0.542.0",
+    "lucide-react-native": "^0.542.0",
     "nativewind": "4.1.23",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "react-i18next": "15.7.3",
+    "react-i18next": "^15.7.3",
     "react-native": "0.79.5",
+    "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "~2.24.0",
-    "react-native-localize": "1.4.1",
+    "react-native-localize": "^1.4.1",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-url-polyfill": "2.0.0"
+    "react-native-url-polyfill": "^2.0.0"
   },
   "devDependencies": {
-    "@babel/core": "7.20.0",
-    "prettier-plugin-tailwindcss": "0.5.11",
-    "tailwindcss": "3.4.17"
+    "@babel/core": "^7.20.0",
+    "prettier-plugin-tailwindcss": "^0.5.11",
+    "tailwindcss": "^3.4.17"
   }
 }

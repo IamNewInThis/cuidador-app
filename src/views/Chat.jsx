@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useState } from 'react';
 import Entypo from '@expo/vector-icons/Entypo';
 import { useAuth } from '../contexts/AuthContext';
+import { LOCAL } from '@env';
 
 // Componente para un mensaje del usuario
 const UserMessage = ({ text }) => (
@@ -50,7 +51,7 @@ const Chat = () => {
 
         // POST API
         try {
-            const res = await fetch('http://192.168.1.135:3000/api/chat', {
+            const res = await fetch(`${LOCAL}chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
