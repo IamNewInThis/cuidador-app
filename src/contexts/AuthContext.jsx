@@ -61,8 +61,8 @@ export const AuthProvider = ({ children }) => {
             
             // console.log('[AuthContext] Authentication successful, user:', data.user);
 
-            const token = data.session?.access_token;
-            console.log('[AuthContext] Token:', token);
+            // const token = data.session?.access_token;
+            // console.log('[AuthContext] Token:', token);
 
             setSession(data.session);
             setUser(data.user);

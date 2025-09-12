@@ -1,9 +1,10 @@
 import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Entypo from '@expo/vector-icons/Entypo';
 import { useAuth } from '../contexts/AuthContext';
 import { LOCAL } from '@env';
+import ConversationsService from '../services/ConversationsService';
 
 // Componente para un mensaje del usuario
 const UserMessage = ({ text }) => (
@@ -25,12 +26,26 @@ const AssistantMessage = ({ text }) => (
 
 const Chat = () => {
     const [message, setMessage] = useState('');
-    const { session } = useAuth();
+    const { session, user } = useAuth();
+    const [messages, setMessages] = useState([]);
 
-    // Mensajes estáticos de ejemplo
-    const [messages, setMessages] = useState([
-        { id: Date.now().toString(), role: 'assistant', text: 'Hola, ¿en qué puedo ayudarte hoy?' },
-    ]);
+    useEffect(() => {
+        loadConversationHistory();
+    }, []);
+
+    const loadConversationHistory = async () => {
+        try {
+            const history = await ConversationsService.getConversationHistory();
+            const formattedMessages = history.map(msg => ({
+                id: msg.id,
+                role: msg.role,
+                text: msg.content
+            }));
+            setMessages(formattedMessages.reverse());
+        } catch (error) {
+            console.error('Error loading conversation history:', error);
+        }
+    };
 
     const handleOnSendMessage = async () => {
         if (message.trim() === '') {
@@ -46,7 +61,15 @@ const Chat = () => {
         }
 
         console.log("Mensaje enviado:", message);
-        const userMsg = { id: Date.now().toString(), role: 'user', text: message };
+        
+        // Guardar mensaje del usuario
+        const savedUserMessage = await ConversationsService.createMessage({
+            userId: user.id,
+            content: message,
+            role: 'user'
+        });
+
+        const userMsg = { id: savedUserMessage.id, role: 'user', text: message };
         setMessages(prevMessages => [...prevMessages, userMsg]);
 
         // POST API
@@ -66,7 +89,14 @@ const Chat = () => {
             const data = await res.json();
             console.log("Respuesta del API:", data?.answer || data);
 
-            const lumiMsg = { id: Date.now().toString(), role: 'assistant', text: data?.answer || "Lo siento, no pude obtener una respuesta." };
+            // Guardar respuesta del asistente
+            const savedAssistantMessage = await ConversationsService.createMessage({
+                userId: user.id,
+                content: data?.answer || "Lo siento, no pude obtener una respuesta.",
+                role: 'assistant'
+            });
+
+            const lumiMsg = { id: savedAssistantMessage.id, role: 'assistant', text: data?.answer || "Lo siento, no pude obtener una respuesta." };
             setMessages(prevMessages => [...prevMessages, lumiMsg]);
         } catch (error) {
             console.error("Error al enviar el mensaje:", error);
@@ -82,8 +112,8 @@ const Chat = () => {
         <SafeAreaView className="flex-1 bg-white">
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
-                behavior={Platform.OS === "ios" ? "padding" : "height"} // 👈 aquí
-                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} // 👈 offset extra para iOS
+                behavior={Platform.OS === "ios" ? "padding" : "height"} 
+                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} 
             >
                 {/* Contenedor del chat */}
                 <ScrollView

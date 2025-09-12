@@ -11,7 +11,7 @@ const Home = () => {
     const signOutUser = async () => {
         try {
             await signOut();
-            navigation.navigate('SignIn ');
+            navigation.navigate('SignIn');
         } catch (error) {
             console.error('Error al cerrar sesión:', error);
         }
