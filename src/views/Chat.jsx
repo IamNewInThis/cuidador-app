@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useState, useEffect } from 'react';
 import Entypo from '@expo/vector-icons/Entypo';
 import { useAuth } from '../contexts/AuthContext';
-import { LOCAL } from '@env';
+import { LOCAL, SERVER, DOCKER_LOCAL } from '@env';
 import ConversationsService from '../services/ConversationsService';
 
 // Componente para un mensaje del usuario

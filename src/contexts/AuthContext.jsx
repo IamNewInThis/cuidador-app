@@ -1,6 +1,8 @@
 // AuthContext.js
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import supabase from '../lib/supabase';
+import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
 
 const AuthContext = createContext();
 
@@ -99,8 +101,57 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const signInWithGoogle = async () => {
+        setAuthError(null);
+        setLoading(true);
+
+        try {
+            const redirectUrl = makeRedirectUri({
+                path: 'auth/callback',
+                useProxy: true,
+            });
+
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: redirectUrl,
+                    skipBrowserRedirect: true,
+                },
+            });
+
+            if (error) {
+                console.error('[AuthContext] Google sign-in error:', error);
+                setAuthError(error);
+                throw error;
+            }
+
+            if (data?.url) {
+                // Abre el navegador web para la autenticación
+                const result = await WebBrowser.openAuthSessionAsync(
+                    data.url,
+                    redirectUrl
+                );
+                
+                if (result.type === 'success') {
+                    const { url } = result;
+                    console.log('[AuthContext] Auth success, URL:', url);
+                } else {
+                    throw new Error('User cancelled or auth failed');
+                }
+            }
+
+            return data;
+        } catch (error) {
+            console.error('[AuthContext] Error in signInWithGoogle:', error);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
     return (
-        <AuthContext.Provider value={{ user, session, loading, authError, signIn, signUp, signOut }}>
+        <AuthContext.Provider value={{ user, session, loading, authError, signIn, signUp, signOut, signInWithGoogle }}>
             {children}
         </AuthContext.Provider>
     );

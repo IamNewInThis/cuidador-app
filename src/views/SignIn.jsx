@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 const SignIn = () => {
     const navigation = useNavigation();
-    const { signIn, loading, authError } = useAuth();
+    const { signIn, signInWithGoogle, loading, authError } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const {t} = useTranslation();
@@ -68,7 +68,7 @@ const SignIn = () => {
                 title={t('auth.google')}
                 icon={<AntDesign name="google" size={24} color="black" />}
                 className="mb-4 bg-gray-100 border border-gray-300"
-                onPress={() => console.log('Sign in with Google')}
+                onPress={signInWithGoogle}
             />
             <Button
                 title={t('auth.apple')}

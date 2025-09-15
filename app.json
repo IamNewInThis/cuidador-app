@@ -36,6 +36,10 @@
         "projectId": "d4cf8bc9-65fd-4f49-a415-c9b96ec68391"
       }
     },
-    "owner": "takeeko"
+    "owner": "takeeko",
+    "plugins": [
+      "expo-web-browser",
+      "expo-font"
+    ]
   }
 }
