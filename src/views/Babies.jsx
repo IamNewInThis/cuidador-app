@@ -1,4 +1,5 @@
-import { View, Text, Platform, SafeAreaView } from "react-native";
+import { View, Text, Platform } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
