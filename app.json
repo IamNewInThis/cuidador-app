@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.takeeko.cuidadorapp",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -40,7 +41,8 @@
     "owner": "takeeko",
     "plugins": [
       "expo-web-browser",
-      "expo-font"
+      "expo-font",
+      "expo-apple-authentication"
     ]
   }
 }

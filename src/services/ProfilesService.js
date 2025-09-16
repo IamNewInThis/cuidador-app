@@ -24,11 +24,9 @@ export async function getProfile(userId) {
 export async function updateProfile(userId, updates) {
     try {
         const payload = {
-            full_name: updates.full_name ?? null,
-            phone: updates.phone ?? null,
-            bio: updates.bio ?? null,
-            avatar_url: updates.avatar_url ?? null,
-            updated_at: new Date().toISOString(),
+            name: updates.name?.trim() || null,
+            phone: updates.phone?.trim() || null,
+            //updated_at: new Date().toISOString(),
         };
 
         const { data, error } = await supabase

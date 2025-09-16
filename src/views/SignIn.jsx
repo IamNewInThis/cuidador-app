@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SignIn = () => {
     const navigation = useNavigation();
-    const { signIn, loading, authError, signInWithGoogle } = useAuth();
+    const { signIn, loading, authError, signInWithGoogle, signInWithApple } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const {t} = useTranslation();
@@ -23,6 +23,15 @@ const SignIn = () => {
             navigation.navigate('Home');
         } catch (e) {
             console.error('Error al iniciar sesión:', e);
+        }
+    };
+
+    const signInWithAppleFunction = async () => {
+        try {
+            await signInWithApple();
+            navigation.navigate('Home');
+        } catch (e) {
+            console.error('Error al iniciar sesión con Apple:', e);
         }
     };
 
@@ -76,7 +85,7 @@ const SignIn = () => {
                 title={t('auth.apple')}
                 icon={<FontAwesome name="apple" size={24} color="black" />}
                 className="bg-gray-100 border border-gray-300"
-                onPress={() => console.log('Sign in with Apple')}
+                onPress={() => { signInWithAppleFunction(); }}
             />
 
             <Text className="text-center text-gray-500 mt-6">

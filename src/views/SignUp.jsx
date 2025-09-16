@@ -1,6 +1,6 @@
 // src/views/SignUp.js
 import React, { useState } from 'react';
-import { View, Text, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, KeyboardAvoidingView, Platform, ScrollView, Modal, Pressable  } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Input from '../components/Input';
@@ -56,12 +56,13 @@ const SignUp = () => {
                             autoCapitalize="none"
                             className="mb-4"
                         />
+
                         <PhoneInput value={phone} onChangeText={setPhone} className="mb-6" />
 
                         <Button
                             title={`Nacimiento: ${birthdate.toLocaleDateString()}`}
                             onPress={() => setShowDatePicker(true)}
-                            className="mb-4 bg-gray-100 border border-gray-300"
+                            className="mt-4 mb-4 bg-gray-100 border border-gray-300"
                         />
                         {showDatePicker && (
                             <DateTimePicker
