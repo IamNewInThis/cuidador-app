@@ -106,16 +106,12 @@ export const AuthProvider = ({ children }) => {
         setLoading(true);
 
         try {
-            const redirectUrl = makeRedirectUri({
-                path: 'auth/callback',
-                useProxy: true,
-            });
+            const redirectUrl = makeRedirectUri({ useProxy: true });
 
             const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
+            provider: 'google',
                 options: {
                     redirectTo: redirectUrl,
-                    skipBrowserRedirect: true,
                 },
             });
 

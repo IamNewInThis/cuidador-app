@@ -1,13 +1,13 @@
 import { View, Text } from 'react-native';
 import React, { useState } from 'react';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 
 const SignIn = () => {
     const navigation = useNavigation();
@@ -70,10 +70,11 @@ const SignIn = () => {
                 title={t('auth.google')}
                 icon={<AntDesign name="google" size={24} color="black" />}
                 className="mb-4 bg-gray-100 border border-gray-300"
+                onPress={signInWithGoogle}
             />
             <Button
                 title={t('auth.apple')}
-                icon={<AntDesign name="apple" size={24} color="black" />}
+                icon={<FontAwesome name="apple" size={24} color="black" />}
                 className="bg-gray-100 border border-gray-300"
                 onPress={() => console.log('Sign in with Apple')}
             />
