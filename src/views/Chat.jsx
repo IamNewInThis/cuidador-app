@@ -6,6 +6,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { LOCAL, SERVER, DOCKER_LOCAL } from '@env';
 import ConversationsService from '../services/ConversationsService';
 
+// Para debug de las variables de entorno
+console.log('Variables de entorno:', { LOCAL, SERVER, DOCKER_LOCAL });
+
 // Componente para un mensaje del usuario
 const UserMessage = ({ text }) => (
     <View className="flex-row justify-end my-2">
@@ -74,7 +77,9 @@ const Chat = () => {
 
         // POST API
         try {
-            const res = await fetch(`${LOCAL}chat`, {
+            const apiUrl = LOCAL 
+            console.log('URL de la API:', apiUrl);
+            const res = await fetch(`${apiUrl}chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
