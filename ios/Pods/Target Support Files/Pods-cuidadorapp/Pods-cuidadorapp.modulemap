@@ -1,0 +1,6 @@
+module Pods_cuidadorapp {
+  umbrella header "Pods-cuidadorapp-umbrella.h"
+
+  export *
+  module * { export * }
+}
