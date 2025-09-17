@@ -74,7 +74,7 @@ const Chat = () => {
 
         // POST API
         try {
-            const res = await fetch(`${LOCAL}chat`, {
+            const res = await fetch(`${SERVER}chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
