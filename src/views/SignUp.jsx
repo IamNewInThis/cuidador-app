@@ -1,6 +1,6 @@
 // src/views/SignUp.js
 import React, { useState } from 'react';
-import { View, Text, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, KeyboardAvoidingView, Platform, ScrollView, Modal, Pressable  } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Input from '../components/Input';
@@ -20,10 +20,42 @@ const SignUp = () => {
     const [password, setPassword] = useState('');
     const [phone, setPhone] = useState('');
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showRelationPicker, setShowRelationPicker] = useState(false);
+    const [showCountryPicker, setShowCountryPicker] = useState(false);
     const [birthdate, setBirthdate] = useState(new Date());
     const [relationToBaby, setRelationToBaby] = useState('');
     const [country, setCountry] = useState('');
     const {t} = useTranslation();
+
+    const RELATIONS = [
+        { label: "Madre", value: "mother" },
+        { label: "Padre", value: "father" },
+        { label: "Hermano", value: "brother" },
+        { label: "Hermana", value: "sister" },
+        { label: "Abuela", value: "grandmother" },
+        { label: "Abuelo", value: "grandfather" },
+        { label: "Tío", value: "uncle" },
+        { label: "Tía", value: "aunt" },
+        { label: "Primo", value: "cousin" },
+        { label: "Prima", value: "cousin" },
+        { label: "Otros", value: "other" }
+    ];
+
+    const COUNTRIES = [
+        { label: "Chile", value: "CL", flag: "🇨🇱" },
+        { label: "Brasil", value: "BR", flag: "🇧🇷" },
+        { label: "Estados Unidos", value: "US", flag: "🇺🇸" }
+    ];
+
+    const getRelationLabel = (value) => {
+        const relation = RELATIONS.find(r => r.value === value);
+        return relation ? relation.label : "Seleccionar relación";
+    };
+
+    const getCountryInfo = (value) => {
+        const country = COUNTRIES.find(c => c.value === value);
+        return country ? `${country.flag} ${country.label}` : "Seleccionar país";
+    };
 
     const onSubmit = async () => {
         try {
@@ -56,12 +88,13 @@ const SignUp = () => {
                             autoCapitalize="none"
                             className="mb-4"
                         />
+
                         <PhoneInput value={phone} onChangeText={setPhone} className="mb-6" />
 
                         <Button
                             title={`Nacimiento: ${birthdate.toLocaleDateString()}`}
                             onPress={() => setShowDatePicker(true)}
-                            className="mb-4 bg-gray-100 border border-gray-300"
+                            className="mt-4 mb-4 bg-gray-100 border border-gray-300"
                         />
                         {showDatePicker && (
                             <DateTimePicker
@@ -75,40 +108,55 @@ const SignUp = () => {
                             />
                         )}
 
-                        <View className="mb-4 w-full max-w-xs border border-gray-300 rounded">
-                            <Picker
-                                selectedValue={relationToBaby}
-                                onValueChange={(itemValue) => setRelationToBaby(itemValue)}
-                                style={{ height: 50 }}
-                            >
-                                <Picker.Item label="Seleccionar relación" value="" />
-                                <Picker.Item label="Madre" value="mother" />
-                                <Picker.Item label="Padre" value="father" />
-                                <Picker.Item label="Hermano" value="brother" />
-                                <Picker.Item label="Hermana" value="sister" />
-                                <Picker.Item label="Abuela" value="grandmother" />
-                                <Picker.Item label="Abuelo" value="grandfather" />
-                                <Picker.Item label="Tío" value="uncle" />
-                                <Picker.Item label="Tía" value="aunt" />
-                                <Picker.Item label="Primo" value="cousin" />
-                                <Picker.Item label="Prima" value="cousin" />
-                                <Picker.Item label="Otros" value="other" />
-                            </Picker>
-                        </View>
+                        {Platform.OS === 'ios' ? (
+                            <Button
+                                title={getRelationLabel(relationToBaby)}
+                                onPress={() => setShowRelationPicker(true)}
+                                className="mb-4 bg-gray-100 border border-gray-300"
+                            />
+                        ) : (
+                            <View className="mb-4 w-full border border-gray-300 rounded">
+                                <Picker
+                                    selectedValue={relationToBaby}
+                                    onValueChange={(itemValue) => setRelationToBaby(itemValue)}
+                                    style={{ height: 60 }}
+                                >
+                                    <Picker.Item label="Seleccionar relación" value="" />
+                                    {RELATIONS.map(relation => (
+                                        <Picker.Item 
+                                            key={relation.value}
+                                            label={relation.label}
+                                            value={relation.value}
+                                        />
+                                    ))}
+                                </Picker>
+                            </View>
+                        )}
                         
-                        
-                        <View className="mb-4 w-full max-w-xs border border-gray-300 rounded">
-                            <Picker
-                                selectedValue={country}
-                                onValueChange={(itemValue) => setCountry(itemValue)}
-                                style={{ height: 50 }}
-                            >
-                                <Picker.Item label="Seleccionar país" value="" />
-                                <Picker.Item label="Chile" value="CL" />
-                                <Picker.Item label="Brasil" value="BR" />
-                                <Picker.Item label="Estados Unidos" value="US" />
-                            </Picker>
-                        </View>
+                        {Platform.OS === 'ios' ? (
+                            <Button
+                                title={getCountryInfo(country)}
+                                onPress={() => setShowCountryPicker(true)}
+                                className="mb-4 bg-gray-100 border border-gray-300"
+                            />
+                        ) : (
+                            <View className="mb-4 w-full border border-gray-300 rounded">
+                                <Picker
+                                    selectedValue={country}
+                                    onValueChange={(itemValue) => setCountry(itemValue)}
+                                    style={{ height: 60 }}
+                                >
+                                    <Picker.Item label="Seleccionar país" value="" />
+                                    {COUNTRIES.map(country => (
+                                        <Picker.Item 
+                                            key={country.value}
+                                            label={`${country.flag} ${country.label}`}
+                                            value={country.value}
+                                        />
+                                    ))}
+                                </Picker>
+                            </View>
+                        )}
 
 
                         <Input
@@ -150,6 +198,70 @@ const SignUp = () => {
                             className="bg-gray-100 border border-gray-300"
                             onPress={() => console.log('Sign up with Apple')}
                         />
+
+                        {Platform.OS === 'ios' && (
+                            <Modal
+                                animationType="slide"
+                                transparent={true}
+                                visible={showRelationPicker}
+                                onRequestClose={() => setShowRelationPicker(false)}
+                            >
+                                <View className="flex-1 justify-end bg-black/50">
+                                    <View className="bg-white w-full">
+                                        <View className="flex-row justify-end border-b border-gray-200 p-2">
+                                            <Pressable onPress={() => setShowRelationPicker(false)}>
+                                                <Text className="text-blue-500 font-semibold text-lg px-4 py-2">Listo</Text>
+                                            </Pressable>
+                                        </View>
+                                        <Picker
+                                            selectedValue={relationToBaby}
+                                            onValueChange={(itemValue) => setRelationToBaby(itemValue)}
+                                        >
+                                            <Picker.Item label="Seleccionar relación" value="" />
+                                            {RELATIONS.map(relation => (
+                                                <Picker.Item 
+                                                    key={relation.value}
+                                                    label={relation.label}
+                                                    value={relation.value}
+                                                />
+                                            ))}
+                                        </Picker>
+                                    </View>
+                                </View>
+                            </Modal>
+                        )}
+
+                        {Platform.OS === 'ios' && (
+                            <Modal
+                                animationType="slide"
+                                transparent={true}
+                                visible={showCountryPicker}
+                                onRequestClose={() => setShowCountryPicker(false)}
+                            >
+                                <View className="flex-1 justify-end bg-black/50">
+                                    <View className="bg-white w-full">
+                                        <View className="flex-row justify-end border-b border-gray-200 p-2">
+                                            <Pressable onPress={() => setShowCountryPicker(false)}>
+                                                <Text className="text-blue-500 font-semibold text-lg px-4 py-2">Listo</Text>
+                                            </Pressable>
+                                        </View>
+                                        <Picker
+                                            selectedValue={country}
+                                            onValueChange={(itemValue) => setCountry(itemValue)}
+                                        >
+                                            <Picker.Item label="Seleccionar país" value="" />
+                                            {COUNTRIES.map(country => (
+                                                <Picker.Item 
+                                                    key={country.value}
+                                                    label={`${country.flag} ${country.label}`}
+                                                    value={country.value}
+                                                />
+                                            ))}
+                                        </Picker>
+                                    </View>
+                                </View>
+                            </Modal>
+                        )}
 
                         <Text className="text-center text-gray-500 mt-6">
                             {t('auth.haveAccount')}{' '}

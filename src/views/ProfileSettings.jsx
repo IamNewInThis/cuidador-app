@@ -23,9 +23,14 @@ const ProfileSettings = () => {
     }, [user?.id, fullName]);
 
     const loadProfile = async () => {
-        if (!user?.id) return;
+        if (!user?.id) {
+            setLoading(false); 
+            return;
+        }
+
         setLoading(true);
         const { data, error } = await getProfile(user.id);
+
         if (error) {
             console.error('Error loading profile:', error);
         } else {
@@ -33,6 +38,7 @@ const ProfileSettings = () => {
             setFullName(data?.name ?? '');
             setPhone(data?.phone ?? '');
         }
+
         setLoading(false);
     };
 

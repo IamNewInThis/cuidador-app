@@ -122,7 +122,7 @@ const BabyDetail = () => {
                 </View>
 
                 <View className="px-4 mt-4">
-                    <Text className="text-gray-700 mb-1">Peso (gramos)</Text>
+                    <Text className="text-gray-700 mb-1">Peso (kilos)</Text>
                     <Input
                         placeholder="Ej: 3200"
                         value={weight}

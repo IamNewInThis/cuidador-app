@@ -3,6 +3,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import supabase from '../lib/supabase';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
 
 const AuthContext = createContext();
 
@@ -107,51 +109,127 @@ export const AuthProvider = ({ children }) => {
 
         try {
             const redirectUrl = makeRedirectUri({
+                scheme: 'cuidador-app',
                 path: 'auth/callback',
-                useProxy: true,
             });
 
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: redirectUrl,
-                    skipBrowserRedirect: true,
+                    queryParams: { prompt: 'select_account' },
                 },
             });
 
-            if (error) {
-                console.error('[AuthContext] Google sign-in error:', error);
-                setAuthError(error);
-                throw error;
-            }
+            if (error) throw error;
 
             if (data?.url) {
-                // Abre el navegador web para la autenticación
-                const result = await WebBrowser.openAuthSessionAsync(
-                    data.url,
-                    redirectUrl
-                );
-                
-                if (result.type === 'success') {
-                    const { url } = result;
-                    console.log('[AuthContext] Auth success, URL:', url);
-                } else {
-                    throw new Error('User cancelled or auth failed');
+                const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+
+                if (result.type === 'success' && result.url) {
+                    // 👇 Parsear el fragmento con query-string
+                    const url = new URL(result.url);
+                    const hashParams = new URLSearchParams(url.hash.substring(1)); 
+
+                    const parsed = {
+                        access_token: hashParams.get('access_token'),
+                        refresh_token: hashParams.get('refresh_token'),
+                        expires_in: hashParams.get('expires_in'),
+                        expires_at: hashParams.get('expires_at'),
+                        provider_token: hashParams.get('provider_token'),
+                    };
+
+                    // console.log('[GoogleAuth] Tokens recibidos:', parsed);
+
+                    // Guardar la sesión en Supabase manualmente
+                    const { data: sessionData, error: setError } = await supabase.auth.setSession({
+                    access_token: parsed.access_token,
+                    refresh_token: parsed.refresh_token,
+                    });
+
+                    if (setError) throw setError;
+
+                    // console.log('[GoogleAuth] Sesión creada:', sessionData.session.user);
+
+                    setSession(sessionData.session);
+                    setUser(sessionData.session.user);
                 }
             }
-
-            return data;
-        } catch (error) {
-            console.error('[AuthContext] Error in signInWithGoogle:', error);
-            throw error;
+        } catch (e) {
+            console.error('[GoogleAuth] Error en signInWithGoogle:', e);
+            setAuthError(e);
         } finally {
             setLoading(false);
         }
     };
 
+    const signInWithApple = async () => {
+        setAuthError(null);
+        setLoading(true);
+        try {
+            console.log('[AppleAuth] Iniciando signInWithApple...');
+
+            const available = await AppleAuthentication.isAvailableAsync();
+            console.log('[AppleAuth] Disponible:', available);
+            if (!available) throw new Error('Apple Sign-In no disponible en este dispositivo.');
+
+            const rawNonce = Crypto.randomUUID();
+            const hashedNonce = await Crypto.digestStringAsync(
+                Crypto.CryptoDigestAlgorithm.SHA256,
+                rawNonce
+            );
+            console.log('[AppleAuth] Nonce generado:', rawNonce);
+            console.log('[AppleAuth] Nonce hasheado:', hashedNonce);
+
+            const credential = await AppleAuthentication.signInAsync({
+                requestedScopes: [
+                    AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                    AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                ],
+                nonce: hashedNonce,
+            });
+
+            console.log('[AppleAuth] Credencial recibida:', credential);
+
+            if (!credential.identityToken) throw new Error('No se recibió identityToken de Apple');
+
+            const { data, error } = await supabase.auth.signInWithIdToken({
+                provider: 'apple',
+                token: credential.identityToken,
+                nonce: rawNonce,
+            });
+
+            console.log('[AppleAuth] Respuesta de Supabase:', { data, error });
+
+            if (error) {
+                console.error('[AppleAuth] Error en Supabase:', error);
+                throw error;
+            }
+
+            if (credential.fullName) {
+                const fullName = `${credential.fullName.givenName ?? ''} ${credential.fullName.familyName ?? ''}`.trim();
+                console.log('[AppleAuth] Nombre completo detectado:', fullName);
+                if (fullName) {
+                    await supabase.auth.updateUser({ data: { full_name: fullName } })
+                        .then(() => console.log('[AppleAuth] Nombre actualizado en Supabase'))
+                        .catch(err => console.error('[AppleAuth] Error al actualizar nombre:', err));
+                }
+            }
+
+            console.log('[AppleAuth] Inicio de sesión con Apple exitoso 🎉');
+            return data;
+        } catch (e) {
+            console.error('[AppleAuth] Error general:', e);
+            setAuthError(e);
+            throw e;
+        } finally {
+            console.log('[AppleAuth] Finalizó el flujo de Apple Sign-In');
+            setLoading(false);
+        }
+    };
 
     return (
-        <AuthContext.Provider value={{ user, session, loading, authError, signIn, signUp, signOut, signInWithGoogle }}>
+        <AuthContext.Provider value={{ user, session, loading, authError, signIn, signUp, signOut, signInWithGoogle, signInWithApple }}>
             {children}
         </AuthContext.Provider>
     );
