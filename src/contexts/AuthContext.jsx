@@ -239,9 +239,17 @@ export const AuthProvider = ({ children }) => {
         try {
             console.log('[AppleAuth] Iniciando signInWithApple...');
 
-            const available = await AppleAuthentication.isAvailableAsync();
-            console.log('[AppleAuth] Disponible:', available);
-            if (!available) throw new Error('Apple Sign-In no disponible en este dispositivo.');
+            // Verificar disponibilidad con más detalle
+            try {
+                const available = await AppleAuthentication.isAvailableAsync();
+                console.log('[AppleAuth] Disponible:', available);
+                if (!available) {
+                    throw new Error('Apple Sign-In no está disponible en este dispositivo. Verifica que hayas iniciado sesión en iCloud.');
+                }
+            } catch (availabilityError) {
+                console.error('[AppleAuth] Error de disponibilidad:', availabilityError);
+                throw new Error('No se pudo verificar la disponibilidad de Apple Sign-In. ¿Has iniciado sesión en iCloud?');
+            }
 
             const rawNonce = Crypto.randomUUID();
             const hashedNonce = await Crypto.digestStringAsync(
@@ -257,11 +265,19 @@ export const AuthProvider = ({ children }) => {
                     AppleAuthentication.AppleAuthenticationScope.EMAIL,
                 ],
                 nonce: hashedNonce,
+                // Asegurar que usamos el bundle ID correcto
+                webAuthenticationOptions: {
+                    clientId: 'com.takeeko.cuidadorapp',
+                    redirectURI: 'cuidador-app://auth/callback',
+                },
             });
 
             console.log('[AppleAuth] Credencial recibida:', credential);
 
             if (!credential.identityToken) throw new Error('No se recibió identityToken de Apple');
+            
+            console.log('[AppleAuth] Identity Token recibido:', credential.identityToken.substring(0, 20) + '...');
+            console.log('[AppleAuth] User ID:', credential.user);
 
             const { data, error } = await supabase.auth.signInWithIdToken({
                 provider: 'apple',

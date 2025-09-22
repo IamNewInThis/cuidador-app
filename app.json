@@ -18,6 +18,9 @@
       "bundleIdentifier": "com.takeeko.cuidadorapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.developer.applesignin": ["Default"]
       }
     },
     "android": {
