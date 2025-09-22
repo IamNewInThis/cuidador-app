@@ -11,6 +11,8 @@ import Babies from '../views/Babies';
 import ListBabies from '../views/ListBabies';
 import BabyDetail from '../views/BabyDetail';
 import ProfileSettings from '../views/ProfileSettings';
+import ResetPasswordScreen from '../views/ResetPassword';
+import ForgotPassword from '../views/ForgotPassword';
 
 const Stack = createStackNavigator();
 
@@ -30,6 +32,8 @@ export default function AppNavigator() {
             <Stack.Screen name="ListBabies" component={ListBabies} />
             <Stack.Screen name="BabyDetail" component={BabyDetail} />
             <Stack.Screen name="ProfileSettings" component={ProfileSettings} />
+            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
         </Stack.Navigator>
     );
 }

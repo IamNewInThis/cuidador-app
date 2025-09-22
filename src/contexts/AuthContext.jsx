@@ -47,22 +47,22 @@ export const AuthProvider = ({ children }) => {
         console.log('[AuthContext] signIn called with email:', email);
         setAuthError(null);
         setLoading(true);
-        
+
         try {
             console.log('[AuthContext] Calling supabase.auth.signInWithPassword...');
-            const { data, error } = await supabase.auth.signInWithPassword({ 
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email: email.trim(),
-                password: password 
+                password: password
             });
-            
+
             // console.log('[AuthContext] supabase.auth response:', { data, error });
-            
+
             if (error) {
                 console.error('[AuthContext] Authentication error:', error);
                 setAuthError(error);
                 throw error;
             }
-            
+
             // console.log('[AuthContext] Authentication successful, user:', data.user);
 
             // const token = data.session?.access_token;
@@ -103,6 +103,76 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const sendPasswordResetEmail = async (email) => {
+        setAuthError(null);
+        setLoading(true);
+
+        try {
+            console.log('[AuthContext] Enviando email de recuperación a:', email);
+            
+            // Cerrar sesión activa
+            await supabase.auth.signOut();
+            
+            // Construir la URL de redirección completa
+            const redirectUrl = 'cuidador-app://auth/reset';
+            
+            // console.log('[AuthContext] URL de redirección para reset:', redirectUrl);
+
+            const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: redirectUrl,
+            });
+
+            if (error) throw error;
+            
+            // console.log('[AuthContext] Email de recuperación enviado correctamente');
+            return data;
+        } catch (e) {
+            console.error('[AuthContext] Error en sendPasswordResetEmail:', e);
+            setAuthError(e);
+            throw e;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const updatePassword = async (newPassword) => {
+        setAuthError(null);
+        setLoading(true);
+
+        try {
+            console.log('[AuthContext] Intentando actualizar contraseña...');
+            
+            // Intentar actualizar la contraseña
+            const { data, error } = await supabase.auth.updateUser({
+                password: newPassword
+            });
+
+            if (error) {
+                console.error('[AuthContext] Error al actualizar contraseña:', error);
+                throw error;
+            }
+
+            // Si la actualización fue exitosa, intentamos obtener la nueva sesión
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            
+            if (sessionError) {
+                console.error('[AuthContext] Error al obtener sesión después de actualizar:', sessionError);
+            } else if (session) {
+                console.log('[AuthContext] Nueva sesión obtenida después de actualizar contraseña');
+                setSession(session);
+                setUser(session.user);
+            }
+
+            return true;
+        } catch (e) {
+            console.error('[AuthContext] Error en updatePassword:', e);
+            setAuthError(e);
+            throw e;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const signInWithGoogle = async () => {
         setAuthError(null);
         setLoading(true);
@@ -129,7 +199,7 @@ export const AuthProvider = ({ children }) => {
                 if (result.type === 'success' && result.url) {
                     // 👇 Parsear el fragmento con query-string
                     const url = new URL(result.url);
-                    const hashParams = new URLSearchParams(url.hash.substring(1)); 
+                    const hashParams = new URLSearchParams(url.hash.substring(1));
 
                     const parsed = {
                         access_token: hashParams.get('access_token'),
@@ -143,8 +213,8 @@ export const AuthProvider = ({ children }) => {
 
                     // Guardar la sesión en Supabase manualmente
                     const { data: sessionData, error: setError } = await supabase.auth.setSession({
-                    access_token: parsed.access_token,
-                    refresh_token: parsed.refresh_token,
+                        access_token: parsed.access_token,
+                        refresh_token: parsed.refresh_token,
                     });
 
                     if (setError) throw setError;
@@ -229,7 +299,19 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, loading, authError, signIn, signUp, signOut, signInWithGoogle, signInWithApple }}>
+        <AuthContext.Provider value={{ 
+            user, 
+            session, 
+            loading, 
+            authError, 
+            signIn, 
+            signUp, 
+            signOut, 
+            sendPasswordResetEmail, 
+            updatePassword,
+            signInWithGoogle, 
+            signInWithApple 
+        }}>
             {children}
         </AuthContext.Provider>
     );

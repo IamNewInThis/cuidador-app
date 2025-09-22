@@ -97,15 +97,24 @@ const SignIn = () => {
                 onPress={() => { signInWithAppleFunction(); }}
             />
 
-            <Text className="text-center text-gray-500 mt-6">
-                <Text>{t('auth.haveAccount')}</Text>
-                <Text
-                    className="text-blue-500 font-bold"
-                    onPress={() => navigation.navigate('SignUp')}
-                >
-                    {t('auth.goSignUp')}
+            <View className="w-full mt-6">
+                <Text className="text-center text-gray-500">
+                    {t('auth.haveAccount')}{' '}
+                    <Text
+                        className="text-blue-500 font-bold"
+                        onPress={() => navigation.navigate('SignUp')}
+                    >
+                        {t('auth.goSignUp')}
+                    </Text>
                 </Text>
-            </Text>
+
+                <Text
+                    className="text-blue-500 text-center mt-4"
+                    onPress={() => navigation.navigate('ForgotPassword')}
+                >
+                    ¿Olvidaste tu contraseña?
+                </Text>
+            </View>
         </SafeAreaView>
     );
 };
