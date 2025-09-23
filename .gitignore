@@ -43,3 +43,5 @@ yarn-error.*
 
 # OS generated files
 Thumbs.db
+
+script_supabase.sql
