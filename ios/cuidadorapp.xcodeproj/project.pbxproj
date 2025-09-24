@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		03FAE6E8E1C2BC7811210404 /* libPods-cuidadorapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E055FD1D21BBA21F900F47A4 /* libPods-cuidadorapp.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		206BB84D8A65B1FB956B5BD1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 68CBF705224C8C44F30E89B3 /* PrivacyInfo.xcprivacy */; };
+		249AC80ACECAF672225DB318 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7D0F16C75F8E3DE4AC59362 /* ExpoModulesProvider.swift */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		CF8DC224B7A9226756E6A14D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8F361989681758EBC5D3977A /* PrivacyInfo.xcprivacy */; };
-		D7DF2BB9272C6194505295CC /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA31335A87002CCA47F90C77 /* ExpoModulesProvider.swift */; };
+		C8265C0F7736546213C3D5C4 /* libPods-cuidadorapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3FFFEC92D0A62D1ECF86234E /* libPods-cuidadorapp.a */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
@@ -20,16 +20,16 @@
 		13B07F961A680F5B00A75B9A /* cuidadorapp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cuidadorapp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = cuidadorapp/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = cuidadorapp/Info.plist; sourceTree = "<group>"; };
-		8DA84C3CF4AB4C31FFA2AFEF /* Pods-cuidadorapp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-cuidadorapp.release.xcconfig"; path = "Target Support Files/Pods-cuidadorapp/Pods-cuidadorapp.release.xcconfig"; sourceTree = "<group>"; };
-		8F361989681758EBC5D3977A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = cuidadorapp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		3FFFEC92D0A62D1ECF86234E /* libPods-cuidadorapp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-cuidadorapp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		68CBF705224C8C44F30E89B3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = cuidadorapp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		8BA1CFEB26A0885535CE6615 /* Pods-cuidadorapp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-cuidadorapp.debug.xcconfig"; path = "Target Support Files/Pods-cuidadorapp/Pods-cuidadorapp.debug.xcconfig"; sourceTree = "<group>"; };
+		9D35F14E30C9221CFCDE0024 /* Pods-cuidadorapp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-cuidadorapp.release.xcconfig"; path = "Target Support Files/Pods-cuidadorapp/Pods-cuidadorapp.release.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = cuidadorapp/SplashScreen.storyboard; sourceTree = "<group>"; };
-		BA31335A87002CCA47F90C77 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-cuidadorapp/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		C5A8C7024953FDEB4D6C8DD4 /* Pods-cuidadorapp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-cuidadorapp.debug.xcconfig"; path = "Target Support Files/Pods-cuidadorapp/Pods-cuidadorapp.debug.xcconfig"; sourceTree = "<group>"; };
-		E055FD1D21BBA21F900F47A4 /* libPods-cuidadorapp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-cuidadorapp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = cuidadorapp/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* cuidadorapp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "cuidadorapp-Bridging-Header.h"; path = "cuidadorapp/cuidadorapp-Bridging-Header.h"; sourceTree = "<group>"; };
+		F7D0F16C75F8E3DE4AC59362 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-cuidadorapp/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03FAE6E8E1C2BC7811210404 /* libPods-cuidadorapp.a in Frameworks */,
+				C8265C0F7736546213C3D5C4 /* libPods-cuidadorapp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,7 +53,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				8F361989681758EBC5D3977A /* PrivacyInfo.xcprivacy */,
+				68CBF705224C8C44F30E89B3 /* PrivacyInfo.xcprivacy */,
 			);
 			name = cuidadorapp;
 			sourceTree = "<group>";
@@ -62,23 +62,23 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				E055FD1D21BBA21F900F47A4 /* libPods-cuidadorapp.a */,
+				3FFFEC92D0A62D1ECF86234E /* libPods-cuidadorapp.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		34885FB44DC65D1F2C305648 /* ExpoModulesProviders */ = {
+		7785524CF875AB9966BA0B7C /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				6330106F179490631EBD0728 /* cuidadorapp */,
+				7EB7D101A3EEC05A4A22FFCA /* cuidadorapp */,
 			);
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
-		6330106F179490631EBD0728 /* cuidadorapp */ = {
+		7EB7D101A3EEC05A4A22FFCA /* cuidadorapp */ = {
 			isa = PBXGroup;
 			children = (
-				BA31335A87002CCA47F90C77 /* ExpoModulesProvider.swift */,
+				F7D0F16C75F8E3DE4AC59362 /* ExpoModulesProvider.swift */,
 			);
 			name = cuidadorapp;
 			sourceTree = "<group>";
@@ -97,8 +97,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				A213190ABB74565C2D42D516 /* Pods */,
-				34885FB44DC65D1F2C305648 /* ExpoModulesProviders */,
+				A600E48ED4F1E86D2EB82F91 /* Pods */,
+				7785524CF875AB9966BA0B7C /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -113,12 +113,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A213190ABB74565C2D42D516 /* Pods */ = {
+		A600E48ED4F1E86D2EB82F91 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				C5A8C7024953FDEB4D6C8DD4 /* Pods-cuidadorapp.debug.xcconfig */,
-				8DA84C3CF4AB4C31FFA2AFEF /* Pods-cuidadorapp.release.xcconfig */,
+				8BA1CFEB26A0885535CE6615 /* Pods-cuidadorapp.debug.xcconfig */,
+				9D35F14E30C9221CFCDE0024 /* Pods-cuidadorapp.release.xcconfig */,
 			);
+			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -139,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "cuidadorapp" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				12799AEFC712EA819D34EADF /* [Expo] Configure project */,
+				629B3851D14F951F10977212 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				6A7A5595C78FF809D894FD30 /* [CP] Embed Pods Frameworks */,
+				5C19CF1708502B1C5ECA5C48 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -195,7 +196,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				CF8DC224B7A9226756E6A14D /* PrivacyInfo.xcprivacy in Resources */,
+				206BB84D8A65B1FB956B5BD1 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -239,7 +240,25 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		12799AEFC712EA819D34EADF /* [Expo] Configure project */ = {
+		5C19CF1708502B1C5ECA5C48 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-cuidadorapp/Pods-cuidadorapp-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-cuidadorapp/Pods-cuidadorapp-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		629B3851D14F951F10977212 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -257,24 +276,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-cuidadorapp/expo-configure-project.sh\"\n";
-		};
-		6A7A5595C78FF809D894FD30 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-cuidadorapp/Pods-cuidadorapp-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-cuidadorapp/Pods-cuidadorapp-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -326,7 +327,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				D7DF2BB9272C6194505295CC /* ExpoModulesProvider.swift in Sources */,
+				249AC80ACECAF672225DB318 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -335,15 +336,12 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C5A8C7024953FDEB4D6C8DD4 /* Pods-cuidadorapp.debug.xcconfig */;
+			baseConfigurationReference = 8BA1CFEB26A0885535CE6615 /* Pods-cuidadorapp.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = cuidadorapp/cuidadorapp.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = U3S9XG7Q7H;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -364,7 +362,6 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.takeeko.cuidadorapp;
 				PRODUCT_NAME = cuidadorapp;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "cuidadorapp/cuidadorapp-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -375,15 +372,12 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 8DA84C3CF4AB4C31FFA2AFEF /* Pods-cuidadorapp.release.xcconfig */;
+			baseConfigurationReference = 9D35F14E30C9221CFCDE0024 /* Pods-cuidadorapp.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = cuidadorapp/cuidadorapp.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = U3S9XG7Q7H;
 				INFOPLIST_FILE = cuidadorapp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -399,7 +393,6 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.takeeko.cuidadorapp;
 				PRODUCT_NAME = cuidadorapp;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "cuidadorapp/cuidadorapp-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -462,7 +455,10 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -517,7 +513,10 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

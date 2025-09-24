@@ -2,45 +2,37 @@ import supabase from "../lib/supabase.js";
 
 class FeedbackService {
     /**
-     * Crea un nuevo feedback para un mensaje de conversación
+     * Crea o actualiza feedback para un mensaje de conversación
      * @param {Object} feedback - Objeto con los datos del feedback
      * @param {string} feedback.conversationMessageId - ID del mensaje
-     * @param {string} feedback.userId - ID del usuario
      * @param {('useful'|'not_useful')} feedback.rating - Calificación del feedback
      * @param {string} [feedback.comment] - Comentario opcional
-     * @returns {Promise<Object>} - El feedback creado
+     * @returns {Promise<Object>} - El feedback creado o actualizado
      */
-    static async createFeedback({ conversationMessageId, rating, comment = null }) {
+    static async upsertFeedback({ conversationMessageId, rating, comment = null }) {
         try {
             // Obtener el usuario actual
             const { data: { user }, error: userError } = await supabase.auth.getUser();
-            
-            if (userError) {
-                console.error('Error getting current user:', userError);
-                throw userError;
-            }
+            if (userError) throw userError;
+            if (!user) throw new Error("No authenticated user found");
 
-            if (!user) {
-                throw new Error('No authenticated user found');
-            }
-
+            // Usar upsert con el unique (conversation_message_id, user_id)
             const { data, error } = await supabase
                 .from("feedback")
-                .insert([{
+                .upsert([{
                     conversation_message_id: conversationMessageId,
+                    user_id: user.id, // se valida con RLS
                     rating,
                     comment: comment || null,
-                }])
+                    updated_at: new Date().toISOString()
+                }], { onConflict: ["conversation_message_id", "user_id"] })
                 .select()
-                .single();
+                .maybeSingle(); // evita error PGRST116 si no devuelve filas
 
-            if (error) {
-                console.error('Error creating feedback:', error);
-                throw error;
-            }
+            if (error) throw error;
             return data;
         } catch (error) {
-            console.error('Unexpected error creating feedback:', error);
+            console.error("Error upserting feedback:", error);
             return { data: null, error };
         }
     }
@@ -49,11 +41,10 @@ class FeedbackService {
      * Elimina un feedback existente
      * @param {string} conversationMessageId - ID del mensaje
      * @param {string} userId - ID del usuario
-     * @returns {Promise<void>}
      */
     static async deleteFeedback(conversationMessageId, userId) {
         const { error } = await supabase
-            .from('feedback')
+            .from("feedback")
             .delete()
             .match({
                 conversation_message_id: conversationMessageId,
@@ -61,7 +52,7 @@ class FeedbackService {
             });
 
         if (error) {
-            console.error('Error deleting feedback:', error);
+            console.error("Error deleting feedback:", error);
             throw error;
         }
     }
@@ -70,23 +61,22 @@ class FeedbackService {
      * Obtiene el feedback de un mensaje específico para un usuario
      * @param {string} conversationMessageId - ID del mensaje
      * @param {string} userId - ID del usuario
-     * @returns {Promise<Object|null>} - El feedback encontrado o null si no existe
+     * @returns {Promise<Object|null>}
      */
     static async getFeedback(conversationMessageId, userId) {
         const { data, error } = await supabase
-            .from('feedback')
-            .select('*')
+            .from("feedback")
+            .select("*")
             .match({
                 conversation_message_id: conversationMessageId,
                 user_id: userId
             })
-            .single();
+            .maybeSingle(); // 👈 aquí también mejor maybeSingle
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 es el código para "no se encontraron registros"
-            console.error('Error getting feedback:', error);
+        if (error) {
+            console.error("Error getting feedback:", error);
             throw error;
         }
-
         return data;
     }
 }

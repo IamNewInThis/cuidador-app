@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, View, Text, TouchableOpacity, Pressable } from 'react-native';
 import Entypo from '@expo/vector-icons/Entypo';
 
-const FeedbackModal = ({ visible, onClose, onSubmit }) => {
+const FeedbackModal = ({ visible, onClose, onSubmit, currentRating = null }) => {
     return (
         <Modal
             animationType="fade"
@@ -10,7 +10,7 @@ const FeedbackModal = ({ visible, onClose, onSubmit }) => {
             visible={visible}
             onRequestClose={onClose}
         >
-            <Pressable 
+            <Pressable
                 className="flex-1 justify-center items-center bg-black/50"
                 onPress={onClose}
             >
@@ -22,20 +22,40 @@ const FeedbackModal = ({ visible, onClose, onSubmit }) => {
 
                     {/* Opciones */}
                     <View className="p-4 space-y-3">
-                        <TouchableOpacity 
-                            className="flex-row items-center p-3 rounded-lg border border-gray-200 active:bg-gray-50"
+                        <TouchableOpacity
+                            className={`flex-row items-center p-3 rounded-lg border ${currentRating === 'useful'
+                                    ? 'bg-green-50 border-green-500'
+                                    : 'border-gray-200 active:bg-gray-50'
+                                }`}
                             onPress={() => onSubmit('useful')}
                         >
-                            <Entypo name="thumbs-up" size={24} color="#16A34A" />
-                            <Text className="ml-3 text-base text-gray-900">Buena respuesta</Text>
+                            <Entypo
+                                name="thumbs-up"
+                                size={24}
+                                color={currentRating === 'useful' ? "#16A34A" : "#16A34A"}
+                            />
+                            <Text className={`ml-3 text-base ${currentRating === 'useful' ? 'text-green-700' : 'text-gray-900'
+                                }`}>
+                                Buena respuesta
+                            </Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity 
-                            className="flex-row items-center p-3 rounded-lg border border-gray-200 active:bg-gray-50"
+                        <TouchableOpacity
+                            className={`flex-row items-center p-3 rounded-lg border ${currentRating === 'not_useful'
+                                    ? 'bg-red-50 border-red-500'
+                                    : 'border-gray-200 active:bg-gray-50'
+                                }`}
                             onPress={() => onSubmit('not_useful')}
                         >
-                            <Entypo name="thumbs-down" size={24} color="#DC2626" />
-                            <Text className="ml-3 text-base text-gray-900">Mala respuesta</Text>
+                            <Entypo
+                                name="thumbs-down"
+                                size={24}
+                                color={currentRating === 'not_useful' ? "#DC2626" : "#DC2626"}
+                            />
+                            <Text className={`ml-3 text-base ${currentRating === 'not_useful' ? 'text-red-700' : 'text-gray-900'
+                                }`}>
+                                Mala respuesta
+                            </Text>
                         </TouchableOpacity>
                     </View>
 
