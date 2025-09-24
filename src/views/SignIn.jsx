@@ -1,4 +1,4 @@
-import { View, Text } from 'react-native';
+import { View, Text, Platform } from 'react-native';
 import React, { useState } from 'react';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -90,12 +90,15 @@ const SignIn = () => {
                 className="mb-4 bg-gray-100 border border-gray-300"
                 onPress={() => { signInWithGoogleFunction(); }}
             />
-            <Button
-                title={t('auth.apple')}
-                icon={<FontAwesome name="apple" size={24} color="black" />}
-                className="bg-gray-100 border border-gray-300"
-                onPress={() => { signInWithAppleFunction(); }}
-            />
+            
+            {Platform.OS === 'ios' &&
+                <Button
+                    title={t('auth.apple')}
+                    icon={<FontAwesome name="apple" size={24} color="black" />}
+                    className="bg-gray-100 border border-gray-300"
+                    onPress={() => { signInWithAppleFunction(); }}
+                />
+            }
 
             <View className="w-full mt-6">
                 <Text className="text-center text-gray-500">

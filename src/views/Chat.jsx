@@ -8,6 +8,7 @@ import ConversationsService from '../services/ConversationsService';
 import FeedbackService from '../services/FeedbackService';
 import FeedbackModal from '../components/FeedbackModal';
 import CommentModal from '../components/CommentModal';
+import TableView from '../components/TableView';
 
 // Componente para un mensaje del usuario
 const UserMessage = ({ text }) => (
@@ -16,18 +17,46 @@ const UserMessage = ({ text }) => (
             <View className="flex-row items-center mb-2">
                 <Text className="text-sm font-medium text-gray-500">Tú</Text>
             </View>
-            <Text className="text-base text-gray-900">{text}</Text>
+            <Text
+                className="text-base text-gray-900"
+                selectable={true}
+            >
+                {text}
+            </Text>
         </View>
     </View>
 );
 
+// Función para dividir el texto en partes antes, tabla y después
+const splitTextAndTable = (text) => {
+    const lines = text.split('\n');
+    let start = -1, end = -1;
+    for (let i = 0; i < lines.length - 1; i++) {
+        if (lines[i].includes('|') && /^\s*\|?\s*[-: ]+\|[-| :]*$/.test(lines[i + 1])) {
+            start = i;
+            end = i + 2;
+            while (end < lines.length && lines[end].includes('|')) {
+                end++;
+            }
+            break;
+        }
+    }
+    if (start === -1 || end === -1) {
+        return { before: text, table: null, after: null };
+    }
+    const before = lines.slice(0, start).join('\n').trim();
+    const table = lines.slice(start, end).join('\n');
+    const after = lines.slice(end).join('\n').trim();
+    return { before, table, after };
+};
+
 // Componente para un mensaje del asistente
 const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
-    const [showFeedback, setShowFeedback] = useState(false);
     const [showComment, setShowComment] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const {before, table, after} = splitTextAndTable(text);
 
-    const handleFeedbackSubmit = (rating) => {
+    const handleFeedback = (rating) => {
         if (rating === 'not_useful') {
             setShowComment(true);
         } else {
@@ -37,52 +66,113 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
                     setTimeout(() => setShowSuccess(false), 2000);
                 });
         }
-        setShowFeedback(false);
     };
 
     const handleCommentSubmit = (comment) => {
-        onFeedback(messageId, 'not_useful', comment);
+        onFeedback(messageId, 'not_useful', comment)
+            .then(() => {
+                setShowSuccess(true);
+                setTimeout(() => setShowSuccess(false), 2000);
+            });
         setShowComment(false);
     };
 
     return (
         <>
-            <Pressable 
-                onLongPress={() => setShowFeedback(true)}
-                className="w-full py-4 px-4 bg-gray-50 border-b border-gray-100"
-            >
+            <View className="w-full py-4 px-4 bg-gray-50 border-b border-gray-100">
                 <View className="max-w-4xl mx-auto w-full">
+                    {/* Header */}
                     <View className="flex-row items-center justify-between mb-2">
                         <Text className="text-sm font-medium text-gray-500">Lumi</Text>
-                        <View className="flex-row items-center">
-                            {feedback && (
-                                <TouchableOpacity 
-                                    onPress={() => setShowFeedback(true)}
-                                    className="flex-row items-center"
-                                >
-                                    <Entypo 
-                                        name={feedback.rating === 'useful' ? 'thumbs-up' : 'thumbs-down'} 
-                                        size={16} 
-                                        color={feedback.rating === 'useful' ? "#16A34A" : "#DC2626"} 
-                                    />
-                                </TouchableOpacity>
-                            )}
-                            {showSuccess && (
-                                <Text className="text-sm text-green-600 ml-2">
-                                    Feedback guardado
-                                </Text>
-                            )}
-                        </View>
+                        {showSuccess && (
+                            <Text className="text-sm text-green-600 ml-2">
+                                Feedback guardado
+                            </Text>
+                        )}
                     </View>
-                    <Text className="text-base text-gray-800">{text}</Text>
+
+                    {/* Contenido del mensaje */}
+
+                    {/* Texto antes de la tabla */}
+                    {before ? (
+                        Platform.OS === 'ios' ? (
+                            <TextInput
+                                value={before}
+                                editable={false}
+                                multiline={true}
+                                scrollEnabled={false}
+                                style={{
+                                    fontSize: 14,
+                                    color: '#1F2937',
+                                    backgroundColor: 'transparent',
+                                    marginBottom: 8,
+                                }}
+                            />
+                        ) : (
+                            <Text selectable={true} style={{ fontSize: 14, color: '#1F2937', marginBottom: 8 }}>
+                                {before}
+                            </Text>
+                        )
+                    ) : null}
+
+                    {/* La tabla */}
+                    {table && <TableView data={table} />}
+
+                    {/* Texto después de la tabla */}
+                    {after ? (
+                        Platform.OS === 'ios' ? (
+                            <TextInput
+                                value={after}
+                                editable={false}
+                                multiline={true}
+                                scrollEnabled={false}
+                                style={{
+                                    fontSize: 14,
+                                    color: '#1F2937',
+                                    backgroundColor: 'transparent',
+                                    marginTop: 8,
+                                }}
+                            />
+                        ) : (
+                            <Text selectable={true} style={{ fontSize: 14, color: '#1F2937', marginTop: 8 }}>
+                                {after}
+                            </Text>
+                        )
+                    ) : null}
+
+
+
+                    {/* Botones de feedback */}
+                    <View className="flex-row items-center justify-end mt-3 space-x-2">
+                        {feedback ? (
+                            <View className="p-2 rounded-full" style={{
+                                backgroundColor: feedback.rating === 'useful' ? '#e6f4ea' : '#fce8e8'
+                            }}>
+                                <Entypo
+                                    name={feedback.rating === 'useful' ? 'thumbs-up' : 'thumbs-down'}
+                                    size={20}
+                                    color={feedback.rating === 'useful' ? "#16A34A" : "#DC2626"}
+                                />
+                            </View>
+                        ) : (
+                            <>
+                                <TouchableOpacity
+                                    onPress={() => handleFeedback('useful')}
+                                    className="p-2 rounded-full bg-gray-100 active:bg-gray-200"
+                                >
+                                    <Entypo name="thumbs-up" size={20} color="#16A34A" />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => handleFeedback('not_useful')}
+                                    className="p-2 rounded-full bg-gray-100 active:bg-gray-200"
+                                >
+                                    <Entypo name="thumbs-down" size={20} color="#DC2626" />
+                                </TouchableOpacity>
+                            </>
+                        )}
+                    </View>
                 </View>
-            </Pressable>
-            <FeedbackModal
-                visible={showFeedback}
-                currentRating={feedback?.rating}
-                onClose={() => setShowFeedback(false)}
-                onSubmit={handleFeedbackSubmit}
-            />
+            </View>
             <CommentModal
                 visible={showComment}
                 onClose={() => setShowComment(false)}
@@ -108,7 +198,7 @@ const Chat = () => {
                 comment
             });
             console.log('Feedback enviado exitosamente:', feedback);
-            
+
             // Actualizar el estado local de feedbacks
             setFeedbacks(prev => ({
                 ...prev,
@@ -126,7 +216,7 @@ const Chat = () => {
         try {
             const feedbackPromises = messageIds.map(id => FeedbackService.getFeedback(id, user.id));
             const results = await Promise.all(feedbackPromises);
-            
+
             const feedbackMap = {};
             results.forEach((feedback, index) => {
                 if (feedback) {
@@ -136,7 +226,7 @@ const Chat = () => {
                     };
                 }
             });
-            
+
             setFeedbacks(feedbackMap);
         } catch (error) {
             console.error('Error loading feedbacks:', error);
@@ -161,13 +251,13 @@ const Chat = () => {
             }));
             const reversedMessages = formattedMessages.reverse();
             setMessages(reversedMessages);
-            
+
             // Cargar los feedbacks para todos los mensajes del asistente
             const assistantMessageIds = reversedMessages
                 .filter(msg => msg.role === 'assistant')
                 .map(msg => msg.id);
             await loadFeedbacks(assistantMessageIds);
-            
+
             // Hacer scroll al final después de cargar los mensajes
             setTimeout(scrollToBottom, 100);
         } catch (error) {
@@ -189,7 +279,7 @@ const Chat = () => {
         }
 
         console.log("Mensaje enviado:", message);
-        
+
         // Guardar mensaje del usuario
         const savedUserMessage = await ConversationsService.createMessage({
             userId: user.id,
@@ -202,7 +292,9 @@ const Chat = () => {
 
         // POST API
         try {
-            const res = await fetch(`${SERVER}chat`, {
+            const API_URL = process.env.EXPO_PUBLIC_API_URL;
+            // console.log("Usando API_URL:", API_URL);
+            const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -242,8 +334,8 @@ const Chat = () => {
         <SafeAreaView className="flex-1 bg-white">
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
-                behavior={Platform.OS === "ios" ? "padding" : "height"} 
-                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} 
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
             >
                 {/* Contenedor del chat */}
                 <ScrollView
@@ -257,8 +349,8 @@ const Chat = () => {
                         msg.role === "user" ? (
                             <UserMessage key={msg.id} text={msg.text} />
                         ) : (
-                            <AssistantMessage 
-                                key={msg.id} 
+                            <AssistantMessage
+                                key={msg.id}
                                 messageId={msg.id}
                                 text={msg.text}
                                 feedback={feedbacks[msg.id]}
@@ -285,10 +377,10 @@ const Chat = () => {
                                 onPress={handleOnSendMessage}
                                 disabled={message.trim() === ''}
                             >
-                                <Entypo 
-                                    name="paper-plane" 
-                                    size={24} 
-                                    color={message.trim() === '' ? "#9CA3AF" : "#2563EB"} 
+                                <Entypo
+                                    name="paper-plane"
+                                    size={24}
+                                    color={message.trim() === '' ? "#9CA3AF" : "#2563EB"}
                                 />
                             </TouchableOpacity>
                         </View>

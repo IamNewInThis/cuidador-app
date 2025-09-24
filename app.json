@@ -20,7 +20,10 @@
         "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
-        "com.apple.developer.applesignin": ["Default"]
+        "com.apple.developer.applesignin": [
+          "Default",
+          "Default"
+        ]
       }
     },
     "android": {
@@ -47,6 +50,10 @@
     "plugins": [
       "expo-web-browser",
       "expo-font"
-    ]
+    ],
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/d4cf8bc9-65fd-4f49-a415-c9b96ec68391"
+    }
   }
 }

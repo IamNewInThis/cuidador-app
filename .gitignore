@@ -45,3 +45,5 @@ yarn-error.*
 Thumbs.db
 
 script_supabase.sql
+ios/
+android/

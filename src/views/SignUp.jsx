@@ -192,12 +192,14 @@ const SignUp = () => {
                             className="mb-4 bg-gray-100 border border-gray-300"
                             onPress={() => console.log('Sign up with Google')}
                         />
-                        <Button
-                            title={t('auth.apple')}
-                            icon={<AntDesign name="apple1" size={24} color="black" />}
-                            className="bg-gray-100 border border-gray-300"
-                            onPress={() => console.log('Sign up with Apple')}
-                        />
+                        {Platform.OS === 'ios' && (
+                            <Button
+                                title={t('auth.apple')}
+                                icon={<AntDesign name="apple1" size={24} color="black" />}
+                                className="bg-gray-100 border border-gray-300"
+                                onPress={() => console.log('Sign up with Apple')}
+                            />
+                        )}
 
                         {Platform.OS === 'ios' && (
                             <Modal
