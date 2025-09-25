@@ -12,7 +12,7 @@ const Home = () => {
     const signOutUser = async () => {
         try {
             await signOut();
-            navigation.navigate('SignIn');
+            // La navegación se manejará automáticamente por el AppNavigator
         } catch (error) {
             console.error('Error al cerrar sesión:', error);
         }

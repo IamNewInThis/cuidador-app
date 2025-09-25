@@ -292,7 +292,7 @@ const Chat = () => {
 
         // POST API
         try {
-            const API_URL = process.env.EXPO_PUBLIC_API_URL;
+            const API_URL = process.env.SERVER;
             // console.log("Usando API_URL:", API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',

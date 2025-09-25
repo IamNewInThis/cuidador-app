@@ -60,7 +60,7 @@ const SignUp = () => {
     const onSubmit = async () => {
         try {
             await signUp({ email: email.trim(), password, full_name: fullName.trim(), phone: phone.trim(), birthdate: birthdate.toISOString(), relation_to_baby: relationToBaby, country: country });
-            navigation.navigate('Home');
+            // La navegación se manejará automáticamente por el AppNavigator
         } catch (_) { /* authError ya está seteado en el contexto */ }
     };
 

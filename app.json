@@ -36,7 +36,9 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.takeeko.cuidadorapp",
-      "runtimeVersion": "1.0.0"
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -55,7 +57,6 @@
       "expo-web-browser",
       "expo-font"
     ],
-    "policy": "appVersion",
     "updates": {
       "url": "https://u.expo.dev/d4cf8bc9-65fd-4f49-a415-c9b96ec68391",
       "enabled": true,

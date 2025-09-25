@@ -19,8 +19,8 @@ const SignIn = () => {
     const onSubmit = async () => {
         try {
             await signIn(email.trim(), password);
-            
-            navigation.navigate('Home');
+            // La navegación se manejará automáticamente por el AppNavigator
+            // cuando el estado de sesión cambie
         } catch (e) {
             console.error('Error al iniciar sesión:', e);
         }
@@ -29,7 +29,7 @@ const SignIn = () => {
     const signInWithAppleFunction = async () => {
         try {
             await signInWithApple();
-            navigation.navigate('Home');
+            // La navegación se manejará automáticamente por el AppNavigator
         } catch (e) {
             console.error('Error al iniciar sesión con Apple:', e);
         }
@@ -38,7 +38,7 @@ const SignIn = () => {
     const signInWithGoogleFunction = async () => {
         try {
             await signInWithGoogle();
-            navigation.navigate('Home');
+            // La navegación se manejará automáticamente por el AppNavigator
         } catch (e) {
             console.error('Error al iniciar sesión con Google:', e);
         }

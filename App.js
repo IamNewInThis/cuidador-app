@@ -14,37 +14,53 @@ function DeepLinkHandler() {
   const navigation = useNavigation();
 
   useEffect(() => {
+    let mounted = true;
+    
     const handleUrl = async (url) => {
-      if (!url) return;
-      console.log('[DeepLinkHandler] URL recibida:', url);
+      if (!url || !mounted) return;
+      
+      try {
+        console.log('[DeepLinkHandler] URL recibida:', url);
 
-      if (url.includes('auth/reset')) {
-        const hash = url.split('#')[1];
-        if (hash) {
-          const params = new URLSearchParams(hash);
-          const tokens = {
-            access_token: params.get('access_token'),
-            refresh_token: params.get('refresh_token'),
-            type: params.get('type')
-          };
-          console.log('[DeepLinkHandler] Tokens extraídos:', tokens);
-          
-          // Navegar a ResetPassword con los tokens
-          navigation.navigate('ResetPassword', tokens);
-        } else {
-          navigation.navigate('ResetPassword');
+        if (url.includes('auth/reset')) {
+          const hash = url.split('#')[1];
+          if (hash) {
+            const params = new URLSearchParams(hash);
+            const tokens = {
+              access_token: params.get('access_token'),
+              refresh_token: params.get('refresh_token'),
+              type: params.get('type')
+            };
+            console.log('[DeepLinkHandler] Tokens extraídos:', tokens);
+            
+            // Pequeño delay para asegurar que el navegador esté listo
+            setTimeout(() => {
+              if (mounted && navigation) {
+                navigation.navigate('ResetPassword', tokens);
+              }
+            }, 100);
+          } else {
+            setTimeout(() => {
+              if (mounted && navigation) {
+                navigation.navigate('ResetPassword');
+              }
+            }, 100);
+          }
         }
+      } catch (error) {
+        console.error('[DeepLinkHandler] Error handling URL:', error);
       }
     };
 
     // Verificar si la app se abrió con un link inicial
-    Linking.getInitialURL().then(handleUrl);
+    Linking.getInitialURL().then(handleUrl).catch(console.error);
 
     // Escuchar nuevos eventos de deep link
     const subscription = Linking.addEventListener('url', ({ url }) => handleUrl(url));
 
     return () => {
-      subscription.remove();
+      mounted = false;
+      subscription?.remove();
     };
   }, [navigation]);
 
@@ -55,6 +71,7 @@ const linking = {
   prefixes: ['cuidador-app://', 'exp://', 'exp+cuidador-app://'],
   config: {
     screens: {
+      // Pantallas de autenticación (AuthStack)
       SignIn: 'signin',
       SignUp: 'signup',
       ResetPassword: {
@@ -66,8 +83,15 @@ const linking = {
         },
       },
       ForgotPassword: 'auth/forgot',
+      
+      // Pantallas de la aplicación para navegacion externa (AppStack)
+      Home: 'home',
+      Chat: 'chat',
+      Babies: 'babies',
+      ListBabies: 'list-babies',
+      BabyDetail: 'baby-detail',
+      ProfileSettings: 'profile-settings',
     },
-    initialRouteName: 'SignIn',
   },
 };
 
