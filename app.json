@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -24,6 +24,9 @@
           "Default",
           "Default"
         ]
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
       }
     },
     "android": {
@@ -32,7 +35,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.takeeko.cuidadorapp"
+      "package": "com.takeeko.cuidadorapp",
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -51,9 +55,11 @@
       "expo-web-browser",
       "expo-font"
     ],
-    "runtimeVersion": "1.0.0",
+    "policy": "appVersion",
     "updates": {
-      "url": "https://u.expo.dev/d4cf8bc9-65fd-4f49-a415-c9b96ec68391"
+      "url": "https://u.expo.dev/d4cf8bc9-65fd-4f49-a415-c9b96ec68391",
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
     }
   }
 }
