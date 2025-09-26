@@ -25,9 +25,7 @@
           "Default"
         ]
       },
-      "runtimeVersion": {
-        "policy": "appVersion"
-      }
+      "runtimeVersion": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
@@ -36,9 +34,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.takeeko.cuidadorapp",
-      "runtimeVersion": {
-        "policy": "appVersion"
-      }
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png",

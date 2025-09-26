@@ -50,6 +50,35 @@ const splitTextAndTable = (text) => {
     return { before, table, after };
 };
 
+// Componente para mostrar mensaje de carga
+const LoadingMessage = () => {
+    const [dots, setDots] = useState('');
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDots(prev => {
+                if (prev === '...') return '';
+                return prev + '.';
+            });
+        }, 500);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <View className="w-full py-4 px-4 bg-gray-50 border-b border-gray-100">
+            <View className="max-w-4xl mx-auto w-full">
+                <View className="flex-row items-center mb-2">
+                    <Text className="text-sm font-medium text-gray-500">Lumi</Text>
+                </View>
+                <View className="flex-row items-center">
+                    <Text className="text-base text-gray-600">Escribiendo{dots}</Text>
+                </View>
+            </View>
+        </View>
+    );
+};
+
 // Componente para un mensaje del asistente
 const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
     const [showComment, setShowComment] = useState(false);
@@ -187,6 +216,7 @@ const Chat = () => {
     const { session, user } = useAuth();
     const [messages, setMessages] = useState([]);
     const [feedbacks, setFeedbacks] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
     const scrollViewRef = useRef();
 
     const handleFeedback = async (messageId, rating, comment = null) => {
@@ -266,7 +296,7 @@ const Chat = () => {
     };
 
     const handleOnSendMessage = async () => {
-        if (message.trim() === '') {
+        if (message.trim() === '' || isLoading) {
             return;
         }
 
@@ -280,18 +310,27 @@ const Chat = () => {
 
         console.log("Mensaje enviado:", message);
 
-        // Guardar mensaje del usuario
-        const savedUserMessage = await ConversationsService.createMessage({
-            userId: user.id,
-            content: message,
-            role: 'user'
-        });
+        // Guardar el mensaje antes de limpiar el input
+        const messageToSend = message.trim();
+        
+        // Limpiar el input inmediatamente
+        setMessage('');
+        
+        // Activar el estado de carga
+        setIsLoading(true);
 
-        const userMsg = { id: savedUserMessage.id, role: 'user', text: message };
-        setMessages(prevMessages => [...prevMessages, userMsg]);
-
-        // POST API
         try {
+            // Guardar mensaje del usuario
+            const savedUserMessage = await ConversationsService.createMessage({
+                userId: user.id,
+                content: messageToSend,
+                role: 'user'
+            });
+
+            const userMsg = { id: savedUserMessage.id, role: 'user', text: messageToSend };
+            setMessages(prevMessages => [...prevMessages, userMsg]);
+
+            // POST API
             const API_URL = process.env.SERVER;
             // console.log("Usando API_URL:", API_URL);
             const res = await fetch(`${API_URL}chat`, {
@@ -301,7 +340,7 @@ const Chat = () => {
                     'Authorization': `Bearer ${session.access_token}`,
                 },
                 body: JSON.stringify({
-                    message: message,
+                    message: messageToSend,
                     profile: null,
                 }),
             });
@@ -318,16 +357,17 @@ const Chat = () => {
 
             const lumiMsg = { id: savedAssistantMessage.id, role: 'assistant', text: data?.answer || "Lo siento, no pude obtener una respuesta." };
             setMessages(prevMessages => [...prevMessages, lumiMsg]);
+            
             // Hacer scroll al final después de recibir la respuesta
             setTimeout(scrollToBottom, 100);
         } catch (error) {
             console.error("Error al enviar el mensaje:", error);
             const errorMsg = { id: Date.now().toString(), role: 'assistant', text: 'Error al conectar con el servidor.' };
             setMessages(prevMessages => [...prevMessages, errorMsg]);
+        } finally {
+            // Desactivar el estado de carga
+            setIsLoading(false);
         }
-
-        // Limpiamos el input
-        setMessage('');
     }
 
     return (
@@ -358,6 +398,8 @@ const Chat = () => {
                             />
                         )
                     )}
+                    {/* Mostrar loading cuando está procesando */}
+                    {isLoading && <LoadingMessage />}
                 </ScrollView>
 
                 {/* Input de texto y botón de enviar */}
@@ -375,12 +417,12 @@ const Chat = () => {
                             <TouchableOpacity
                                 className="px-4 py-2 justify-center"
                                 onPress={handleOnSendMessage}
-                                disabled={message.trim() === ''}
+                                disabled={message.trim() === '' || isLoading}
                             >
                                 <Entypo
                                     name="paper-plane"
                                     size={24}
-                                    color={message.trim() === '' ? "#9CA3AF" : "#2563EB"}
+                                    color={message.trim() === '' || isLoading ? "#9CA3AF" : "#2563EB"}
                                 />
                             </TouchableOpacity>
                         </View>
