@@ -13,6 +13,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [authError, setAuthError] = useState(null);
+    const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -42,6 +43,61 @@ export const AuthProvider = ({ children }) => {
             subscription?.unsubscribe?.();
         };
     }, []);
+
+    // Función para verificar si el perfil está completo
+    const checkProfileCompletion = async (userId) => {
+        try {
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('phone, birthdate, country, relationship_to_baby')
+                .eq('id', userId)
+                .single();
+
+            if (error && error.code !== 'PGRST116') {
+                console.error('[AuthContext] Error verificando perfil:', error);
+                return true; // En caso de error, asumir que está completo para no bloquear
+            }
+
+            // El perfil está incompleto si falta alguno de estos campos obligatorios
+            const isIncomplete = !profile?.phone || !profile?.birthdate || !profile?.country || !profile?.relationship_to_baby;
+            
+            console.log('[AuthContext] Perfil completo:', !isIncomplete, profile);
+            setNeedsProfileCompletion(isIncomplete);
+            
+            return !isIncomplete;
+        } catch (error) {
+            console.error('[AuthContext] Error en checkProfileCompletion:', error);
+            return true; // En caso de error, asumir que está completo
+        }
+    };
+
+    // Función para completar el perfil
+    const completeProfile = async (profileData) => {
+        try {
+            setLoading(true);
+            const { error } = await supabase
+                .from('profiles')
+                .update({
+                    phone: profileData.phone?.trim(),
+                    birthdate: profileData.birthdate,
+                    country: profileData.country,
+                    relationship_to_baby: profileData.relationshipToBaby
+                })
+                .eq('id', user.id);
+
+            if (error) throw error;
+
+            setNeedsProfileCompletion(false);
+            console.log('[AuthContext] Perfil completado exitosamente');
+            return true;
+        } catch (error) {
+            console.error('[AuthContext] Error completando perfil:', error);
+            setAuthError(error);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const signIn = async (email, password) => {
         console.log('[AuthContext] signIn called with email:', email);
@@ -209,7 +265,7 @@ export const AuthProvider = ({ children }) => {
                         provider_token: hashParams.get('provider_token'),
                     };
 
-                    // console.log('[GoogleAuth] Tokens recibidos:', parsed);
+                    console.log('[GoogleAuth] Tokens recibidos:', parsed);
 
                     // Guardar la sesión en Supabase manualmente
                     const { data: sessionData, error: setError } = await supabase.auth.setSession({
@@ -219,10 +275,46 @@ export const AuthProvider = ({ children }) => {
 
                     if (setError) throw setError;
 
-                    // console.log('[GoogleAuth] Sesión creada:', sessionData.session.user);
+                    console.log('[GoogleAuth] Sesión creada:', sessionData.session.user);
 
                     setSession(sessionData.session);
                     setUser(sessionData.session.user);
+
+                    // Verificar si el perfil existe, si no, crearlo manualmente
+                    if (sessionData.session?.user) {
+                        try {
+                            const { data: existingProfile } = await supabase
+                                .from('profiles')
+                                .select('id')
+                                .eq('id', sessionData.session.user.id)
+                                .single();
+
+                            if (!existingProfile) {
+                                console.log('[GoogleAuth] Creando perfil manualmente...');
+                                const { error: profileError } = await supabase
+                                    .from('profiles')
+                                    .insert([{
+                                        id: sessionData.session.user.id,
+                                        email: sessionData.session.user.email,
+                                        name: sessionData.session.user.user_metadata?.full_name || sessionData.session.user.user_metadata?.name,
+                                        created_at: new Date().toISOString()
+                                    }]);
+
+                                if (profileError) {
+                                    console.error('[GoogleAuth] Error al crear perfil:', profileError);
+                                } else {
+                                    console.log('[GoogleAuth] Perfil creado exitosamente');
+                                }
+                            } else {
+                                console.log('[GoogleAuth] Perfil ya existe');
+                            }
+                        } catch (profileCheckError) {
+                            console.error('[GoogleAuth] Error al verificar/crear perfil:', profileCheckError);
+                        }
+
+                        // Verificar si el perfil necesita completarse
+                        await checkProfileCompletion(sessionData.session.user.id);
+                    }
                 }
             }
         } catch (e) {
@@ -279,10 +371,33 @@ export const AuthProvider = ({ children }) => {
             console.log('[AppleAuth] Identity Token recibido:', credential.identityToken.substring(0, 20) + '...');
             console.log('[AppleAuth] User ID:', credential.user);
 
+            // Preparar metadatos con la información de Apple (solo si Apple los proporciona)
+            const userMetadata = {};
+            
+            if (credential.fullName && (credential.fullName.givenName || credential.fullName.familyName)) {
+                const fullName = `${credential.fullName.givenName ?? ''} ${credential.fullName.familyName ?? ''}`.trim();
+                if (fullName) {
+                    userMetadata.full_name = fullName;
+                    userMetadata.name = fullName; // También como 'name' para el trigger
+                    console.log('[AppleAuth] Nombre completo detectado:', fullName);
+                }
+            }
+
+            if (credential.email) {
+                userMetadata.email = credential.email;
+                console.log('[AppleAuth] Email detectado:', credential.email);
+            }
+
+            // Si Apple no proporciona datos (login posterior), los metadatos estarán vacíos
+            console.log('[AppleAuth] Metadatos a enviar:', userMetadata);
+
             const { data, error } = await supabase.auth.signInWithIdToken({
                 provider: 'apple',
                 token: credential.identityToken,
                 nonce: rawNonce,
+                options: Object.keys(userMetadata).length > 0 ? {
+                    data: userMetadata
+                } : undefined
             });
 
             console.log('[AppleAuth] Respuesta de Supabase:', { data, error });
@@ -292,14 +407,108 @@ export const AuthProvider = ({ children }) => {
                 throw error;
             }
 
-            if (credential.fullName) {
-                const fullName = `${credential.fullName.givenName ?? ''} ${credential.fullName.familyName ?? ''}`.trim();
-                console.log('[AppleAuth] Nombre completo detectado:', fullName);
-                if (fullName) {
-                    await supabase.auth.updateUser({ data: { full_name: fullName } })
-                        .then(() => console.log('[AppleAuth] Nombre actualizado en Supabase'))
-                        .catch(err => console.error('[AppleAuth] Error al actualizar nombre:', err));
+            // Manejar datos de Apple (solo se proporcionan en el primer login)
+            if (data.user) {
+                let needsUpdate = false;
+                const updates = {};
+
+                // Si Apple proporcionó datos nuevos, actualizarlos
+                if (userMetadata.full_name && !data.user.user_metadata?.full_name) {
+                    updates.data = { 
+                        ...data.user.user_metadata, 
+                        full_name: userMetadata.full_name,
+                        name: userMetadata.full_name
+                    };
+                    needsUpdate = true;
                 }
+
+                if (userMetadata.email && !data.user.email) {
+                    updates.email = userMetadata.email;
+                    needsUpdate = true;
+                }
+
+                if (needsUpdate) {
+                    console.log('[AppleAuth] Actualizando usuario con datos nuevos:', updates);
+                    try {
+                        await supabase.auth.updateUser(updates);
+                        console.log('[AppleAuth] Usuario actualizado en Supabase');
+                    } catch (updateError) {
+                        console.error('[AppleAuth] Error al actualizar usuario:', updateError);
+                    }
+                }
+
+                // Verificar si el perfil existe, si no, crearlo manualmente
+                try {
+                    const { data: existingProfile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('id, name, email')
+                        .eq('id', data.user.id)
+                        .single();
+
+                    if (profileError && profileError.code !== 'PGRST116') {
+                        // Error diferente a "no rows found"
+                        console.error('[AppleAuth] Error al consultar perfil:', profileError);
+                    }
+
+                    if (!existingProfile) {
+                        console.log('[AppleAuth] Creando perfil manualmente...');
+                        
+                        // Usar los datos de Apple si los tenemos, sino los datos existentes del usuario
+                        const profileData = {
+                            id: data.user.id,
+                            email: userMetadata.email || data.user.email,
+                            name: userMetadata.full_name || data.user.user_metadata?.full_name || data.user.user_metadata?.name,
+                            created_at: new Date().toISOString()
+                        };
+
+                        console.log('[AppleAuth] Datos del perfil a crear:', profileData);
+
+                        const { error: createProfileError } = await supabase
+                            .from('profiles')
+                            .insert([profileData]);
+
+                        if (createProfileError) {
+                            console.error('[AppleAuth] Error al crear perfil:', createProfileError);
+                        } else {
+                            console.log('[AppleAuth] Perfil creado exitosamente');
+                        }
+                    } else {
+                        console.log('[AppleAuth] Perfil existente encontrado:', existingProfile);
+                        
+                        // Si el perfil existe pero faltan datos, actualizarlo
+                        const profileUpdates = {};
+                        let needsProfileUpdate = false;
+
+                        if (userMetadata.full_name && !existingProfile.name) {
+                            profileUpdates.name = userMetadata.full_name;
+                            needsProfileUpdate = true;
+                        }
+
+                        if (userMetadata.email && !existingProfile.email) {
+                            profileUpdates.email = userMetadata.email;
+                            needsProfileUpdate = true;
+                        }
+
+                        if (needsProfileUpdate) {
+                            console.log('[AppleAuth] Actualizando perfil con:', profileUpdates);
+                            const { error: updateProfileError } = await supabase
+                                .from('profiles')
+                                .update(profileUpdates)
+                                .eq('id', data.user.id);
+
+                            if (updateProfileError) {
+                                console.error('[AppleAuth] Error al actualizar perfil:', updateProfileError);
+                            } else {
+                                console.log('[AppleAuth] Perfil actualizado exitosamente');
+                            }
+                        }
+                    }
+                } catch (profileCheckError) {
+                    console.error('[AppleAuth] Error al verificar/crear perfil:', profileCheckError);
+                }
+
+                // Verificar si el perfil necesita completarse
+                await checkProfileCompletion(data.user.id);
             }
 
             console.log('[AppleAuth] Inicio de sesión con Apple exitoso 🎉');
@@ -320,13 +529,16 @@ export const AuthProvider = ({ children }) => {
             session, 
             loading, 
             authError, 
+            needsProfileCompletion,
             signIn, 
             signUp, 
             signOut, 
             sendPasswordResetEmail, 
             updatePassword,
             signInWithGoogle, 
-            signInWithApple 
+            signInWithApple,
+            completeProfile,
+            checkProfileCompletion
         }}>
             {children}
         </AuthContext.Provider>

@@ -9,6 +9,102 @@ import FeedbackService from '../services/FeedbackService';
 import FeedbackModal from '../components/FeedbackModal';
 import CommentModal from '../components/CommentModal';
 import TableView from '../components/TableView';
+import Markdown from 'react-native-markdown-display';
+
+// Estilos para markdown similar a Claude/ChatGPT
+const markdownStyles = {
+    body: {
+        fontSize: 14,
+        color: '#1F2937',
+        lineHeight: 20,
+    },
+    heading1: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#111827',
+        marginBottom: 8,
+        marginTop: 12,
+    },
+    heading2: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#111827',
+        marginBottom: 6,
+        marginTop: 10,
+    },
+    heading3: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#374151',
+        marginBottom: 4,
+        marginTop: 8,
+    },
+    heading4: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#4B5563',
+        marginBottom: 4,
+        marginTop: 6,
+    },
+    strong: {
+        fontWeight: 'bold',
+        color: '#111827',
+    },
+    em: {
+        fontStyle: 'italic',
+        color: '#374151',
+    },
+    paragraph: {
+        marginBottom: 8,
+        lineHeight: 20,
+    },
+    list_item: {
+        marginBottom: 4,
+        flexDirection: 'row',
+    },
+    bullet_list: {
+        marginBottom: 8,
+    },
+    ordered_list: {
+        marginBottom: 8,
+    },
+    code_inline: {
+        backgroundColor: '#F3F4F6',
+        paddingHorizontal: 4,
+        paddingVertical: 2,
+        borderRadius: 3,
+        fontSize: 13,
+        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    },
+    fence: {
+        backgroundColor: '#F9FAFB',
+        padding: 12,
+        borderRadius: 6,
+        marginVertical: 8,
+        borderLeftWidth: 3,
+        borderLeftColor: '#E5E7EB',
+    },
+    blockquote: {
+        backgroundColor: '#F9FAFB',
+        borderLeftWidth: 4,
+        borderLeftColor: '#D1D5DB',
+        paddingLeft: 12,
+        paddingVertical: 8,
+        marginVertical: 8,
+        fontStyle: 'italic',
+    },
+};
+
+// Componente para renderizar texto con markdown
+const MarkdownText = ({ text, style }) => {
+    if (!text) return null;
+    
+    return (
+        <Markdown style={markdownStyles} selectionColor="#3B82F6">
+            {text}
+        </Markdown>
+    );
+};
 
 // Componente para un mensaje del usuario
 const UserMessage = ({ text }) => (
@@ -121,53 +217,21 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
                     </View>
 
                     {/* Contenido del mensaje */}
-
-                    {/* Texto antes de la tabla */}
-                    {before ? (
-                        Platform.OS === 'ios' ? (
-                            <TextInput
-                                value={before}
-                                editable={false}
-                                multiline={true}
-                                scrollEnabled={false}
-                                style={{
-                                    fontSize: 14,
-                                    color: '#1F2937',
-                                    backgroundColor: 'transparent',
-                                    marginBottom: 8,
-                                }}
-                            />
-                        ) : (
-                            <Text selectable={true} style={{ fontSize: 14, color: '#1F2937', marginBottom: 8 }}>
-                                {before}
-                            </Text>
-                        )
-                    ) : null}
-
-                    {/* La tabla */}
-                    {table && <TableView data={table} />}
-
-                    {/* Texto después de la tabla */}
-                    {after ? (
-                        Platform.OS === 'ios' ? (
-                            <TextInput
-                                value={after}
-                                editable={false}
-                                multiline={true}
-                                scrollEnabled={false}
-                                style={{
-                                    fontSize: 14,
-                                    color: '#1F2937',
-                                    backgroundColor: 'transparent',
-                                    marginTop: 8,
-                                }}
-                            />
-                        ) : (
-                            <Text selectable={true} style={{ fontSize: 14, color: '#1F2937', marginTop: 8 }}>
-                                {after}
-                            </Text>
-                        )
-                    ) : null}
+                    {table ? (
+                        <>
+                            {/* Texto antes de la tabla */}
+                            {before && <MarkdownText text={before} />}
+                            
+                            {/* La tabla */}
+                            <TableView data={table} />
+                            
+                            {/* Texto después de la tabla */}
+                            {after && <MarkdownText text={after} />}
+                        </>
+                    ) : (
+                        /* Si no hay tabla, renderizar todo el texto junto */
+                        <MarkdownText text={text} />
+                    )}
 
 
 
@@ -331,7 +395,7 @@ const Chat = () => {
             setMessages(prevMessages => [...prevMessages, userMsg]);
 
             // POST API
-            const API_URL = process.env.SERVER;
+            const API_URL = 'http://192.168.1.10:5000/api/';
             // console.log("Usando API_URL:", API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',

@@ -15,6 +15,7 @@ import BabyDetail from '../views/BabyDetail';
 import ProfileSettings from '../views/ProfileSettings';
 import ResetPasswordScreen from '../views/ResetPassword';
 import ForgotPassword from '../views/ForgotPassword';
+import CompleteProfile from '../views/CompleteProfile';
 
 const Stack = createStackNavigator();
 
@@ -47,11 +48,12 @@ const AppStack = () => (
         <Stack.Screen name="ListBabies" component={ListBabies} />
         <Stack.Screen name="BabyDetail" component={BabyDetail} />
         <Stack.Screen name="ProfileSettings" component={ProfileSettings} />
+        <Stack.Screen name="CompleteProfile" component={CompleteProfile} />
     </Stack.Navigator>
 );
 
 export default function AppNavigator() {
-    const { session, loading } = useAuth();
+    const { session, loading, needsProfileCompletion } = useAuth();
 
     // Mostrar loading mientras se verifica la sesión
     if (loading) {
@@ -62,6 +64,20 @@ export default function AppNavigator() {
         );
     }
 
-    // Retornar el stack apropiado basado en el estado de autenticación
-    return session ? <AppStack /> : <AuthStack />;
+    // Si no hay sesión, mostrar el stack de autenticación
+    if (!session) {
+        return <AuthStack />;
+    }
+
+    // Si hay sesión pero necesita completar el perfil, mostrar CompleteProfile
+    if (needsProfileCompletion) {
+        return (
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="CompleteProfile" component={CompleteProfile} />
+            </Stack.Navigator>
+        );
+    }
+
+    // Si hay sesión y el perfil está completo, mostrar la app
+    return <AppStack />;
 }

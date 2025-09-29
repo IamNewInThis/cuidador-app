@@ -91,6 +91,7 @@ const SignUp = () => {
 
                         <PhoneInput value={phone} onChangeText={setPhone} className="mb-6" />
 
+                        {/* Fecha de nacimiento */}
                         <Button
                             title={`Nacimiento: ${birthdate.toLocaleDateString()}`}
                             onPress={() => setShowDatePicker(true)}
@@ -108,6 +109,7 @@ const SignUp = () => {
                             />
                         )}
 
+                        {/* Relación con el bebé */}
                         {Platform.OS === 'ios' ? (
                             <Button
                                 title={getRelationLabel(relationToBaby)}
@@ -133,6 +135,7 @@ const SignUp = () => {
                             </View>
                         )}
                         
+                        {/* País */}
                         {Platform.OS === 'ios' ? (
                             <Button
                                 title={getCountryInfo(country)}
