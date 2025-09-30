@@ -3,7 +3,7 @@
     "name": "cuidador-app",
     "slug": "cuidador-app",
     "scheme": "cuidador-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -25,7 +25,7 @@
           "Default"
         ]
       },
-      "runtimeVersion": "1.0.0"
+      "runtimeVersion": "1.0.1"
     },
     "android": {
       "adaptiveIcon": {
@@ -34,7 +34,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.takeeko.cuidadorapp",
-      "runtimeVersion": "1.0.0"
+      "runtimeVersion": "1.0.1"
     },
     "web": {
       "favicon": "./assets/favicon.png",
