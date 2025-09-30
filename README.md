@@ -86,6 +86,13 @@ expo build:android
 expo build:ios
 ```
 
+### Deploy
+```bash
+# Build for preview
+eas build -p ios --profile preview --clear-cache
+
+```
+
 ## 📁 Project Structure
 
 ```

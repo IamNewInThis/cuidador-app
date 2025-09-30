@@ -9,100 +9,158 @@ import FeedbackService from '../services/FeedbackService';
 import FeedbackModal from '../components/FeedbackModal';
 import CommentModal from '../components/CommentModal';
 import TableView from '../components/TableView';
-import Markdown from 'react-native-markdown-display';
 
-// Estilos para markdown similar a Claude/ChatGPT
-const markdownStyles = {
-    body: {
-        fontSize: 14,
-        color: '#1F2937',
-        lineHeight: 20,
-    },
-    heading1: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#111827',
-        marginBottom: 8,
-        marginTop: 12,
-    },
-    heading2: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#111827',
-        marginBottom: 6,
-        marginTop: 10,
-    },
-    heading3: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#374151',
-        marginBottom: 4,
-        marginTop: 8,
-    },
-    heading4: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#4B5563',
-        marginBottom: 4,
-        marginTop: 6,
-    },
-    strong: {
-        fontWeight: 'bold',
-        color: '#111827',
-    },
-    em: {
-        fontStyle: 'italic',
-        color: '#374151',
-    },
-    paragraph: {
-        marginBottom: 8,
-        lineHeight: 20,
-    },
-    list_item: {
-        marginBottom: 4,
-        flexDirection: 'row',
-    },
-    bullet_list: {
-        marginBottom: 8,
-    },
-    ordered_list: {
-        marginBottom: 8,
-    },
-    code_inline: {
-        backgroundColor: '#F3F4F6',
-        paddingHorizontal: 4,
-        paddingVertical: 2,
-        borderRadius: 3,
-        fontSize: 13,
-        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    },
-    fence: {
-        backgroundColor: '#F9FAFB',
-        padding: 12,
-        borderRadius: 6,
-        marginVertical: 8,
-        borderLeftWidth: 3,
-        borderLeftColor: '#E5E7EB',
-    },
-    blockquote: {
-        backgroundColor: '#F9FAFB',
-        borderLeftWidth: 4,
-        borderLeftColor: '#D1D5DB',
-        paddingLeft: 12,
-        paddingVertical: 8,
-        marginVertical: 8,
-        fontStyle: 'italic',
-    },
+// Función para parsear markdown simple
+const parseMarkdown = (text) => {
+    const lines = text.split('\n');
+    const elements = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        // Headers
+        if (line.startsWith('### ')) {
+            elements.push({
+                type: 'h3',
+                content: line.replace('### ', ''),
+                key: i
+            });
+        } else if (line.startsWith('## ')) {
+            elements.push({
+                type: 'h2',
+                content: line.replace('## ', ''),
+                key: i
+            });
+        } else if (line.startsWith('# ')) {
+            elements.push({
+                type: 'h1',
+                content: line.replace('# ', ''),
+                key: i
+            });
+        } else if (line.trim() === '') {
+            // Espacio vacío
+            elements.push({
+                type: 'space',
+                key: i
+            });
+        } else {
+            // Texto normal (puede contener **bold**)
+            elements.push({
+                type: 'text',
+                content: line,
+                key: i
+            });
+        }
+    }
+    
+    return elements;
+};
+
+// Función para renderizar texto con formato inline (bold)
+const renderInlineText = (text) => {
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    
+    return parts.map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            // Texto en negrita
+            return (
+                <Text key={index} style={{ fontWeight: 'bold', color: '#111827' }}>
+                    {part.slice(2, -2)}
+                </Text>
+            );
+        } else {
+            // Texto normal
+            return (
+                <Text key={index}>
+                    {part}
+                </Text>
+            );
+        }
+    });
 };
 
 // Componente para renderizar texto con markdown
-const MarkdownText = ({ text, style }) => {
+const MarkdownText = ({ text }) => {
     if (!text) return null;
     
+    const elements = parseMarkdown(text);
+    
     return (
-        <Markdown style={markdownStyles} selectionColor="#3B82F6">
-            {text}
-        </Markdown>
+        <View>
+            {elements.map((element) => {
+                switch (element.type) {
+                    case 'h1':
+                        return (
+                            <Text 
+                                key={element.key}
+                                style={{
+                                    fontSize: 20,
+                                    fontWeight: 'bold',
+                                    color: '#111827',
+                                    marginBottom: 8,
+                                    marginTop: 12,
+                                }}
+                                selectable={true}
+                            >
+                                {renderInlineText(element.content)}
+                            </Text>
+                        );
+                    case 'h2':
+                        return (
+                            <Text 
+                                key={element.key}
+                                style={{
+                                    fontSize: 18,
+                                    fontWeight: 'bold',
+                                    color: '#111827',
+                                    marginBottom: 6,
+                                    marginTop: 10,
+                                }}
+                                selectable={true}
+                            >
+                                {renderInlineText(element.content)}
+                            </Text>
+                        );
+                    case 'h3':
+                        return (
+                            <Text 
+                                key={element.key}
+                                style={{
+                                    fontSize: 16,
+                                    fontWeight: '600',
+                                    color: '#374151',
+                                    marginBottom: 4,
+                                    marginTop: 8,
+                                }}
+                                selectable={true}
+                            >
+                                {renderInlineText(element.content)}
+                            </Text>
+                        );
+                    case 'text':
+                        return (
+                            <Text 
+                                key={element.key}
+                                style={{
+                                    fontSize: 14,
+                                    color: '#1F2937',
+                                    lineHeight: 20,
+                                    marginBottom: 4,
+                                }}
+                                selectable={true}
+                            >
+                                {renderInlineText(element.content)}
+                            </Text>
+                        );
+                    case 'space':
+                        return (
+                            <View key={element.key} style={{ height: 8 }} />
+                        );
+                    default:
+                        return null;
+                }
+            })}
+        </View>
     );
 };
 
