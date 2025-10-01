@@ -166,17 +166,9 @@ const MarkdownText = ({ text }) => {
 
 // Componente para un mensaje del usuario
 const UserMessage = ({ text }) => (
-    <View className="w-full py-4 px-4 border-b border-gray-100">
-        <View className="max-w-4xl mx-auto w-full">
-            <View className="flex-row items-center mb-2">
-                <Text className="text-sm font-medium text-gray-500">Tú</Text>
-            </View>
-            <Text
-                className="text-base text-gray-900"
-                selectable={true}
-            >
-                {text}
-            </Text>
+    <View className="flex-row justify-end my-2">
+        <View className="bg-blue-600 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+            <Text className="text-white text-base">{text}</Text>
         </View>
     </View>
 );
@@ -290,8 +282,6 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
                         /* Si no hay tabla, renderizar todo el texto junto */
                         <MarkdownText text={text} />
                     )}
-
-
 
                     {/* Botones de feedback */}
                     <View className="flex-row items-center justify-end mt-3 space-x-2">
@@ -453,8 +443,9 @@ const Chat = () => {
             setMessages(prevMessages => [...prevMessages, userMsg]);
 
             // POST API
-            const API_URL = 'http://192.168.1.10:5000/api/';
-            // console.log("Usando API_URL:", API_URL);
+            //const API_URL = 'http://192.168.1.10:5000/api/';
+            const API_URL = 'https://lumi-llm.onrender.com/api/';
+            //console.log("Usando API_URL:", API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
                 headers: {
