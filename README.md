@@ -4,10 +4,10 @@ A React Native application designed to help caregivers manage and track baby car
 
 ## 🚀 Features
 
-- **User Authentication**: Sign in/Sign up functionality with Supabase integration
-- **Baby Management**: Add and manage baby profiles with birth dates
+- **User Authentication**: Sign in/Sign up, password reset and profile completion powered by Supabase
+- **Baby Management**: Create, list and edit baby profiles with detailed records
 - **Multi-language Support**: Available in English, Spanish, and Portuguese
-- **Chat Interface**: Communication features for caregivers
+- **Chat Interface**: Conversational assistant with markdown responses, rendered tables and feedback capture
 - **Modern UI**: Built with NativeWind (Tailwind CSS for React Native)
 - **Cross-platform**: Runs on iOS, Android, and Web
 
@@ -90,7 +90,7 @@ expo build:ios
 ```bash
 # Build for preview
 eas build -p ios --profile preview --clear-cache
-
+eas update --platform ios
 ```
 
 ## 📁 Project Structure
@@ -98,34 +98,59 @@ eas build -p ios --profile preview --clear-cache
 ```
 cuidador-app/
 ├── src/
-│   ├── components/          # Reusable UI components
+│   ├── components/           # Reusable UI components
 │   │   ├── Button.jsx
-│   │   └── Input.jsx
-│   ├── contexts/           # React contexts
+│   │   ├── CommentModal.jsx
+│   │   ├── FeedbackModal.jsx
+│   │   ├── Input.jsx
+│   │   ├── PhoneInput.jsx
+│   │   ├── TableView.jsx
+│   │   └── chat/
+│   │       ├── AssistantMessage.jsx
+│   │       ├── LoadingMessage.jsx
+│   │       ├── MarkdownText.jsx
+│   │       └── UserMessage.jsx
+│   ├── contexts/            # React contexts
 │   │   └── AuthContext.jsx
-│   ├── lib/               # Utilities and configurations
-│   │   ├── 18n.js         # Internationalization setup
-│   │   └── supabase.js    # Supabase configuration
-│   ├── locales/           # Translation files
+│   ├── lib/                 # Utilities and configurations
+│   │   ├── 18n.js           # Internationalization setup
+│   │   └── supabase.js      # Supabase configuration
+│   ├── locales/             # Translation files
 │   │   ├── en.json
 │   │   ├── es.json
 │   │   └── pt.json
-│   ├── navigation/        # Navigation configuration
+│   ├── navigation/          # Navigation configuration
 │   │   └── AppNavigator.js
-│   ├── services/          # API services
-│   │   └── BabiesService.js
-│   └── views/             # Screen components
+│   ├── services/            # API services
+│   │   ├── BabiesService.js
+│   │   ├── ConversationsService.js
+│   │   ├── FeedbackService.js
+│   │   └── ProfilesService.js
+│   └── views/               # Screen components
 │       ├── Babies.jsx
+│       ├── BabyDetail.jsx
 │       ├── Chat.jsx
+│       ├── CompleteProfile.jsx
+│       ├── ForgotPassword.jsx
 │       ├── Home.jsx
 │       ├── ListBabies.jsx
+│       ├── ProfileSettings.jsx
+│       ├── ResetPassword.jsx
 │       ├── SignIn.jsx
 │       └── SignUp.jsx
-├── assets/                # Static assets
-├── App.js                 # Main app component
-├── app.json              # Expo configuration
-└── package.json          # Dependencies and scripts
+├── assets/                  # Static assets
+├── App.js                   # Main app component
+├── app.json                 # Expo configuration
+└── package.json             # Dependencies and scripts
 ```
+
+## 🖥️ Key Screens
+
+- **Home.jsx**: Dashboard with quick actions and contextual guidance for caregivers
+- **Babies.jsx / BabyDetail.jsx**: Full CRUD flow to manage baby records and review specific details
+- **Chat.jsx**: Conversational assistant view leveraging the reusable chat component suite
+- **CompleteProfile.jsx & ProfileSettings.jsx**: Guided flows to complete and update caregiver information
+- **Auth Screens**: `SignIn.jsx`, `SignUp.jsx`, `ForgotPassword.jsx`, and `ResetPassword.jsx` for the authentication journey
 
 ## 🌐 Internationalization
 
@@ -164,19 +189,12 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 👥 Authors
+Nicolás Ruiz
 
-- **Your Name** - *Initial work* - [YourGitHub](https://github.com/yourusername)
+- **Nicolás Ruiz** - *Initial work* - [YourGitHub](https://github.com/IamNewInThis)
 
 ## 🙏 Acknowledgments
 
 - Thanks to the Expo team for the amazing development experience
 - Supabase for providing an excellent backend solution
 - The React Native community for continuous support
-
-## 📞 Support
-
-If you have any questions or need help, please open an issue on GitHub or contact [your-email@example.com](mailto:your-email@example.com).
-
----
-
-Made with ❤️ for caregivers everywhere

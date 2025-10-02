@@ -12,7 +12,6 @@ const Home = () => {
     const signOutUser = async () => {
         try {
             await signOut();
-            // La navegación se manejará automáticamente por el AppNavigator
         } catch (error) {
             console.error('Error al cerrar sesión:', error);
         }
@@ -20,7 +19,7 @@ const Home = () => {
 
     return (
         <SafeAreaView className="flex-1 items-center justify-center bg-white">
-            <Text className="text-xl font-bold text-blue-500">Home v59d57h</Text>
+            <Text className="text-xl font-bold text-blue-500">Home 6e05a38</Text>
             <Button
                 title="Ir al chat"
                 onPress={() => navigation.navigate('Chat')}
