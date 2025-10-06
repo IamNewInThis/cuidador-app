@@ -146,6 +146,7 @@ const CompleteProfile = () => {
                 ) : (
                     <View className="mb-4 w-full border border-gray-300 rounded">
                         <Picker
+                            testID="country-picker"
                             selectedValue={country}
                             onValueChange={(itemValue) => setCountry(itemValue)}
                             style={{ height: 60 }}
@@ -173,6 +174,7 @@ const CompleteProfile = () => {
                     ) : (
                         <View className="mb-4 w-full border border-gray-300 rounded">
                             <Picker
+                                testID="relation-picker"
                                 selectedValue={relationToBaby}
                                 onValueChange={(itemValue) => setRelationToBaby(itemValue)}
                                 style={{ height: 60 }}
@@ -218,6 +220,7 @@ const CompleteProfile = () => {
                                 </Pressable>
                             </View>
                             <Picker
+                                testID="country-picker-ios"
                                 selectedValue={country}
                                 onValueChange={(itemValue) => setCountry(itemValue)}
                             >
@@ -251,6 +254,7 @@ const CompleteProfile = () => {
                                 </Pressable>
                             </View>
                             <Picker
+                                testID="relation-picker-ios"
                                 selectedValue={relationToBaby}
                                 onValueChange={(itemValue) => setRelationToBaby(itemValue)}
                             >

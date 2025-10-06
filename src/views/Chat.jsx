@@ -124,7 +124,7 @@ const Chat = () => {
 
             appendMessage({ id: savedUserMessage.id, role: 'user', text: messageToSend });
 
-            const API_URL = 'https://lumi-llm.onrender.com/api/';
+            const API_URL = 'http://192.168.1.10:5000/api/';
             console.log('Usando API_URL:', API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
@@ -203,6 +203,7 @@ const Chat = () => {
                                 multiline
                             />
                             <TouchableOpacity
+                                testID="send-button"
                                 className="px-4 py-2 justify-center"
                                 onPress={handleOnSendMessage}
                                 disabled={isSendDisabled}

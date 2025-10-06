@@ -70,12 +70,14 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
                         ) : (
                             <>
                                 <TouchableOpacity
+                                    testID="feedback-useful"
                                     onPress={() => handleFeedback('useful')}
                                     className="p-2 rounded-full bg-gray-100 active:bg-gray-200"
                                 >
                                     <Entypo name="thumbs-up" size={20} color="#16A34A" />
                                 </TouchableOpacity>
                                 <TouchableOpacity
+                                    testID="feedback-not-useful"
                                     onPress={() => handleFeedback('not_useful')}
                                     className="p-2 rounded-full bg-gray-100 active:bg-gray-200"
                                 >
