@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Entypo from '@expo/vector-icons/Entypo';
@@ -10,7 +10,8 @@ import { getBabies } from '../services/BabiesService';
 import AssistantMessage from '../components/chat/AssistantMessage';
 import UserMessage from '../components/chat/UserMessage';
 import LoadingMessage from '../components/chat/LoadingMessage';
-import ChatHeader from '../components/ChatHeader';
+import ChatHeader from '../components/chat/ChatHeader';
+import BabySelectionModal from '../components/chat/BabySelectionModal';
 
 const Chat = () => {
     const [message, setMessage] = useState('');
@@ -18,8 +19,10 @@ const Chat = () => {
     const [messages, setMessages] = useState([]);
     const [feedbacks, setFeedbacks] = useState({});
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingConversations, setIsLoadingConversations] = useState(false);
     const [babies, setBabies] = useState([]);
     const [selectedBaby, setSelectedBaby] = useState(null);
+    const [showBabyModal, setShowBabyModal] = useState(false);
     const scrollViewRef = useRef();
 
     const appendMessage = useCallback((newMessage) => {
@@ -76,13 +79,25 @@ const Chat = () => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
     }, []);
 
-    const loadConversationHistory = useCallback(async () => {
+    const loadConversationHistory = useCallback(async (babyId = null) => {
+        setIsLoadingConversations(true);
         try {
-            const history = await ConversationsService.getConversationHistory();
+            let history;
+            if (babyId) {
+                // Cargar conversaciones específicas del bebé
+                history = await ConversationsService.getConversationsByBaby(babyId);
+                console.log(`Cargando conversaciones para bebé ID: ${babyId}`);
+            } else {
+                // Cargar todas las conversaciones (comportamiento anterior)
+                history = await ConversationsService.getConversationHistory();
+                console.log('Cargando todas las conversaciones');
+            }
+
             const formattedMessages = history.map((msg) => ({
                 id: msg.id,
                 role: msg.role,
                 text: msg.content,
+                babyId: msg.baby_id,
             }));
             const reversedMessages = formattedMessages.reverse();
             setMessages(reversedMessages);
@@ -95,6 +110,8 @@ const Chat = () => {
             setTimeout(scrollToBottom, 100);
         } catch (error) {
             console.error('Error loading conversation history:', error);
+        } finally {
+            setIsLoadingConversations(false);
         }
     }, [loadFeedbacks, scrollToBottom]);
 
@@ -118,10 +135,21 @@ const Chat = () => {
         }
     }, [user?.id]);
 
+    // Efecto para cargar conversaciones cuando cambia el bebé seleccionado
     useEffect(() => {
-        loadConversationHistory();
+        if (selectedBaby) {
+            console.log('Bebé seleccionado cambió:', selectedBaby.name);
+            loadConversationHistory(selectedBaby.id);
+        }
+    }, [selectedBaby, loadConversationHistory]);
+
+    useEffect(() => {
         loadBabies();
-    }, [loadConversationHistory, loadBabies]);
+        // Cargar conversaciones generales solo al inicio si no hay bebé seleccionado
+        if (!selectedBaby) {
+            loadConversationHistory();
+        }
+    }, [loadBabies]);
 
     const handleOnSendMessage = async () => {
         if (message.trim() === '' || isLoading) {
@@ -143,11 +171,17 @@ const Chat = () => {
         try {
             const savedUserMessage = await ConversationsService.createMessage({
                 userId: user.id,
+                babyId: selectedBaby?.id || null, // Incluir el baby_id
                 content: messageToSend,
                 role: 'user',
             });
 
-            appendMessage({ id: savedUserMessage.id, role: 'user', text: messageToSend });
+            appendMessage({ 
+                id: savedUserMessage.id, 
+                role: 'user', 
+                text: messageToSend,
+                babyId: selectedBaby?.id || null
+            });
 
             const API_URL = 'http://192.168.1.10:5000/api/';
             console.log('Usando API_URL:', API_URL);
@@ -169,11 +203,17 @@ const Chat = () => {
             const assistantContent = data?.answer || 'Lo siento, no pude obtener una respuesta.';
             const savedAssistantMessage = await ConversationsService.createMessage({
                 userId: user.id,
+                babyId: selectedBaby?.id || null, // Incluir el baby_id también para la respuesta
                 content: assistantContent,
                 role: 'assistant',
             });
 
-            appendMessage({ id: savedAssistantMessage.id, role: 'assistant', text: assistantContent });
+            appendMessage({ 
+                id: savedAssistantMessage.id, 
+                role: 'assistant', 
+                text: assistantContent,
+                babyId: selectedBaby?.id || null
+            });
 
             setTimeout(scrollToBottom, 100);
         } catch (error) {
@@ -194,15 +234,40 @@ const Chat = () => {
         console.log('Search pressed');
     };
 
+    const handleBabyPress = () => {
+        setShowBabyModal(true);
+    };
+
+    const handleSelectBaby = (baby) => {
+        console.log('Baby selected:', baby.name);
+        setSelectedBaby(baby);
+        setShowBabyModal(false);
+        // Las conversaciones se cargarán automáticamente gracias al useEffect que detecta cambios en selectedBaby
+    };
+
+    const handleCloseBabyModal = () => {
+        setShowBabyModal(false);
+    };
+
     const isSendDisabled = message.trim() === '' || isLoading;
 
     return (
         <SafeAreaView className="flex-1 bg-white">
             {/* Header */}
             <ChatHeader 
-                babyName={selectedBaby?.name || "Martín"} 
+                babyName={selectedBaby?.name || ""} 
                 onMenuPress={handleMenuPress}
                 onSearchPress={handleSearchPress}
+                onBabyPress={handleBabyPress}
+            />
+            
+            {/* Modal de selección de bebés */}
+            <BabySelectionModal
+                visible={showBabyModal}
+                babies={babies}
+                selectedBaby={selectedBaby}
+                onSelectBaby={handleSelectBaby}
+                onClose={handleCloseBabyModal}
             />
             
             <KeyboardAvoidingView
@@ -217,20 +282,31 @@ const Chat = () => {
                     onContentSizeChange={scrollToBottom}
                     onLayout={scrollToBottom}
                 >
-                    {messages.map((msg) =>
-                        msg.role === 'user' ? (
-                            <UserMessage key={msg.id} text={msg.text} />
-                        ) : (
-                            <AssistantMessage
-                                key={msg.id}
-                                messageId={msg.id}
-                                text={msg.text}
-                                feedback={feedbacks[msg.id]}
-                                onFeedback={handleFeedback}
-                            />
-                        )
+                    {isLoadingConversations ? (
+                        <View className="flex-1 justify-center items-center py-8">
+                            <ActivityIndicator size="small" color="#3B82F6" />
+                            <Text className="text-gray-500 mt-2">
+                                Cargando conversaciones de {selectedBaby?.name || 'todos los bebés'}...
+                            </Text>
+                        </View>
+                    ) : (
+                        <>
+                            {messages.map((msg) =>
+                                msg.role === 'user' ? (
+                                    <UserMessage key={msg.id} text={msg.text} />
+                                ) : (
+                                    <AssistantMessage
+                                        key={msg.id}
+                                        messageId={msg.id}
+                                        text={msg.text}
+                                        feedback={feedbacks[msg.id]}
+                                        onFeedback={handleFeedback}
+                                    />
+                                )
+                            )}
+                            {isLoading && <LoadingMessage />}
+                        </>
                     )}
-                    {isLoading && <LoadingMessage />}
                 </ScrollView>
 
                 {/* Input mejorado */}
