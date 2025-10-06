@@ -5,10 +5,12 @@ import Entypo from '@expo/vector-icons/Entypo';
 import { useAuth } from '../contexts/AuthContext';
 import ConversationsService from '../services/ConversationsService';
 import FeedbackService from '../services/FeedbackService';
+import { getBabies } from '../services/BabiesService';
 
 import AssistantMessage from '../components/chat/AssistantMessage';
 import UserMessage from '../components/chat/UserMessage';
 import LoadingMessage from '../components/chat/LoadingMessage';
+import ChatHeader from '../components/ChatHeader';
 
 const Chat = () => {
     const [message, setMessage] = useState('');
@@ -16,6 +18,8 @@ const Chat = () => {
     const [messages, setMessages] = useState([]);
     const [feedbacks, setFeedbacks] = useState({});
     const [isLoading, setIsLoading] = useState(false);
+    const [babies, setBabies] = useState([]);
+    const [selectedBaby, setSelectedBaby] = useState(null);
     const scrollViewRef = useRef();
 
     const appendMessage = useCallback((newMessage) => {
@@ -94,9 +98,30 @@ const Chat = () => {
         }
     }, [loadFeedbacks, scrollToBottom]);
 
+    const loadBabies = useCallback(async () => {
+        if (!user?.id) return;
+        
+        try {
+            const { data, error } = await getBabies(user.id);
+            if (error) {
+                console.error('Error loading babies:', error);
+                return;
+            }
+            
+            setBabies(data || []);
+            // Seleccionar el primer bebé por defecto
+            if (data && data.length > 0) {
+                setSelectedBaby(data[0]);
+            }
+        } catch (error) {
+            console.error('Error loading babies:', error);
+        }
+    }, [user?.id]);
+
     useEffect(() => {
         loadConversationHistory();
-    }, [loadConversationHistory]);
+        loadBabies();
+    }, [loadConversationHistory, loadBabies]);
 
     const handleOnSendMessage = async () => {
         if (message.trim() === '' || isLoading) {
@@ -124,7 +149,7 @@ const Chat = () => {
 
             appendMessage({ id: savedUserMessage.id, role: 'user', text: messageToSend });
 
-            const API_URL = 'https://lumi-llm.onrender.com/api/';
+            const API_URL = 'http://192.168.1.10:5000/api/';
             console.log('Usando API_URL:', API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
@@ -159,14 +184,31 @@ const Chat = () => {
         }
     };
 
+    const handleMenuPress = () => {
+        // TODO: Implementar side menu
+        console.log('Menu pressed');
+    };
+
+    const handleSearchPress = () => {
+        // TODO: Implementar búsqueda
+        console.log('Search pressed');
+    };
+
     const isSendDisabled = message.trim() === '' || isLoading;
 
     return (
         <SafeAreaView className="flex-1 bg-white">
+            {/* Header */}
+            <ChatHeader 
+                babyName={selectedBaby?.name || "Martín"} 
+                onMenuPress={handleMenuPress}
+                onSearchPress={handleSearchPress}
+            />
+            
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <ScrollView
                     ref={scrollViewRef}
@@ -191,29 +233,33 @@ const Chat = () => {
                     {isLoading && <LoadingMessage />}
                 </ScrollView>
 
-                <View className="border-t border-gray-200 bg-white px-4 py-2">
-                    <View className="max-w-4xl mx-auto w-full">
-                        <View className="flex-row items-end bg-white rounded-lg border border-gray-300">
-                            <TextInput
-                                className="flex-1 px-4 py-3 text-base text-gray-800 min-h-[44px] max-h-[120px]"
-                                placeholder="Envía un mensaje a Lumi..."
-                                placeholderTextColor="#6B7280"
-                                value={message}
-                                onChangeText={setMessage}
-                                multiline
+                {/* Input mejorado */}
+                <View className="border-t border-gray-200 bg-white px-4 py-3">
+                    <View className="flex-row items-end bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
+                        <TextInput
+                            className="flex-1 px-4 py-3 text-base text-gray-800 min-h-[48px] max-h-[120px]"
+                            placeholder="Pregúntale a Lumi..."
+                            placeholderTextColor="#9CA3AF"
+                            value={message}
+                            onChangeText={setMessage}
+                            multiline
+                            style={{
+                                textAlignVertical: 'center',
+                            }}
+                        />
+                        <TouchableOpacity
+                            className={`m-2 w-10 h-10 rounded-full items-center justify-center ${
+                                isSendDisabled ? 'bg-gray-300' : 'bg-blue-500'
+                            }`}
+                            onPress={handleOnSendMessage}
+                            disabled={isSendDisabled}
+                        >
+                            <Entypo
+                                name="paper-plane"
+                                size={20}
+                                color="white"
                             />
-                            <TouchableOpacity
-                                className="px-4 py-2 justify-center"
-                                onPress={handleOnSendMessage}
-                                disabled={isSendDisabled}
-                            >
-                                <Entypo
-                                    name="paper-plane"
-                                    size={24}
-                                    color={isSendDisabled ? '#9CA3AF' : '#2563EB'}
-                                />
-                            </TouchableOpacity>
-                        </View>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </KeyboardAvoidingView>

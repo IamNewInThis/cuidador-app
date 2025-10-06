@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import Entypo from '@expo/vector-icons/Entypo';
 import CommentModal from '../CommentModal';
 import TableView from '../TableView';
@@ -30,6 +31,16 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
         setShowComment(false);
     };
 
+    const handleCopyMessage = async () => {
+        try {
+            await Clipboard.setStringAsync(text);
+            Alert.alert('Copiado', 'Mensaje copiado al portapapeles');
+        } catch (error) {
+            console.error('Error al copiar:', error);
+            Alert.alert('Error', 'No se pudo copiar el mensaje');
+        }
+    };
+
     return (
         <>
             <View className="w-full py-4 px-4 bg-gray-50 border-b border-gray-100">
@@ -54,6 +65,13 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
                     )}
 
                     <View className="flex-row items-center justify-end mt-3 space-x-2">
+                        <TouchableOpacity
+                            onPress={handleCopyMessage}
+                            className="p-2 rounded-full bg-gray-100 active:bg-gray-200"
+                        >
+                            <Entypo name="copy" size={16} color="#6B7280" />
+                        </TouchableOpacity>
+                        
                         {feedback ? (
                             <View
                                 className="p-2 rounded-full"
