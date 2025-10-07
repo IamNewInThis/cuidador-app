@@ -25,7 +25,22 @@ jest.mock('react-native/Libraries/Modal/Modal', () => {
   return ({ visible, children, ...props }) => (visible ? <View {...props}>{children}</View> : null);
 });
 
-jest.mock('../../../src/components/chat/ChatOptionsModal', () => () => null);
+let latestChatOptionsModalProps;
+const mockChatOptionsModal = jest.fn((props) => {
+  latestChatOptionsModalProps = props;
+  return null;
+});
+
+jest.mock('../../../src/components/chat/ChatOptionsModal', () => {
+  return (props) => mockChatOptionsModal(props);
+});
+
+jest.mock('../../../src/services/FavoritesService', () => ({
+  __esModule: true,
+  default: {
+    addToFavorites: jest.fn(),
+  },
+}));
 
 
 jest.mock('../../../src/components/CommentModal', () => {
@@ -55,6 +70,10 @@ import AssistantMessage from '../../../src/components/chat/AssistantMessage';
 describe('<AssistantMessage />', () => {
   beforeEach(() => {
     jest.useFakeTimers();
+    latestChatOptionsModalProps = null;
+    mockChatOptionsModal.mockClear();
+    const FavoritesService = require('../../../src/services/FavoritesService').default;
+    FavoritesService.addToFavorites.mockReset();
   });
 
   afterEach(() => {
@@ -130,6 +149,37 @@ describe('<AssistantMessage />', () => {
     });
 
     expect(screen.queryByDisplayValue('No aplica')).toBeNull();
+  });
+
+  it('agrega el mensaje a favoritos desde el menú de opciones', async () => {
+    const FavoritesService = require('../../../src/services/FavoritesService').default;
+    FavoritesService.addToFavorites.mockResolvedValue({});
+    const { Alert } = require('react-native');
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    const screen = render(
+      <AssistantMessage
+        text="Respuesta"
+        messageId="msg-5"
+        onFeedback={jest.fn()}
+      />
+    );
+
+    fireEvent.press(screen.getByTestId('assistant-options-button'));
+
+    await waitFor(() => {
+      expect(latestChatOptionsModalProps).toBeTruthy();
+      expect(latestChatOptionsModalProps.visible).toBe(true);
+    });
+
+    await act(async () => {
+      await latestChatOptionsModalProps.onAddToFavorites('msg-5');
+    });
+
+    expect(FavoritesService.addToFavorites).toHaveBeenCalledWith({ conversationMessageId: 'msg-5' });
+    expect(alertSpy).toHaveBeenCalledWith('Favoritos', 'Mensaje agregado a favoritos');
+
+    alertSpy.mockRestore();
   });
 
   it('muestra icono cuando ya existe feedback previo', () => {

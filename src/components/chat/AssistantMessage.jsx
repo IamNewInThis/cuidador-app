@@ -8,11 +8,15 @@ import CommentModal from '../CommentModal';
 import ChatOptionsModal from './ChatOptionsModal';
 import TableView from '../TableView';
 import MarkdownText, { splitTextAndTable } from './MarkdownText';
+import FavoritesService from '../../services/FavoritesService';
+import SelectCategoryModal from '../favorites/SelectCategoryModal';
 
 const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
     const [showComment, setShowComment] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [showOptionsModal, setShowOptionsModal] = useState(false);
+    const [showCategoryModal, setShowCategoryModal] = useState(false);
+    const [isAddingFavorite, setIsAddingFavorite] = useState(false);
     const { before, table, after } = splitTextAndTable(text);
 
     const handleFeedback = (rating) => {
@@ -45,10 +49,32 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
         }
     };
 
-    const handleAddToFavorites = (messageId) => {
-        // TODO: Implementar funcionalidad de favoritos
-        console.log('Agregando a favoritos:', messageId);
-        Alert.alert('Favoritos', 'Mensaje agregado a favoritos (funcionalidad pendiente)');
+    const handleAddToFavorites = async () => {
+        // Mostrar el modal de selección de categoría
+        setShowCategoryModal(true);
+    };
+
+    const handleCategorySelected = async (categoryId) => {
+        if (isAddingFavorite) {
+            return;
+        }
+
+        try {
+            setIsAddingFavorite(true);
+            await FavoritesService.addToFavorites({ 
+                conversationMessageId: messageId,
+                categoryId: categoryId
+            });
+            Alert.alert('¡Guardado!', 'Mensaje agregado a favoritos exitosamente', [
+                { text: 'Ver favoritos', onPress: () => {/* Navegar a favoritos */} },
+                { text: 'OK', style: 'default' }
+            ]);
+        } catch (error) {
+            console.error('Error al agregar a favoritos:', error);
+            Alert.alert('Error', 'No se pudo agregar a favoritos. Intenta nuevamente.');
+        } finally {
+            setIsAddingFavorite(false);
+        }
     };
 
     return (
@@ -117,6 +143,7 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
 
                         {/* Lado derecho: Dots */}
                         <TouchableOpacity
+                            testID="assistant-options-button"
                             onPress={() => setShowOptionsModal(true)}
                             className="p-1"
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -135,6 +162,12 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
                 visible={showOptionsModal}
                 onClose={() => setShowOptionsModal(false)}
                 onAddToFavorites={handleAddToFavorites}
+                messageId={messageId}
+            />
+            <SelectCategoryModal
+                visible={showCategoryModal}
+                onClose={() => setShowCategoryModal(false)}
+                onSelectCategory={handleCategorySelected}
                 messageId={messageId}
             />
         </>

@@ -45,6 +45,12 @@ const Home = () => {
             />
 
             <Button
+                title="Ir a Favorites"
+                onPress={() => navigation.navigate('Favorites')}
+                className="mt-4 bg-gray-100 border border-gray-300"
+            />
+
+            <Button
                 title="Cerrar sesión"
                 onPress={() => signOutUser()}
                 className="mt-4 bg-gray-100 border border-gray-300"

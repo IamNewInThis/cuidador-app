@@ -16,6 +16,8 @@ import ProfileSettings from '../views/ProfileSettings';
 import ResetPasswordScreen from '../views/ResetPassword';
 import ForgotPassword from '../views/ForgotPassword';
 import CompleteProfile from '../views/CompleteProfile';
+import FavoritesView from '../views/FavoritesView';
+import CategoryDetailView from '../views/CategoryDetailView';
 
 const Stack = createStackNavigator();
 
@@ -49,6 +51,8 @@ const AppStack = () => (
         <Stack.Screen name="BabyDetail" component={BabyDetail} />
         <Stack.Screen name="ProfileSettings" component={ProfileSettings} />
         <Stack.Screen name="CompleteProfile" component={CompleteProfile} />
+        <Stack.Screen name="Favorites" component={FavoritesView} />
+        <Stack.Screen name="CategoryDetail" component={CategoryDetailView} />
     </Stack.Navigator>
 );
 
