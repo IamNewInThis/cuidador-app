@@ -89,7 +89,7 @@ expo build:ios
 ### Deploy
 ```bash
 # Build for preview
-eas build -p ios --profile preview --clear-cache
+eas build -p ios --profile preview 
 eas update --platform ios
 ```
 

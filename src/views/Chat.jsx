@@ -281,6 +281,8 @@ const Chat = () => {
                     keyboardShouldPersistTaps="handled"
                     onContentSizeChange={scrollToBottom}
                     onLayout={scrollToBottom}
+                    contentContainerStyle={{ padding: 16 }}
+                    showsVerticalScrollIndicator={false}
                 >
                     {isLoadingConversations ? (
                         <View className="flex-1 justify-center items-center py-8">
