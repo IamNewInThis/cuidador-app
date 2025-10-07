@@ -90,7 +90,7 @@ describe('<SignIn />', () => {
     fireEvent.press(screen.getByText('auth.google'));
     expect(signInWithGoogle).toHaveBeenCalled();
 
-    fireEvent.press(screen.getByText('¿Olvidaste tu contraseña?'));
+    fireEvent.press(screen.getByText('auth.forgotPassword'));
     expect(mockNavigate).toHaveBeenCalledWith('ForgotPassword');
   });
 

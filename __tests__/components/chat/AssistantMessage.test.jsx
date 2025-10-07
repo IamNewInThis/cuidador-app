@@ -35,6 +35,16 @@ jest.mock('../../../src/components/chat/ChatOptionsModal', () => {
   return (props) => mockChatOptionsModal(props);
 });
 
+let latestSelectCategoryModalProps;
+const mockSelectCategoryModal = jest.fn((props) => {
+  latestSelectCategoryModalProps = props;
+  return null;
+});
+
+jest.mock('../../../src/components/favorites/SelectCategoryModal', () => {
+  return (props) => mockSelectCategoryModal(props);
+});
+
 jest.mock('../../../src/services/FavoritesService', () => ({
   __esModule: true,
   default: {
@@ -72,6 +82,8 @@ describe('<AssistantMessage />', () => {
     jest.useFakeTimers();
     latestChatOptionsModalProps = null;
     mockChatOptionsModal.mockClear();
+    latestSelectCategoryModalProps = null;
+    mockSelectCategoryModal.mockClear();
     const FavoritesService = require('../../../src/services/FavoritesService').default;
     FavoritesService.addToFavorites.mockReset();
   });
@@ -176,8 +188,15 @@ describe('<AssistantMessage />', () => {
       await latestChatOptionsModalProps.onAddToFavorites('msg-5');
     });
 
-    expect(FavoritesService.addToFavorites).toHaveBeenCalledWith({ conversationMessageId: 'msg-5' });
-    expect(alertSpy).toHaveBeenCalledWith('Favoritos', 'Mensaje agregado a favoritos');
+    expect(latestSelectCategoryModalProps).toBeTruthy();
+    expect(latestSelectCategoryModalProps.visible).toBe(true);
+
+    await act(async () => {
+      await latestSelectCategoryModalProps.onSelectCategory('cat-1');
+    });
+
+    expect(FavoritesService.addToFavorites).toHaveBeenCalledWith({ conversationMessageId: 'msg-5', categoryId: 'cat-1' });
+    expect(alertSpy).toHaveBeenCalledWith('¡Guardado!', 'Mensaje agregado a favoritos exitosamente', expect.any(Array));
 
     alertSpy.mockRestore();
   });
