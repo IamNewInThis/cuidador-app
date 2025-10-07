@@ -115,7 +115,7 @@ const SignIn = () => {
                     className="text-blue-500 text-center mt-4"
                     onPress={() => navigation.navigate('ForgotPassword')}
                 >
-                    ¿Olvidaste tu contraseña?
+                    {t('auth.forgotPassword')}
                 </Text>
             </View>
         </SafeAreaView>

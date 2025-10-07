@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import FavoritesCategoriesService from '../services/FavoritesCategoriesService';
 import CreateCategoryModal from '../components/favorites/CreateCategoryModal';
 import CategoryCard from '../components/favorites/CategoryCard';
+import { useTranslation } from 'react-i18next';
 
 const FavoritesView = ({ navigation }) => {
     const { user } = useAuth();
@@ -13,6 +14,7 @@ const FavoritesView = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const { t } = useTranslation();
 
     useEffect(() => {
         loadCategories();
@@ -66,7 +68,7 @@ const FavoritesView = ({ navigation }) => {
             <SafeAreaView className="flex-1 bg-gray-50">
                 <View className="flex-1 justify-center items-center">
                     <Ionicons name="heart" size={48} color="#3B82F6" />
-                    <Text className="text-gray-500 mt-4">Cargando favoritos...</Text>
+                    <Text className="text-gray-500 mt-4">{t('favorites.loading')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -78,9 +80,9 @@ const FavoritesView = ({ navigation }) => {
             <View className="bg-white px-6 py-4 border-b border-gray-200">
                 <View className="flex-row items-center justify-between">
                     <View>
-                        <Text className="text-2xl font-bold text-gray-900">Favoritos</Text>
+                        <Text className="text-2xl font-bold text-gray-900">{t('favorites.title')}</Text>
                         <Text className="text-gray-500 mt-1">
-                            {categories.length} {categories.length === 1 ? 'categoría' : 'categorías'}
+                            {categories.length} {categories.length === 1 ? t('favorites.category') : t('favorites.categories')}
                         </Text>
                     </View>
                     <TouchableOpacity
@@ -107,15 +109,15 @@ const FavoritesView = ({ navigation }) => {
                 {categories.length === 0 ? (
                     <View className="flex-1 justify-center items-center py-20">
                         <Ionicons name="heart-outline" size={64} color="#9CA3AF" />
-                        <Text className="text-gray-500 text-lg font-medium mt-4">No tienes categorías</Text>
+                        <Text className="text-gray-500 text-lg font-medium mt-4">{t('favorites.noCategories')}</Text>
                         <Text className="text-gray-400 text-center mt-2 px-8">
-                            Crea tu primera categoría para organizar tus mensajes favoritos
+                            {t('favorites.noCategoriesDesc')}
                         </Text>
                         <TouchableOpacity
                             onPress={() => setShowCreateModal(true)}
                             className="bg-blue-600 rounded-lg px-6 py-3 mt-6"
                         >
-                            <Text className="text-white font-semibold">Crear categoría</Text>
+                            <Text className="text-white font-semibold">{t('favorites.createCategory')}</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (

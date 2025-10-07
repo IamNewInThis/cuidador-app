@@ -1,4 +1,19 @@
-{
+{   
+    "common": {
+        "loading": "Cargando...",
+        "error": "Ocurrió un error. Por favor, intenta de nuevo.",
+        "retry": "Reintentar",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "delete": "Eliminar",
+        "edit": "Editar",
+        "yes": "Sí",
+        "no": "No",
+        "close": "Cerrar",
+        "creating": "Creando...",
+        "optional": "opcional",
+        "caracters": "caracteres"
+    },
     "auth": {
         "signInTitle": "Iniciar sesión",
         "signUpTitle": "Crear cuenta",
@@ -13,7 +28,52 @@
         "haveAccount": "¿No tienes cuenta?",
         "goSignUp": "Regístrate",
         "errorSignIn": "Error al iniciar sesión",
-        "errorSignUp": "Error al crear la cuenta"
+        "errorSignUp": "Error al crear la cuenta",
+        "forgotPassword": "¿Olvidaste tu contraseña?"
+    },
+    "favorites": {
+        "title": "Favoritos",
+        "favorite": "Favorito",
+        "loading": "Cargando favoritos...",
+        "addToFavorites": "Agregar a Favoritos",
+        "removeFromFavorites": "Quitar de Favoritos",
+        "addedToFavorites": "Agregado a Favoritos",
+        "removedFromFavorites": "Quitado de Favoritos",
+        "selectCategory": "Seleccionar Categoría",
+        "noFavorites": "No hay favoritos",
+        "noFavoritesDesc": "Los mensajes que agregues a esta categoría aparecerán aquí",
+        "category": "Categoría",
+        "categories": "Categorías",
+        "all": "Todas",
+        "uncategorized": "Sin categoría",
+        "createCategory": "Crear Categoría",
+        "editCategory": "Editar Categoría",
+        "deleteCategory": "Eliminar Categoría",
+        "categoryName": "Nombre de la Categoría",
+        "confirmDeleteCategory": "¿Estás seguro de que deseas eliminar esta categoría?",
+        "confirmDeleteCategoryDesc": "Los mensajes no se eliminarán, solo la categoría.",
+        "noCategories": "Aún no hay categorías.",
+        "noCategoriesDesc": "Crea categorías para organizar tus mensajes favoritos.",
+        "newCategory": "Nueva Categoría",
+        "preview": "Vista previa",
+        "name": "Nombre",
+        "namePlaceholder": "Ej: Cocina, Regalos, Consejos...",
+        "description": "Descripción",
+        "descriptionPlaceholder": "Breve descripción de la categoría...",
+        "icon": "Icono",
+        "color": "Color"
+    },
+    "chat":{
+        "typing": "Escribiendo...",
+        "inputPlaceholder": "Escribe tu mensaje...",
+        "send": "Enviar",
+        "clearChat": "Borrar Chat",
+        "confirmClearChat": "¿Estás seguro de que deseas borrar el chat?",
+        "confirmClearChatDesc": "Esta acción no se puede deshacer.",
+        "noMessages": "No hay mensajes aún. ¡Inicia la conversación!",
+        "errorLoadingMessages": "Error al cargar mensajes",
+        "errorSendingMessage": "Error al enviar mensaje",
+        "messageOptions": "Opciones del Mensaje"
     }
  }
  

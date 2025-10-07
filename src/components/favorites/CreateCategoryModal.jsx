@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Modal, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FavoritesCategoriesService from '../../services/FavoritesCategoriesService';
+import { useTranslation } from 'react-i18next';
 
 const CreateCategoryModal = ({ visible, onClose, onSubmit }) => {
     const [name, setName] = useState('');
@@ -9,6 +10,7 @@ const CreateCategoryModal = ({ visible, onClose, onSubmit }) => {
     const [selectedIcon, setSelectedIcon] = useState('⭐');
     const [selectedColor, setSelectedColor] = useState('#3B82F6');
     const [loading, setLoading] = useState(false);
+    const { t } = useTranslation();
 
     const presetIcons = FavoritesCategoriesService.getPresetIcons();
     const presetColors = FavoritesCategoriesService.getPresetColors();
@@ -65,16 +67,16 @@ const CreateCategoryModal = ({ visible, onClose, onSubmit }) => {
                 <View className="bg-white px-6 py-4 border-b border-gray-200">
                     <View className="flex-row items-center justify-between">
                         <TouchableOpacity onPress={handleClose}>
-                            <Text className="text-blue-600 text-lg">Cancelar</Text>
+                            <Text className="text-blue-600 text-lg">{t('common.cancel')}</Text>
                         </TouchableOpacity>
-                        <Text className="text-xl font-semibold text-gray-900">Nueva Categoría</Text>
-                        <TouchableOpacity 
+                        <Text className="text-xl font-semibold text-gray-900">{t('favorites.newCategory')}</Text>
+                        <TouchableOpacity
                             onPress={handleSubmit}
                             disabled={loading || !name.trim()}
                             className={`${!name.trim() || loading ? 'opacity-50' : ''}`}
                         >
                             <Text className="text-blue-600 text-lg font-semibold">
-                                {loading ? 'Creando...' : 'Crear'}
+                                {loading ? t('common.creating') : t('common.save')}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -83,7 +85,7 @@ const CreateCategoryModal = ({ visible, onClose, onSubmit }) => {
                 <ScrollView className="flex-1 px-6 py-6">
                     {/* Preview */}
                     <View className="mb-6">
-                        <Text className="text-gray-700 font-medium mb-3">Vista previa</Text>
+                        <Text className="text-gray-700 font-medium mb-3">{t('favorites.preview')}</Text>
                         <View className="bg-gray-50 rounded-2xl p-4">
                             <View className="flex-row items-center">
                                 <View 
@@ -94,7 +96,7 @@ const CreateCategoryModal = ({ visible, onClose, onSubmit }) => {
                                 </View>
                                 <View className="flex-1">
                                     <Text className="text-gray-900 font-semibold text-lg">
-                                        {name || 'Nombre de la categoría'}
+                                        {name || t('favorites.categoryName')}
                                     </Text>
                                     {description && (
                                         <Text className="text-gray-500 text-sm mt-1">
@@ -108,39 +110,39 @@ const CreateCategoryModal = ({ visible, onClose, onSubmit }) => {
 
                     {/* Nombre */}
                     <View className="mb-6">
-                        <Text className="text-gray-700 font-medium mb-2">Nombre *</Text>
+                        <Text className="text-gray-700 font-medium mb-2">{t('favorites.name')} *</Text>
                         <TextInput
                             value={name}
                             onChangeText={setName}
-                            placeholder="Ej: Cocina, Regalos, Consejos..."
+                            placeholder={t('favorites.namePlaceholder')}
                             className="bg-gray-50 rounded-lg px-4 py-3 text-gray-900"
                             maxLength={50}
                         />
                         <Text className="text-gray-400 text-sm mt-1">
-                            {name.length}/50 caracteres
+                            {name.length}/50 {t('common.caracters')}
                         </Text>
                     </View>
 
                     {/* Descripción */}
                     <View className="mb-6">
-                        <Text className="text-gray-700 font-medium mb-2">Descripción (opcional)</Text>
+                        <Text className="text-gray-700 font-medium mb-2">{t('favorites.description')} ({t('common.optional')})</Text>
                         <TextInput
                             value={description}
                             onChangeText={setDescription}
-                            placeholder="Breve descripción de la categoría..."
+                            placeholder={t('favorites.descriptionPlaceholder')}
                             className="bg-gray-50 rounded-lg px-4 py-3 text-gray-900"
                             multiline
                             numberOfLines={3}
                             maxLength={200}
                         />
                         <Text className="text-gray-400 text-sm mt-1">
-                            {description.length}/200 caracteres
+                            {description.length}/200 {t('common.caracters')}
                         </Text>
                     </View>
 
                     {/* Icono */}
                     <View className="mb-6">
-                        <Text className="text-gray-700 font-medium mb-3">Icono</Text>
+                        <Text className="text-gray-700 font-medium mb-3">{t('favorites.icon')}</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                             <View className="flex-row space-x-3">
                                 {presetIcons.map((icon, index) => (
@@ -160,7 +162,7 @@ const CreateCategoryModal = ({ visible, onClose, onSubmit }) => {
 
                     {/* Color */}
                     <View className="mb-6">
-                        <Text className="text-gray-700 font-medium mb-3">Color</Text>
+                        <Text className="text-gray-700 font-medium mb-3">{t('favorites.color')}</Text>
                         <View className="flex-row flex-wrap">
                             {presetColors.map((color, index) => (
                                 <TouchableOpacity

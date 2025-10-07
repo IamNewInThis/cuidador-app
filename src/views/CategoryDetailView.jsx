@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import FavoritesService from '../services/FavoritesService';
 import FavoriteMessageCard from '../components/favorites/FavoriteMessageCard';
 import FavoriteDetailModal from '../components/favorites/FavoriteDetailModal';
+import { useTranslation } from 'react-i18next';
 
 const CategoryDetailView = ({ route, navigation }) => {
     const { categoryId, categoryName, categoryColor, categoryIcon } = route.params;
@@ -15,6 +16,7 @@ const CategoryDetailView = ({ route, navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [selectedFavorite, setSelectedFavorite] = useState(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const { t } = useTranslation();
 
     useEffect(() => {
         loadFavorites();
@@ -82,7 +84,7 @@ const CategoryDetailView = ({ route, navigation }) => {
                         className="flex-row items-center"
                     >
                         <Ionicons name="chevron-back" size={24} color="#374151" />
-                        <Text className="text-gray-600 ml-1">Favoritos</Text>
+                        <Text className="text-gray-600 ml-1">{t('favorites.title')}</Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity className="p-2">
@@ -100,7 +102,7 @@ const CategoryDetailView = ({ route, navigation }) => {
                     <View className="flex-1">
                         <Text className="text-xl font-bold text-gray-900">{categoryName}</Text>
                         <Text className="text-gray-500">
-                            {favorites.length} {favorites.length === 1 ? 'favorito' : 'favoritos'}
+                            {favorites.length} {favorites.length === 1 ? t('favorites.favorite') : t('favorites.title')}
                         </Text>
                     </View>
                 </View>
@@ -126,9 +128,9 @@ const CategoryDetailView = ({ route, navigation }) => {
                         >
                             <Text style={{ fontSize: 40, color: categoryColor }}>{categoryIcon}</Text>
                         </View>
-                        <Text className="text-gray-500 text-lg font-medium">No hay favoritos</Text>
+                        <Text className="text-gray-500 text-lg font-medium">{t('favorites.noFavorites')}</Text>
                         <Text className="text-gray-400 text-center mt-2 px-8">
-                            Los mensajes que agregues a esta categoría aparecerán aquí
+                            {t('favorites.noFavoritesDesc')}
                         </Text>
                     </View>
                 ) : (

@@ -1,4 +1,21 @@
-{
+{   
+    "common": {
+        "loading": "Carregando...",
+        "error": "Ocorreu um erro. Por favor, tente novamente.",
+        "noData": "Nenhum dado disponível.",
+        "retry": "Tentar novamente",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "delete": "Excluir",
+        "edit": "Editar",
+        "confirm": "Confirmar",
+        "close": "Fechar",
+        "yes": "Sim",
+        "no": "Não",
+        "creating": "Criando...",
+        "optional": "opcional",
+        "caracters": "caracteres"
+    },
     "auth": {
         "signInTitle": "Entrar",
         "signUpTitle": "Criar conta",
@@ -13,7 +30,44 @@
         "haveAccount": "Não tem uma conta?",
         "goSignUp": "Cadastre-se",
         "errorSignIn": "Erro ao entrar",
-        "errorSignUp": "Erro ao criar conta"
+        "errorSignUp": "Erro ao criar conta",
+        "forgotPassword": "Esqueceu sua senha?"
+    },
+    "favorites": {
+        "title": "Favoritos",
+        "favorite": "Favorito",
+        "loading": "Carregando favoritos...",
+        "addToFavorites": "Adicionar aos Favoritos",
+        "removeFromFavorites": "Remover dos Favoritos",
+        "addedToFavorites": "Adicionado aos Favoritos",
+        "removedFromFavorites": "Removido dos Favoritos",
+        "selectCategory": "Selecionar Categoria",
+        "noFavorites": "Nenhum favorito",
+        "noFavoritesDesc": "Os mensagens que você adicionar a esta categoria aparecerão aqui",
+        "category": "Categoria",
+        "categories": "Categorias",
+        "all": "Todas",
+        "uncategorized": "Sem categoria",
+        "createCategory": "Criar Categoria",
+        "editCategory": "Editar Categoria",
+        "deleteCategory": "Excluir Categoria",
+        "categoryName": "Nome da Categoria",
+        "confirmDeleteCategory": "Tem certeza que deseja excluir esta categoria?",
+        "confirmDeleteCategoryDesc": "As mensagens não serão excluídas, apenas a categoria.",
+        "noCategories": "Nenhuma categoria ainda.",
+        "noCategoriesDesc": "Crie categorias para organizar suas mensagens favoritas.",
+        "newCategory": "Nova Categoria",
+        "preview": "Pré-visualização",
+        "name": "Nome",
+        "namePlaceholder": "Ex: Culinária, Presentes, Dicas...",
+        "description": "Descrição",
+        "descriptionPlaceholder": "Breve descrição da categoria...",
+        "icon": "Ícone",
+        "color": "Cor"
+    },
+    "chat":{
+        "tiping": "Digitando...",
+        "messageOptions": "Opções da mensagem"
     }
 }
   
