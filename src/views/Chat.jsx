@@ -183,7 +183,7 @@ const Chat = () => {
                 babyId: selectedBaby?.id || null
             });
 
-            const API_URL = 'http://192.168.1.10:5000/api/';
+            const API_URL = 'https://lumi-llm.onrender.com/api/';
             console.log('Usando API_URL:', API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
@@ -203,7 +203,7 @@ const Chat = () => {
             const assistantContent = data?.answer || 'Lo siento, no pude obtener una respuesta.';
             const savedAssistantMessage = await ConversationsService.createMessage({
                 userId: user.id,
-                babyId: selectedBaby?.id || null, // Incluir el baby_id también para la respuesta
+                babyId: selectedBaby?.id || null, 
                 content: assistantContent,
                 role: 'assistant',
             });

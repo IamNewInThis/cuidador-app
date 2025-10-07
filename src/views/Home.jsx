@@ -19,7 +19,7 @@ const Home = () => {
 
     return (
         <SafeAreaView className="flex-1 items-center justify-center bg-white">
-            <Text className="text-xl font-bold text-blue-500">Home fa6990a</Text>
+            <Text className="text-xl font-bold text-blue-500">Home f7f119d</Text>
             <Button
                 title="Ir al chat"
                 onPress={() => navigation.navigate('Chat')}
