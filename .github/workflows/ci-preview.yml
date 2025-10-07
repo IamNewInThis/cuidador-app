@@ -47,12 +47,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Setup Expo
+      - name: Build Expo preview
         uses: expo/expo-github-action@v8
         with:
-          expo-cache: true
           eas-cache: true
+          expo-cache: true
           token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Build Expo preview
-        run: npx eas build --profile preview --platform all --non-interactive
+          eas-version: latest
+          eas-command: build --profile preview --platform all --non-interactive
