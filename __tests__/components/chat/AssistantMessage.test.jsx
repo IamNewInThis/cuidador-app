@@ -1,11 +1,31 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 
+jest.mock('@expo/vector-icons/Entypo', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+  return (props) => <Text {...props} />;
+});
+
+jest.mock('@expo/vector-icons/AntDesign', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+  return (props) => <Text {...props} />;
+});
+
+jest.mock('@expo/vector-icons/FontAwesome', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+  return (props) => <Text {...props} />;
+});
+
 jest.mock('react-native/Libraries/Modal/Modal', () => {
   const React = require('react');
   const { View } = require('react-native');
   return ({ visible, children, ...props }) => (visible ? <View {...props}>{children}</View> : null);
 });
+
+jest.mock('../../../src/components/chat/ChatOptionsModal', () => () => null);
 
 
 jest.mock('../../../src/components/CommentModal', () => {

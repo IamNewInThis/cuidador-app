@@ -88,6 +88,7 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
                             ) : (
                                 <>
                                     <TouchableOpacity
+                                        testID="feedback-useful"
                                         onPress={() => handleFeedback('useful')}
                                         className="p-1 mr-4"
                                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -95,6 +96,7 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
                                         <Entypo name="thumbs-up" size={18} color="#6B7280" />
                                     </TouchableOpacity>
                                     <TouchableOpacity
+                                        testID="feedback-not-useful"
                                         onPress={() => handleFeedback('not_useful')}
                                         className="p-1 mr-4"
                                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

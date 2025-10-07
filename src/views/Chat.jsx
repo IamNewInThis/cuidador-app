@@ -171,7 +171,7 @@ const Chat = () => {
         try {
             const savedUserMessage = await ConversationsService.createMessage({
                 userId: user.id,
-                babyId: selectedBaby?.id || null, // Incluir el baby_id
+                babyId: selectedBaby?.id || null, 
                 content: messageToSend,
                 role: 'user',
             });
@@ -183,7 +183,7 @@ const Chat = () => {
                 babyId: selectedBaby?.id || null
             });
 
-            const API_URL = 'https://lumi-llm.onrender.com/api/';
+            const API_URL = process.env.EXPO_PUBLIC_API_URL;
             console.log('Usando API_URL:', API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
@@ -326,6 +326,9 @@ const Chat = () => {
                             }}
                         />
                         <TouchableOpacity
+                            testID="send-button"
+                            accessibilityRole="button"
+                            accessibilityLabel="Enviar mensaje"
                             className={`m-2 w-10 h-10 rounded-full items-center justify-center ${
                                 isSendDisabled ? 'bg-gray-300' : 'bg-blue-500'
                             }`}
