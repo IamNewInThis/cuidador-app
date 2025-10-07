@@ -106,10 +106,8 @@ const UserMessage = ({ text }) => {
 
     // Componente del mensaje
     const MessageContent = () => (
-        <View className="items-end self-end">
-            <View className="bg-blue-600 rounded-2xl rounded-tr-none px-5 py-4 max-w-[90%]">
-                <Text className="text-white text-lg leading-6">{text}</Text>
-            </View>
+        <View className="bg-blue-600 rounded-2xl rounded-tr-none px-5 py-4">
+            <Text className="text-white text-lg leading-6">{text}</Text>
         </View>
     );
 
@@ -117,27 +115,25 @@ const UserMessage = ({ text }) => {
         <View className="my-2">
             <View className="flex-row justify-end items-end">
                 {Platform.OS === 'ios' ? (
-                    <View
-                        className="rounded-2xl overflow-hidden"
-                        style={{ alignSelf: 'flex-end', flexShrink: 1 }}
-                    >
+                    <View style={{ maxWidth: '85%' }}>
                         <ContextMenuView
                             menuConfig={menuConfig}
                             onPressMenuItem={handlePressMenuItem}
-                            style={{ alignSelf: 'flex-end' }}
                         >
                             <MessageContent />
                         </ContextMenuView>
                     </View>
                 ) : (
-                    <TouchableOpacity
-                        ref={messageRef}
-                        onLongPress={showMenuAnimation}
-                        delayLongPress={400}
-                        activeOpacity={0.8}
-                    >
-                        <MessageContent />
-                    </TouchableOpacity>
+                    <View style={{ maxWidth: '85%' }}>
+                        <TouchableOpacity
+                            ref={messageRef}
+                            onLongPress={showMenuAnimation}
+                            delayLongPress={400}
+                            activeOpacity={0.8}
+                        >
+                            <MessageContent />
+                        </TouchableOpacity>
+                    </View>
                 )}
             </View>
 
