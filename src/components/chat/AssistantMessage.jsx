@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Entypo from '@expo/vector-icons/Entypo';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -17,7 +18,23 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
     const [showOptionsModal, setShowOptionsModal] = useState(false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [isAddingFavorite, setIsAddingFavorite] = useState(false);
+    const [selectedBaby, setSelectedBaby] = useState(null);
     const { before, table, after } = splitTextAndTable(text);
+
+    useEffect(() => {
+        loadSelectedBaby();
+    }, []);
+
+    const loadSelectedBaby = async () => {
+        try {
+            const babyData = await AsyncStorage.getItem('selectedBaby');
+            if (babyData) {
+                setSelectedBaby(JSON.parse(babyData));
+            }
+        } catch (error) {
+            console.error('Error loading selected baby:', error);
+        }
+    };
 
     const handleFeedback = (rating) => {
         if (rating === 'not_useful') {
@@ -63,7 +80,8 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
             setIsAddingFavorite(true);
             await FavoritesService.addToFavorites({ 
                 conversationMessageId: messageId,
-                categoryId: categoryId
+                categoryId: categoryId,
+                babyId: selectedBaby?.id // ✅ Incluir baby_id
             });
             Alert.alert('¡Guardado!', 'Mensaje agregado a favoritos exitosamente', [
                 { text: 'Ver favoritos', onPress: () => {/* Navegar a favoritos */} },
@@ -169,6 +187,7 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
                 onClose={() => setShowCategoryModal(false)}
                 onSelectCategory={handleCategorySelected}
                 messageId={messageId}
+                babyId={selectedBaby?.id} // ✅ Pasar baby_id
             />
         </>
     );

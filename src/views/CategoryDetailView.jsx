@@ -9,7 +9,7 @@ import FavoriteDetailModal from '../components/favorites/FavoriteDetailModal';
 import { useTranslation } from 'react-i18next';
 
 const CategoryDetailView = ({ route, navigation }) => {
-    const { categoryId, categoryName, categoryColor, categoryIcon } = route.params;
+    const { categoryId, categoryName, categoryColor, categoryIcon, babyId } = route.params;
     const { user } = useAuth();
     const [favorites, setFavorites] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -20,12 +20,12 @@ const CategoryDetailView = ({ route, navigation }) => {
 
     useEffect(() => {
         loadFavorites();
-    }, [categoryId]);
+    }, [categoryId, babyId]);
 
     const loadFavorites = async () => {
         try {
             setLoading(true);
-            const data = await FavoritesService.getUserFavorites(categoryId);
+            const data = await FavoritesService.getUserFavorites(categoryId, babyId);
             setFavorites(data);
         } catch (error) {
             console.error('Error loading favorites:', error);

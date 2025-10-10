@@ -2,7 +2,7 @@ import supabase from "../lib/supabase";
 
 class FavoritesService {
     // ⭐ Agregar mensaje a favoritos
-    async addToFavorites({ conversationMessageId, categoryId = null, customTitle = null, notes = null }) {
+    async addToFavorites({ conversationMessageId, categoryId = null, customTitle = null, notes = null, babyId = null }) {
         try {
             // Obtener el usuario autenticado
             const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -11,15 +11,22 @@ class FavoritesService {
                 throw new Error('Usuario no autenticado');
             }
 
-            // Si no se especifica categoría, usar la categoría por defecto
+            // Si no se especifica categoría, usar la categoría por defecto del bebé específico
             if (!categoryId) {
-                const { data: defaultCategory } = await supabase
+                let categoryQuery = supabase
                     .from('favorites_categories')
                     .select('id')
                     .eq('is_default', true)
-                    .eq('user_id', user.id) // ✅ Filtrar por usuario
-                    .single();
+                    .eq('user_id', user.id);
                 
+                // Si se especifica babyId, buscar categoría por defecto para ese bebé
+                if (babyId) {
+                    categoryQuery = categoryQuery.eq('baby_id', babyId);
+                } else {
+                    categoryQuery = categoryQuery.is('baby_id', null);
+                }
+                
+                const { data: defaultCategory } = await categoryQuery.single();
                 categoryId = defaultCategory?.id;
             }
 
@@ -30,11 +37,13 @@ class FavoritesService {
                     category_id: categoryId,
                     custom_title: customTitle,
                     notes,
-                    user_id: user.id // ✅ Agregar user_id
+                    user_id: user.id,
+                    baby_id: babyId // ✅ Agregar baby_id
                 }])
                 .select(`
                     *,
-                    category:favorites_categories(*)
+                    category:favorites_categories(*),
+                    baby:babies(name)
                 `)
                 .single();
 
@@ -71,7 +80,7 @@ class FavoritesService {
     }
 
     // 📋 Obtener todos los favoritos del usuario
-    async getUserFavorites(categoryId = null, limit = 100) {
+    async getUserFavorites(categoryId = null, babyId = null, limit = 100) {
         try {
             // Obtener el usuario autenticado
             const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -94,7 +103,8 @@ class FavoritesService {
                         baby:babies(
                             name
                         )
-                    )
+                    ),
+                    baby:babies(name)
                 `)
                 .eq('user_id', user.id) // ✅ Filtrar por usuario
                 .order('created_at', { ascending: false })
@@ -102,6 +112,11 @@ class FavoritesService {
 
             if (categoryId) {
                 query = query.eq('category_id', categoryId);
+            }
+
+            // ✅ Filtrar por baby_id si se especifica
+            if (babyId) {
+                query = query.eq('baby_id', babyId);
             }
 
             const { data, error } = await query;
@@ -114,9 +129,16 @@ class FavoritesService {
     }
 
     // 📂 Obtener favoritos agrupados por categoría
-    async getFavoritesByCategory() {
+    async getFavoritesByCategory(babyId = null) {
         try {
-            const { data, error } = await supabase
+            // Obtener el usuario autenticado
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            
+            if (userError || !user) {
+                throw new Error('Usuario no autenticado');
+            }
+
+            let query = supabase
                 .from('favorites')
                 .select(`
                     *,
@@ -127,10 +149,18 @@ class FavoritesService {
                         role,
                         created_at,
                         baby_id
-                    )
+                    ),
+                    baby:babies(name)
                 `)
+                .eq('user_id', user.id) // ✅ Filtrar por usuario
                 .order('created_at', { ascending: false });
 
+            // ✅ Filtrar por baby_id si se especifica
+            if (babyId) {
+                query = query.eq('baby_id', babyId);
+            }
+
+            const { data, error } = await query;
             if (error) throw error;
 
             // Agrupar por categoría
@@ -159,14 +189,26 @@ class FavoritesService {
     // ✅ Verificar si un mensaje es favorito
     async isFavorite(conversationMessageId) {
         try {
+            // Obtener el usuario autenticado
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            
+            if (userError || !user) {
+                throw new Error('Usuario no autenticado');
+            }
+
             const { data, error } = await supabase
                 .from('favorites')
-                .select('id, category_id')
+                .select('id, category_id, baby_id')
                 .eq('conversation_message_id', conversationMessageId)
+                .eq('user_id', user.id) // ✅ Filtrar por usuario
                 .single();
 
             if (error && error.code !== 'PGRST116') throw error;
-            return data ? { isFavorite: true, categoryId: data.category_id } : { isFavorite: false };
+            return data ? { 
+                isFavorite: true, 
+                categoryId: data.category_id,
+                babyId: data.baby_id 
+            } : { isFavorite: false };
         } catch (error) {
             console.error('Error checking favorite status:', error);
             return { isFavorite: false };
@@ -174,7 +216,7 @@ class FavoritesService {
     }
 
     // 🔄 Toggle favorito
-    async toggleFavorite(conversationMessageId, categoryId = null) {
+    async toggleFavorite(conversationMessageId, categoryId = null, babyId = null) {
         try {
             const { isFavorite } = await this.isFavorite(conversationMessageId);
             
@@ -182,7 +224,11 @@ class FavoritesService {
                 await this.removeFromFavorites(conversationMessageId);
                 return { isFavorite: false, action: 'removed' };
             } else {
-                await this.addToFavorites({ conversationMessageId, categoryId });
+                await this.addToFavorites({ 
+                    conversationMessageId, 
+                    categoryId, 
+                    babyId // ✅ Incluir baby_id
+                });
                 return { isFavorite: true, action: 'added' };
             }
         } catch (error) {
@@ -194,6 +240,13 @@ class FavoritesService {
     // ✏️ Actualizar favorito
     async updateFavorite(favoriteId, { categoryId, customTitle, notes }) {
         try {
+            // Obtener el usuario autenticado
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            
+            if (userError || !user) {
+                throw new Error('Usuario no autenticado');
+            }
+
             const updateData = {};
             if (categoryId !== undefined) updateData.category_id = categoryId;
             if (customTitle !== undefined) updateData.custom_title = customTitle;
@@ -204,9 +257,11 @@ class FavoritesService {
                 .from('favorites')
                 .update(updateData)
                 .eq('id', favoriteId)
+                .eq('user_id', user.id) // ✅ Verificar que sea del usuario
                 .select(`
                     *,
-                    category:favorites_categories(*)
+                    category:favorites_categories(*),
+                    baby:babies(name)
                 `)
                 .single();
 
@@ -219,8 +274,15 @@ class FavoritesService {
     }
 
     // 🔍 Buscar en favoritos
-    async searchFavorites(searchTerm, categoryId = null) {
+    async searchFavorites(searchTerm, categoryId = null, babyId = null) {
         try {
+            // Obtener el usuario autenticado
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            
+            if (userError || !user) {
+                throw new Error('Usuario no autenticado');
+            }
+
             let query = supabase
                 .from('favorites')
                 .select(`
@@ -232,13 +294,20 @@ class FavoritesService {
                         role,
                         created_at,
                         baby_id
-                    )
+                    ),
+                    baby:babies(name)
                 `)
+                .eq('user_id', user.id) // ✅ Filtrar por usuario
                 .or(`custom_title.ilike.%${searchTerm}%,notes.ilike.%${searchTerm}%,conversation.content.ilike.%${searchTerm}%`)
                 .order('created_at', { ascending: false });
 
             if (categoryId) {
                 query = query.eq('category_id', categoryId);
+            }
+
+            // ✅ Filtrar por baby_id si se especifica
+            if (babyId) {
+                query = query.eq('baby_id', babyId);
             }
 
             const { data, error } = await query;
@@ -251,17 +320,32 @@ class FavoritesService {
     }
 
     // 📊 Obtener estadísticas de favoritos
-    async getFavoritesStats() {
+    async getFavoritesStats(babyId = null) {
         try {
-            const { data, error } = await supabase
+            // Obtener el usuario autenticado
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            
+            if (userError || !user) {
+                throw new Error('Usuario no autenticado');
+            }
+
+            let query = supabase
                 .from('favorites')
                 .select(`
                     id,
                     category_id,
                     created_at,
+                    baby_id,
                     category:favorites_categories(name, color, icon)
-                `);
+                `)
+                .eq('user_id', user.id); // ✅ Filtrar por usuario
 
+            // ✅ Filtrar por baby_id si se especifica
+            if (babyId) {
+                query = query.eq('baby_id', babyId);
+            }
+
+            const { data, error } = await query;
             if (error) throw error;
 
             const stats = {
@@ -303,17 +387,32 @@ class FavoritesService {
     }
 
     // 📤 Exportar favoritos (útil para backup)
-    async exportFavorites() {
+    async exportFavorites(babyId = null) {
         try {
-            const { data, error } = await supabase
+            // Obtener el usuario autenticado
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            
+            if (userError || !user) {
+                throw new Error('Usuario no autenticado');
+            }
+
+            let query = supabase
                 .from('favorites')
                 .select(`
                     *,
                     category:favorites_categories(*),
-                    conversation:conversations(*)
+                    conversation:conversations(*),
+                    baby:babies(name)
                 `)
+                .eq('user_id', user.id) // ✅ Filtrar por usuario
                 .order('created_at', { ascending: false });
 
+            // ✅ Filtrar por baby_id si se especifica
+            if (babyId) {
+                query = query.eq('baby_id', babyId);
+            }
+
+            const { data, error } = await query;
             if (error) throw error;
             return data;
         } catch (error) {

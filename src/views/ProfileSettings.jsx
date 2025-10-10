@@ -1,13 +1,50 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ActivityIndicator, Alert, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import ChatSideMenu from '../components/chat/ChatSideMenu';
+import SideMenu from '../components/SideMenu';
 import { getProfile, updateProfile } from '../services/ProfilesService';
+import { getBabies } from '../services/BabiesService';
 import { useAuth } from '../contexts/AuthContext';
+
+const formatBabyAge = (birthdate) => {
+    if (!birthdate) return '';
+
+    const parsedDate = new Date(birthdate);
+    if (Number.isNaN(parsedDate.getTime())) {
+        return '';
+    }
+
+    const now = new Date();
+    let years = now.getFullYear() - parsedDate.getFullYear();
+    let months = now.getMonth() - parsedDate.getMonth();
+
+    if (now.getDate() < parsedDate.getDate()) {
+        months -= 1;
+    }
+
+    if (months < 0) {
+        years -= 1;
+        months += 12;
+    }
+
+    years = Math.max(years, 0);
+    months = Math.max(months, 0);
+
+    if (years > 0 && months > 0) {
+        return `${years} año${years !== 1 ? 's' : ''} ${months} mes${months !== 1 ? 'es' : ''}`;
+    } else if (years > 0) {
+        return `${years} año${years !== 1 ? 's' : ''}`;
+    } else if (months > 0) {
+        return `${months} mes${months !== 1 ? 'es' : ''}`;
+    } else {
+        return 'Recién nacido';
+    }
+};
 
 const ProfileSettings = () => {
     const navigation = useNavigation();
@@ -17,9 +54,53 @@ const ProfileSettings = () => {
     const [saving, setSaving] = useState(false);
     const [profile, setProfile] = useState(null);
     const [isMenuVisible, setIsMenuVisible] = useState(false);
+    const [selectedBaby, setSelectedBaby] = useState(null);
 
     const [fullName, setFullName] = useState('');
     const [phone, setPhone] = useState('');
+
+    // Calcular edad del bebé seleccionado
+    const selectedBabyAge = selectedBaby?.birthdate ? formatBabyAge(selectedBaby.birthdate) : '';
+
+    // Cargar bebé seleccionado cuando se enfoca la pantalla
+    useFocusEffect(
+        React.useCallback(() => {
+            loadSelectedBaby();
+        }, [])
+    );
+
+    const loadSelectedBaby = async () => {
+        try {
+            // Primero intentar con la key específica del usuario (usado en Chat)
+            let babyData = await AsyncStorage.getItem(`selectedBaby_${user?.id}`);
+            
+            if (babyData) {
+                // Es un ID, necesitamos buscar el bebé completo
+                try {
+                    const { data: babies } = await getBabies(user.id);
+                    // Convertir babyData a número para comparar correctamente
+                    const babyId = parseInt(babyData, 10);
+                    const selectedBabyData = babies.find(baby => baby.id === babyId);
+                    if (selectedBabyData) {
+                        setSelectedBaby(selectedBabyData);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error fetching baby by ID:', error);
+                }
+            }
+            
+            // Si no se encontró con la key específica, intentar con la key general
+            babyData = await AsyncStorage.getItem('selectedBaby');
+            
+            if (babyData) {
+                const parsedBaby = JSON.parse(babyData);
+                setSelectedBaby(parsedBaby);
+            }
+        } catch (error) {
+            console.error('Error loading selected baby in ProfileSettings:', error);
+        }
+    };
 
     const canSave = useMemo(() => {
         return !!user?.id && !!fullName.trim();
@@ -74,16 +155,47 @@ const ProfileSettings = () => {
         setIsMenuVisible(false);
     };
 
-    const handleNavigateToChat = () => {
+    const handleNavigateToChat = async () => {
+        if (selectedBaby) {
+            try {
+                await AsyncStorage.setItem(`selectedBaby_${user.id}`, selectedBaby.id.toString());
+                await AsyncStorage.setItem('selectedBaby', JSON.stringify(selectedBaby));
+            } catch (error) {
+                console.error('Error al guardar bebé seleccionado:', error);
+            }
+        }
         navigation.navigate('Chat');
     };
 
-    const handleNavigateToFavorites = () => {
+    const handleNavigateToFavorites = async () => {
+        if (selectedBaby) {
+            try {
+                await AsyncStorage.setItem(`selectedBaby_${user.id}`, selectedBaby.id.toString());
+                await AsyncStorage.setItem('selectedBaby', JSON.stringify(selectedBaby));
+            } catch (error) {
+                console.error('Error al guardar bebé seleccionado:', error);
+            }
+        }
         navigation.navigate('Favorites');
     };
 
-    const handleNavigateToProfile = () => {
-        navigation.navigate('BabyDetail');
+    const handleNavigateToProfile = async () => {
+        if (selectedBaby) {
+            try {
+                await AsyncStorage.setItem(`selectedBaby_${user.id}`, selectedBaby.id.toString());
+                await AsyncStorage.setItem('selectedBaby', JSON.stringify(selectedBaby));
+                
+                // Navegar pasando el bebé como parámetro
+                navigation.navigate('BabyDetail', { baby: selectedBaby });
+            } catch (error) {
+                console.error('Error al guardar bebé seleccionado:', error);
+                // Navegar sin parámetros en caso de error
+                navigation.navigate('BabyDetail');
+            }
+        } else {
+            // Si no hay bebé seleccionado, navegar sin parámetros
+            navigation.navigate('BabyDetail');
+        }
     };
 
     const handleLogout = async () => {
@@ -151,17 +263,17 @@ const ProfileSettings = () => {
             </ScrollView>
 
             {/* Side Menu */}
-            <ChatSideMenu
+            <SideMenu
                 visible={isMenuVisible}
                 onClose={handleCloseMenu}
-                onChangeBaby={() => {}} // No aplica aquí
+                onChangeBaby={() => navigation.navigate('BabyList')}
                 onNavigateToChat={handleNavigateToChat}
                 onNavigateToFavorites={handleNavigateToFavorites}
                 onNavigateToProfile={handleNavigateToProfile}
-                onNavigateToAccount={() => {}} // Ya estamos aquí
+                onNavigateToAccount={() => {}} 
                 onLogout={handleLogout}
-                babyName="Tu bebé"
-                babyAgeLabel=""
+                babyName={selectedBaby?.name || "Sin seleccionar"}
+                babyAgeLabel={selectedBabyAge}
             />
         </SafeAreaView>
     );

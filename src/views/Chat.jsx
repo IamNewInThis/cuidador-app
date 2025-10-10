@@ -14,7 +14,7 @@ import UserMessage from '../components/chat/UserMessage';
 import LoadingMessage from '../components/chat/LoadingMessage';
 import ChatHeader from '../components/chat/ChatHeader';
 import BabySelectionModal from '../components/chat/BabySelectionModal';
-import ChatSideMenu from '../components/chat/ChatSideMenu';
+import SideMenu from '../components/SideMenu';
 
 const formatBabyAge = (birthdate) => {
     if (!birthdate) return '';
@@ -333,8 +333,20 @@ const Chat = () => {
         }, 220);
     };
 
-    const handleNavigateToFavorites = () => {
-        navigation.navigate('Favorites');
+    const handleNavigateToFavorites = async () => {
+        try {
+            // Asegurar que el bebé seleccionado esté guardado en AsyncStorage
+            if (selectedBaby && user) {
+                // Guardar con ambas keys para compatibilidad
+                await AsyncStorage.setItem(`selectedBaby_${user.id}`, selectedBaby.id);
+                await AsyncStorage.setItem('selectedBaby', JSON.stringify(selectedBaby));
+                console.log('Baby saved to AsyncStorage before navigating to Favorites:', selectedBaby);
+            }
+            navigation.navigate('Favorites');
+        } catch (error) {
+            console.error('Error saving baby before navigation:', error);
+            navigation.navigate('Favorites');
+        }
     };
 
     const handleNavigateToProfile = () => {
@@ -484,7 +496,7 @@ const Chat = () => {
                 </View>
             </KeyboardAvoidingView>
 
-            <ChatSideMenu
+            <SideMenu
                 visible={isMenuVisible}
                 onClose={handleCloseMenu}
                 onChangeBaby={handleBabyPressFromMenu}

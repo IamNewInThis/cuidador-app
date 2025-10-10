@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import FavoritesCategoriesService from '../../services/FavoritesCategoriesService';
 
-const SelectCategoryModal = ({ visible, onClose, onSelectCategory, messageId }) => {
+const SelectCategoryModal = ({ visible, onClose, onSelectCategory, messageId, babyId }) => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -21,12 +21,13 @@ const SelectCategoryModal = ({ visible, onClose, onSelectCategory, messageId }) 
         if (visible) {
             loadCategories();
         }
-    }, [visible]);
+    }, [visible, babyId]);
 
     const loadCategories = async () => {
         try {
             setLoading(true);
-            const data = await FavoritesCategoriesService.getUserCategories();
+            setCategories([]); // Limpiar categorías mientras se cargan las nuevas
+            const data = await FavoritesCategoriesService.getUserCategories(babyId);
             setCategories(data);
             // Seleccionar la categoría por defecto automáticamente
             const defaultCategory = data.find(cat => cat.is_default);
@@ -156,7 +157,10 @@ const SelectCategoryModal = ({ visible, onClose, onSelectCategory, messageId }) 
                         <View className="flex-1 items-center justify-center">
                             <Ionicons name="folder-outline" size={64} color="#9CA3AF" />
                             <Text className="text-gray-500 text-center mt-4">
-                                No tienes categorías creadas
+                                No hay categorías disponibles
+                            </Text>
+                            <Text className="text-gray-400 text-center text-sm mt-2">
+                                Crea una nueva categoría para organizar tus favoritos
                             </Text>
                         </View>
                     ) : (

@@ -2,12 +2,50 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import FavoritesCategoriesService from '../services/FavoritesCategoriesService';
+import { getBabies } from '../services/BabiesService';
 import CreateCategoryModal from '../components/favorites/CreateCategoryModal';
 import CategoryCard from '../components/favorites/CategoryCard';
-import ChatSideMenu from '../components/chat/ChatSideMenu';
+import SideMenu from '../components/SideMenu';
 import { useTranslation } from 'react-i18next';
+
+const formatBabyAge = (birthdate) => {
+    if (!birthdate) return '';
+
+    const parsedDate = new Date(birthdate);
+    if (Number.isNaN(parsedDate.getTime())) {
+        return '';
+    }
+
+    const now = new Date();
+    let years = now.getFullYear() - parsedDate.getFullYear();
+    let months = now.getMonth() - parsedDate.getMonth();
+
+    if (now.getDate() < parsedDate.getDate()) {
+        months -= 1;
+    }
+
+    if (months < 0) {
+        years -= 1;
+        months += 12;
+    }
+
+    years = Math.max(years, 0);
+    months = Math.max(months, 0);
+
+    if (years > 0 && months > 0) {
+        return `${years} año${years !== 1 ? 's' : ''} ${months} mes${months !== 1 ? 'es' : ''}`;
+    } else if (years > 0) {
+        return `${years} año${years !== 1 ? 's' : ''}`;
+    } else if (months > 0) {
+        return `${months} mes${months !== 1 ? 'es' : ''}`;
+    } else {
+        return 'Recién nacido';
+    }
+};
 
 const FavoritesView = ({ navigation }) => {
     const { user, signOut } = useAuth();
@@ -16,16 +54,70 @@ const FavoritesView = ({ navigation }) => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [isMenuVisible, setIsMenuVisible] = useState(false);
+    const [selectedBaby, setSelectedBaby] = useState(null);
     const { t } = useTranslation();
+
+    // Calcular edad del bebé seleccionado
+    const selectedBabyAge = selectedBaby?.birthdate ? formatBabyAge(selectedBaby.birthdate) : '';
+
+    // ✅ Obtener bebé seleccionado al enfocar la pantalla
+    useFocusEffect(
+        React.useCallback(() => {
+            loadSelectedBaby();
+        }, [])
+    );
 
     useEffect(() => {
         loadCategories();
-    }, []);
+    }, [selectedBaby]);
+
+    const loadSelectedBaby = async () => {
+        try {
+            // Primero intentar con la key específica del usuario (usado en Chat)
+            let babyData = await AsyncStorage.getItem(`selectedBaby_${user?.id}`);
+            console.log('Baby data from user-specific key:', babyData);
+            
+            if (babyData) {
+                // Es un ID, necesitamos buscar el bebé completo
+                try {
+                    const { data: babies } = await getBabies(user.id);
+                    const selectedBabyData = babies.find(baby => baby.id === babyData);
+                    if (selectedBabyData) {
+                        console.log('Found complete baby data:', selectedBabyData);
+                        setSelectedBaby(selectedBabyData);
+                        // Guardar también en la key general para consistencia
+                        await AsyncStorage.setItem('selectedBaby', JSON.stringify(selectedBabyData));
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error fetching baby by ID:', error);
+                }
+            }
+            
+            // Si no se encontró con la key específica, intentar con la key general
+            babyData = await AsyncStorage.getItem('selectedBaby');
+            console.log('Baby data from general key:', babyData);
+            
+            if (babyData) {
+                const parsedBaby = JSON.parse(babyData);
+                console.log('Parsed baby data:', parsedBaby);
+                setSelectedBaby(parsedBaby);
+            } else {
+                console.log('No baby selected, loading global categories');
+                // Si no hay bebé seleccionado, cargar categorías globales
+                loadCategories();
+            }
+        } catch (error) {
+            console.error('Error loading selected baby:', error);
+            // En caso de error, intentar cargar categorías sin bebé específico
+            loadCategories();
+        }
+    };
 
     const loadCategories = async () => {
         try {
             setLoading(true);
-            const data = await FavoritesCategoriesService.getCategoriesWithStats();
+            const data = await FavoritesCategoriesService.getCategoriesWithStats(selectedBaby?.id);
             setCategories(data);
         } catch (error) {
             console.error('Error loading categories:', error);
@@ -43,7 +135,12 @@ const FavoritesView = ({ navigation }) => {
 
     const handleCreateCategory = async (categoryData) => {
         try {
-            await FavoritesCategoriesService.createCategory(categoryData);
+            console.log('Creating category for baby:', selectedBaby?.name, 'ID:', selectedBaby?.id);
+            
+            await FavoritesCategoriesService.createCategory({
+                ...categoryData,
+                babyId: selectedBaby?.id // ✅ Incluir baby_id
+            });
             setShowCreateModal(false);
             loadCategories(); // Recargar categorías
         } catch (error) {
@@ -57,7 +154,8 @@ const FavoritesView = ({ navigation }) => {
             categoryId: category.id, 
             categoryName: category.name,
             categoryColor: category.color,
-            categoryIcon: category.icon
+            categoryIcon: category.icon,
+            babyId: selectedBaby?.id // ✅ Incluir baby_id
         });
     };
 
@@ -79,11 +177,27 @@ const FavoritesView = ({ navigation }) => {
     };
 
     const handleNavigateToProfile = () => {
-        navigation.navigate('BabyDetail');
+        if (selectedBaby) {
+            navigation.navigate('BabyDetail', { baby: selectedBaby });
+        } else {
+            // Si no hay bebé seleccionado, ir a la lista de bebés
+            navigation.navigate('Babies');
+        }
     };
 
-    const handleNavigateToAccount = () => {
-        navigation.navigate('ProfileSettings');
+    const handleNavigateToAccount = async () => {
+        try {
+            // Asegurar que el bebé seleccionado esté guardado en AsyncStorage
+            if (selectedBaby && user) {
+                await AsyncStorage.setItem(`selectedBaby_${user.id}`, selectedBaby.id);
+                await AsyncStorage.setItem('selectedBaby', JSON.stringify(selectedBaby));
+                console.log('Baby saved before navigating to ProfileSettings:', selectedBaby.name);
+            }
+            navigation.navigate('ProfileSettings');
+        } catch (error) {
+            console.error('Error saving baby before navigation to ProfileSettings:', error);
+            navigation.navigate('ProfileSettings');
+        }
     };
 
     const handleLogout = async () => {
@@ -187,17 +301,17 @@ const FavoritesView = ({ navigation }) => {
             />
 
             {/* Side Menu */}
-            <ChatSideMenu
+            <SideMenu
                 visible={isMenuVisible}
                 onClose={handleCloseMenu}
-                onChangeBaby={() => {}} // No aplica en favorites
+                onChangeBaby={() => navigation.navigate('BabyList')}
                 onNavigateToChat={handleNavigateToChat}
                 onNavigateToFavorites={() => {}} // Ya estamos aquí
                 onNavigateToProfile={handleNavigateToProfile}
                 onNavigateToAccount={handleNavigateToAccount}
                 onLogout={handleLogout}
-                babyName="Tu bebé"
-                babyAgeLabel=""
+                babyName={selectedBaby?.name || "Sin seleccionar"}
+                babyAgeLabel={selectedBabyAge}
             />
         </SafeAreaView>
     );

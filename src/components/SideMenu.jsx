@@ -41,7 +41,7 @@ const menuOptions = [
   },
 ];
 
-const ChatSideMenu = ({
+const SideMenu = ({
   visible,
   onClose,
   onChangeBaby,
@@ -259,4 +259,4 @@ const ChatSideMenu = ({
   );
 };
 
-export default ChatSideMenu;
+export default SideMenu;

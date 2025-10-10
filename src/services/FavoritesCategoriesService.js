@@ -2,7 +2,7 @@ import supabase from "../lib/supabase";
 
 class FavoritesCategoriesService {
     // 📂 Crear nueva categoría
-    async createCategory({ name, description = null, icon = '⭐', color = '#3B82F6' }) {
+    async createCategory({ name, description = null, icon = '⭐', color = '#3B82F6', babyId = null }) {
         try {
             // Obtener el usuario autenticado
             const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -11,20 +11,27 @@ class FavoritesCategoriesService {
                 throw new Error('Usuario no autenticado');
             }
 
+            const categoryData = {
+                name,
+                description,
+                icon,
+                color,
+                is_default: false,
+                user_id: user.id,
+                baby_id: babyId // ✅ Agregar baby_id
+            };
+
             const { data, error } = await supabase
                 .from('favorites_categories')
-                .insert([{
-                    name,
-                    description,
-                    icon,
-                    color,
-                    is_default: false,
-                    user_id: user.id // ✅ Agregar user_id
-                }])
+                .insert([categoryData])
                 .select('*')
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase error:', error);
+                throw error;
+            }
+
             return data;
         } catch (error) {
             console.error('Error creating category:', error);
@@ -32,8 +39,8 @@ class FavoritesCategoriesService {
         }
     }
 
-    // 📋 Obtener todas las categorías del usuario
-    async getUserCategories() {
+    // 📋 Obtener todas las categorías del usuario para un bebé específico
+    async getUserCategories(babyId = null) {
         try {
             // Obtener el usuario autenticado
             const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -42,13 +49,23 @@ class FavoritesCategoriesService {
                 throw new Error('Usuario no autenticado');
             }
 
-            const { data, error } = await supabase
+            let query = supabase
                 .from('favorites_categories')
                 .select(`
                     *,
                     favorites_count:favorites(count)
                 `)
-                .eq('user_id', user.id) // ✅ Filtrar por user_id
+                .eq('user_id', user.id);
+
+            // Filtrar por baby_id si se proporciona
+            if (babyId) {
+                query = query.eq('baby_id', babyId);
+            } else {
+                // Si no se proporciona baby_id, obtener categorías sin baby_id (globales)
+                query = query.is('baby_id', null);
+            }
+
+            const { data, error } = await query
                 .order('is_default', { ascending: false })
                 .order('created_at', { ascending: true });
 
@@ -155,7 +172,7 @@ class FavoritesCategoriesService {
     }
 
     // 📊 Obtener estadísticas de categorías
-    async getCategoriesWithStats() {
+    async getCategoriesWithStats(babyId = null) {
         try {
             // Obtener el usuario autenticado
             const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -164,23 +181,51 @@ class FavoritesCategoriesService {
                 throw new Error('Usuario no autenticado');
             }
 
-            const { data, error } = await supabase
+            // Obtener categorías del usuario
+            let categoriesQuery = supabase
                 .from('favorites_categories')
-                .select(`
-                    *,
-                    favorites_count:favorites(count)
-                `)
-                .eq('user_id', user.id) // ✅ Filtrar por usuario
+                .select('*')
+                .eq('user_id', user.id);
+
+            // ✅ Filtrar por baby_id si se especifica
+            if (babyId) {
+                categoriesQuery = categoriesQuery.eq('baby_id', babyId);
+            } else {
+                categoriesQuery = categoriesQuery.is('baby_id', null);
+            }
+
+            const { data: categories, error: categoriesError } = await categoriesQuery
                 .order('is_default', { ascending: false })
                 .order('name', { ascending: true });
 
-            if (error) throw error;
-            
-            // Procesar para agregar conteo
-            return data.map(category => ({
-                ...category,
-                favorites_count: category.favorites_count[0]?.count || 0
-            }));
+            if (categoriesError) throw categoriesError;
+
+            // Obtener conteo de favoritos por categoría
+            const categoriesWithStats = await Promise.all(
+                categories.map(async (category) => {
+                    let favoritesQuery = supabase
+                        .from('favorites')
+                        .select('id', { count: 'exact' })
+                        .eq('category_id', category.id)
+                        .eq('user_id', user.id);
+
+                    // ✅ Filtrar favoritos por baby_id si se especifica
+                    if (babyId) {
+                        favoritesQuery = favoritesQuery.eq('baby_id', babyId);
+                    }
+
+                    const { count, error: countError } = await favoritesQuery;
+                    
+                    if (countError) {
+                        console.error('Error counting favorites for category:', category.id, countError);
+                        return { ...category, favorites_count: 0 };
+                    }
+
+                    return { ...category, favorites_count: count || 0 };
+                })
+            );
+
+            return categoriesWithStats;
         } catch (error) {
             console.error('Error fetching categories with stats:', error);
             throw error;

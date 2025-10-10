@@ -2,12 +2,48 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import ChatSideMenu from '../components/chat/ChatSideMenu';
+import SideMenu from '../components/SideMenu';
 import { updateBaby, deleteBaby } from '../services/BabiesService';
 import { useAuth } from '../contexts/AuthContext';
+
+const formatBabyAge = (birthdate) => {
+    if (!birthdate) return '';
+
+    const parsedDate = new Date(birthdate);
+    if (Number.isNaN(parsedDate.getTime())) {
+        return '';
+    }
+
+    const now = new Date();
+    let years = now.getFullYear() - parsedDate.getFullYear();
+    let months = now.getMonth() - parsedDate.getMonth();
+
+    if (now.getDate() < parsedDate.getDate()) {
+        months -= 1;
+    }
+
+    if (months < 0) {
+        years -= 1;
+        months += 12;
+    }
+
+    years = Math.max(years, 0);
+    months = Math.max(months, 0);
+
+    if (years > 0 && months > 0) {
+        return `${years} año${years !== 1 ? 's' : ''} ${months} mes${months !== 1 ? 'es' : ''}`;
+    } else if (years > 0) {
+        return `${years} año${years !== 1 ? 's' : ''}`;
+    } else if (months > 0) {
+        return `${months} mes${months !== 1 ? 'es' : ''}`;
+    } else {
+        return 'Recién nacido';
+    }
+};
 
 const BabyDetail = () => {
     const route = useRoute();
@@ -35,9 +71,28 @@ const BabyDetail = () => {
     const [height, setHeight] = useState(babyParam.height ? String(babyParam.height) : '');
     const [saving, setSaving] = useState(false);
 
+    // Calcular edad del bebé
+    const babyAge = babyParam.birthdate ? formatBabyAge(babyParam.birthdate) : '';
+
     useEffect(() => {
         navigation.setOptions?.({ headerShown: false });
     }, [navigation]);
+
+    // Guardar el bebé en AsyncStorage para consistencia
+    useEffect(() => {
+        if (babyParam && babyParam.id && user) {
+            const saveBabyToStorage = async () => {
+                try {
+                    await AsyncStorage.setItem(`selectedBaby_${user.id}`, babyParam.id);
+                    await AsyncStorage.setItem('selectedBaby', JSON.stringify(babyParam));
+                    console.log('Baby saved to AsyncStorage from BabyDetail:', babyParam.name);
+                } catch (error) {
+                    console.error('Error saving baby to AsyncStorage:', error);
+                }
+            };
+            saveBabyToStorage();
+        }
+    }, [babyParam, user]);
 
     const canSave = useMemo(() => {
         return !!name?.trim();
@@ -212,17 +267,17 @@ const BabyDetail = () => {
             </ScrollView>
 
             {/* Side Menu */}
-            <ChatSideMenu
+            <SideMenu
                 visible={isMenuVisible}
                 onClose={handleCloseMenu}
-                onChangeBaby={() => {}} // No aplica aquí
+                onChangeBaby={() => navigation.navigate('BabyList')}
                 onNavigateToChat={handleNavigateToChat}
                 onNavigateToFavorites={handleNavigateToFavorites}
-                onNavigateToProfile={() => {}} // Ya estamos aquí
+                onNavigateToProfile={() => {}} 
                 onNavigateToAccount={handleNavigateToAccount}
                 onLogout={handleLogout}
-                babyName={name || 'Tu bebé'}
-                babyAgeLabel=""
+                babyName={name || babyParam.name || 'Tu bebé'}
+                babyAgeLabel={babyAge}
             />
         </SafeAreaView>
     );
