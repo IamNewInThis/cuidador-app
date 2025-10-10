@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const FavoriteMessageCard = ({ favorite, onPress, categoryColor, style }) => {
+const FavoriteMessageCard = ({ favorite, onPress, onOptions, categoryColor, style }) => {
     const { conversation, custom_title, notes, created_at } = favorite;
     const messageContent = conversation?.content || '';
     const isUserMessage = conversation?.role === 'user';
@@ -26,9 +26,14 @@ const FavoriteMessageCard = ({ favorite, onPress, categoryColor, style }) => {
         return date.toLocaleDateString();
     };
 
+    const handleOptionsPress = () => {
+        onOptions && onOptions(favorite);
+    };
+
     return (
         <TouchableOpacity
             onPress={onPress}
+            onLongPress={handleOptionsPress}
             activeOpacity={0.8}
             style={style}
             className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
@@ -60,47 +65,49 @@ const FavoriteMessageCard = ({ favorite, onPress, categoryColor, style }) => {
                     </View>
                 </View>
                 
-                <Ionicons name="heart" size={16} color={categoryColor} />
+                <TouchableOpacity
+                    onPress={handleOptionsPress}
+                    className="p-1"
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                    <Ionicons name="ellipsis-horizontal" size={16} color="#9CA3AF" />
+                </TouchableOpacity>
             </View>
 
-            {/* Content Preview */}
-            <View className="flex-1 mb-3">
-                <Text className="text-gray-700 text-sm leading-5" numberOfLines={4}>
-                    {truncatedContent}
-                </Text>
-            </View>
+                {/* Content Preview */}
+                <View className="flex-1 mb-3">
+                    <Text className="text-gray-700 text-sm leading-5" numberOfLines={4}>
+                        {truncatedContent}
+                    </Text>
+                </View>
 
-            {/* Notes Preview */}
-            {notes && (
-                <View className="mb-3">
-                    <View className="bg-gray-50 rounded-lg p-2">
-                        <Text className="text-gray-600 text-xs" numberOfLines={2}>
-                            📝 {notes}
-                        </Text>
+                {/* Notes Preview */}
+                {notes && (
+                    <View className="mb-3">
+                        <View className="bg-gray-50 rounded-lg p-2">
+                            <Text className="text-gray-600 text-xs" numberOfLines={2}>
+                                📝 {notes}
+                            </Text>
+                        </View>
+                    </View>
+                )}
+
+                {/* Footer */}
+                <View className="flex-row items-center justify-between">
+                    <Text className="text-xs text-gray-400">
+                        {formatDate(created_at)}
+                    </Text>
+                    
+                    <View className="flex-row items-center">
+                        <Ionicons name="heart" size={16} color={categoryColor} />
+                        {messageContent.length > 120 && (
+                            <View className="bg-gray-100 rounded-md px-2 py-1 ml-2">
+                                <Text className="text-xs text-gray-600 font-medium">Ver más</Text>
+                            </View>
+                        )}
                     </View>
                 </View>
-            )}
-
-            {/* Footer */}
-            <View className="flex-row items-center justify-between">
-                <Text className="text-xs text-gray-400">
-                    {formatDate(created_at)}
-                </Text>
-                
-                <View className="flex-row items-center">
-                    {messageContent.length > 120 && (
-                        <View className="bg-gray-100 rounded-md px-2 py-1">
-                            <Text className="text-xs text-gray-600 font-medium">Ver más</Text>
-                        </View>
-                    )}
-                </View>
-            </View>
-
-            {/* Visual indicator for interaction */}
-            <View className="absolute top-3 right-3">
-                <Ionicons name="chevron-forward" size={12} color="#D1D5DB" />
-            </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
     );
 };
 

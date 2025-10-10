@@ -55,7 +55,7 @@ class FavoritesService {
         }
     }
 
-    // 🗑️ Quitar de favoritos
+    // 🗑️ Quitar de favoritos por ID de conversación
     async removeFromFavorites(conversationMessageId) {
         try {
             // Obtener el usuario autenticado
@@ -75,6 +75,30 @@ class FavoritesService {
             return true;
         } catch (error) {
             console.error('Error removing from favorites:', error);
+            throw error;
+        }
+    }
+
+    // Eliminar favorito por ID del favorito
+    async deleteFavoriteById(favoriteId) {
+        try {
+            // Obtener el usuario autenticado
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            
+            if (userError || !user) {
+                throw new Error('Usuario no autenticado');
+            }
+
+            const { error } = await supabase
+                .from('favorites')
+                .delete()
+                .eq('id', favoriteId)
+                .eq('user_id', user.id); // ✅ Verificar que sea del usuario
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Error deleting favorite by ID:', error);
             throw error;
         }
     }

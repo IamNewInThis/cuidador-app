@@ -5,10 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 const CategoryCard = ({ category, onPress, onEdit, style }) => {
     const { name, description, icon, color, favorites_count, is_default } = category;
 
+    const handleOptionsPress = () => {
+        onEdit();
+    };
+
     return (
         <TouchableOpacity
             onPress={onPress}
-            onLongPress={is_default ? null : onEdit}
+            onLongPress={is_default ? null : handleOptionsPress}
             activeOpacity={0.8}
             style={style}
             className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
@@ -24,7 +28,7 @@ const CategoryCard = ({ category, onPress, onEdit, style }) => {
                 
                 {!is_default && (
                     <TouchableOpacity
-                        onPress={onEdit}
+                        onPress={handleOptionsPress}
                         className="p-1"
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >

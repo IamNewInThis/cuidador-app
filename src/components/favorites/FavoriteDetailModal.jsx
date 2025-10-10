@@ -60,7 +60,7 @@ const FavoriteDetailModal = ({ visible, favorite, onClose, onRemove, categoryCol
                 { 
                     text: 'Eliminar', 
                     style: 'destructive',
-                    onPress: () => onRemove(favorite.id)
+                    onPress: () => onRemove && onRemove(favorite.id)
                 }
             ]
         );

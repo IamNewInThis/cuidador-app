@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import FavoritesService from '../services/FavoritesService';
 import FavoriteMessageCard from '../components/favorites/FavoriteMessageCard';
 import FavoriteDetailModal from '../components/favorites/FavoriteDetailModal';
+import FavoriteDetailOptionsModal from '../components/favorites/FavoriteDetailOptionsModal';
 import { useTranslation } from 'react-i18next';
 
 const CategoryDetailView = ({ route, navigation }) => {
@@ -16,7 +17,16 @@ const CategoryDetailView = ({ route, navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [selectedFavorite, setSelectedFavorite] = useState(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [showOptionsModal, setShowOptionsModal] = useState(false);
     const { t } = useTranslation();
+
+    // Construir objeto de categoría desde los parámetros de la ruta
+    const category = {
+        id: categoryId,
+        name: categoryName,
+        color: categoryColor,
+        icon: categoryIcon
+    };
 
     useEffect(() => {
         loadFavorites();
@@ -46,12 +56,24 @@ const CategoryDetailView = ({ route, navigation }) => {
         setShowDetailModal(true);
     };
 
+    const handleFavoriteOptions = (favorite) => {
+        setSelectedFavorite(favorite);
+        setShowOptionsModal(true);
+    };
+
+    const handleUpdateFavoriteCategory = async (newCategoryId) => {
+        // Aquí implementarías la lógica para actualizar la categoría del favorito
+        // Por ahora solo recargamos la lista
+        loadFavorites();
+    };
+
     const handleRemoveFavorite = async (favoriteId) => {
         try {
-            await FavoritesService.removeFromFavorites(selectedFavorite.conversation_message_id);
+            await FavoritesService.deleteFavoriteById(favoriteId);
             setFavorites(favorites.filter(f => f.id !== favoriteId));
             setShowDetailModal(false);
             setSelectedFavorite(null);
+            Alert.alert('Éxito', 'Favorito eliminado correctamente');
         } catch (error) {
             console.error('Error removing favorite:', error);
             Alert.alert('Error', 'No se pudo eliminar el favorito');
@@ -140,6 +162,7 @@ const CategoryDetailView = ({ route, navigation }) => {
                                 key={favorite.id}
                                 favorite={favorite}
                                 onPress={() => handleFavoritePress(favorite)}
+                                onOptions={handleFavoriteOptions}
                                 categoryColor={categoryColor}
                                 style={{ 
                                     width: '48%', 
@@ -162,6 +185,23 @@ const CategoryDetailView = ({ route, navigation }) => {
                 }}
                 onRemove={handleRemoveFavorite}
                 categoryColor={categoryColor}
+            />
+
+            {/* Options Modal */}
+            <FavoriteDetailOptionsModal
+                visible={showOptionsModal}
+                favorite={selectedFavorite}
+                onClose={() => {
+                    setShowOptionsModal(false);
+                    setSelectedFavorite(null);
+                }}
+                onUpdate={handleUpdateFavoriteCategory}
+                onRemove={handleRemoveFavorite}
+                onDelete={handleRemoveFavorite}
+                onCategoryChange={handleUpdateFavoriteCategory}
+                currentCategoryId={categoryId}
+                babyId={babyId}
+                category={category}
             />
         </SafeAreaView>
     );

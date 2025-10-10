@@ -8,6 +8,8 @@ import { useAuth } from '../contexts/AuthContext';
 import FavoritesCategoriesService from '../services/FavoritesCategoriesService';
 import { getBabies } from '../services/BabiesService';
 import CreateCategoryModal from '../components/favorites/CreateCategoryModal';
+import EditCategoryModal from '../components/favorites/EditCategoryModal';
+import EditCategoryFormModal from '../components/favorites/EditCategoryFormModal';
 import CategoryCard from '../components/favorites/CategoryCard';
 import SideMenu from '../components/SideMenu';
 import { useTranslation } from 'react-i18next';
@@ -52,6 +54,9 @@ const FavoritesView = ({ navigation }) => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showEditFormModal, setShowEditFormModal] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState(null);
     const [refreshing, setRefreshing] = useState(false);
     const [isMenuVisible, setIsMenuVisible] = useState(false);
     const [selectedBaby, setSelectedBaby] = useState(null);
@@ -149,6 +154,46 @@ const FavoritesView = ({ navigation }) => {
         }
     };
 
+    const handleEditCategory = (category) => {
+        setSelectedCategory(category);
+        setShowEditModal(true);
+    };
+
+    const handleEditCategoryForm = () => {
+        setShowEditModal(false);
+        setShowEditFormModal(true);
+    };
+
+    const handleUpdateCategory = async (categoryData) => {
+        try {
+            await FavoritesCategoriesService.updateCategory(selectedCategory.id, categoryData);
+            setShowEditFormModal(false);
+            setSelectedCategory(null);
+            loadCategories(); // Recargar categorías
+            Alert.alert('Éxito', 'Categoría actualizada correctamente');
+        } catch (error) {
+            console.error('Error updating category:', error);
+            Alert.alert('Error', 'No se pudo actualizar la categoría');
+        }
+    };
+
+    const handleDeleteCategory = async () => {
+        try {
+            await FavoritesCategoriesService.deleteCategory(selectedCategory.id);
+            setShowEditModal(false);
+            setSelectedCategory(null);
+            loadCategories(); // Recargar categorías
+            Alert.alert('Éxito', 'Categoría eliminada correctamente');
+        } catch (error) {
+            console.error('Error deleting category:', error);
+            if (error.message.includes('categoría por defecto')) {
+                Alert.alert('Error', 'No se puede eliminar la categoría por defecto');
+            } else {
+                Alert.alert('Error', 'No se pudo eliminar la categoría');
+            }
+        }
+    };
+
     const handleCategoryPress = (category) => {
         navigation.navigate('CategoryDetail', { 
             categoryId: category.id, 
@@ -157,10 +202,6 @@ const FavoritesView = ({ navigation }) => {
             categoryIcon: category.icon,
             babyId: selectedBaby?.id // ✅ Incluir baby_id
         });
-    };
-
-    const handleEditCategory = (category) => {
-        navigation.navigate('EditCategory', { category });
     };
 
     // Menu functions
@@ -298,6 +339,29 @@ const FavoritesView = ({ navigation }) => {
                 visible={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
                 onSubmit={handleCreateCategory}
+            />
+
+            {/* Edit Category Action Modal */}
+            <EditCategoryModal
+                visible={showEditModal}
+                onClose={() => {
+                    setShowEditModal(false);
+                    setSelectedCategory(null);
+                }}
+                onEdit={handleEditCategoryForm}
+                onDelete={handleDeleteCategory}
+                category={selectedCategory}
+            />
+
+            {/* Edit Category Form Modal */}
+            <EditCategoryFormModal
+                visible={showEditFormModal}
+                onClose={() => {
+                    setShowEditFormModal(false);
+                    setSelectedCategory(null);
+                }}
+                onSubmit={handleUpdateCategory}
+                category={selectedCategory}
             />
 
             {/* Side Menu */}
