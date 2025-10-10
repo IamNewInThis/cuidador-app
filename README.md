@@ -88,9 +88,17 @@ expo build:ios
 
 ### Deploy
 ```bash
-# Build for preview
-eas build -p ios --profile preview 
-eas update --platform ios
+# Build preview para dispositivos físicos
+eas build --platform all --profile preview
+
+# Actualizar apps existentes con canal preview
+eas update --channel preview
+
+# Actualizar solo iOS en canal preview  
+eas update --platform ios --channel preview
+
+# Actualizar solo Android en canal preview
+eas update --platform android --channel preview
 ```
 
 ## 📁 Project Structure

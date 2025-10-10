@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Entypo from '@expo/vector-icons/Entypo';
 import { useAuth } from '../contexts/AuthContext';
 import ConversationsService from '../services/ConversationsService';
@@ -86,11 +87,11 @@ const Chat = () => {
             if (babyId) {
                 // Cargar conversaciones específicas del bebé
                 history = await ConversationsService.getConversationsByBaby(babyId);
-                console.log(`Cargando conversaciones para bebé ID: ${babyId}`);
+                // console.log(`Cargando conversaciones para bebé ID: ${babyId}`);
             } else {
                 // Cargar todas las conversaciones (comportamiento anterior)
                 history = await ConversationsService.getConversationHistory();
-                console.log('Cargando todas las conversaciones');
+                // console.log('Cargando todas las conversaciones');
             }
 
             const formattedMessages = history.map((msg) => ({
@@ -126,10 +127,43 @@ const Chat = () => {
             }
             
             setBabies(data || []);
-            // Seleccionar el primer bebé por defecto
-            if (data && data.length > 0) {
-                setSelectedBaby(data[0]);
+            
+            if (!data || data.length === 0) {
+                console.log('No hay bebés disponibles');
+                setSelectedBaby(null);
+                return;
             }
+            
+            // Intentar recuperar la selección guardada
+            try {
+                const savedBabyId = await AsyncStorage.getItem(`selectedBaby_${user.id}`);
+                if (savedBabyId) {
+                    // Buscar el bebé guardado en la lista actual
+                    const savedBaby = data.find(baby => baby.id === savedBabyId);
+                    if (savedBaby) {
+                        // console.log('Restaurando bebé seleccionado:', savedBaby.name);
+                        setSelectedBaby(savedBaby);
+                        return; // Salir aquí porque ya encontramos y establecimos el bebé
+                    } else {
+                        // El bebé guardado ya no existe, limpiar storage
+                        console.log('Bebé guardado ya no existe, limpiando selección');
+                        await AsyncStorage.removeItem(`selectedBaby_${user.id}`);
+                    }
+                }
+            } catch (storageError) {
+                console.log('Error recuperando selección de bebé:', storageError);
+            }
+            
+            // Si llegamos aquí, no había selección guardada válida, seleccionar el primer bebé
+            console.log('Seleccionando primer bebé por defecto:', data[0].name);
+            setSelectedBaby(data[0]);
+            // Guardar esta selección por defecto
+            try {
+                await AsyncStorage.setItem(`selectedBaby_${user.id}`, data[0].id);
+            } catch (storageError) {
+                console.log('Error guardando selección por defecto:', storageError);
+            }
+            
         } catch (error) {
             console.error('Error loading babies:', error);
         }
@@ -138,7 +172,7 @@ const Chat = () => {
     // Efecto para cargar conversaciones cuando cambia el bebé seleccionado
     useEffect(() => {
         if (selectedBaby) {
-            console.log('Bebé seleccionado cambió:', selectedBaby.name);
+            // console.log('Bebé seleccionado cambió:', selectedBaby.name);
             loadConversationHistory(selectedBaby.id);
         }
     }, [selectedBaby, loadConversationHistory]);
@@ -183,7 +217,7 @@ const Chat = () => {
                 babyId: selectedBaby?.id || null
             });
 
-            const API_URL = process.env.SERVER;
+            const API_URL = 'http://192.168.1.88:8000/api/';
             console.log('Usando API_URL:', API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
@@ -238,11 +272,29 @@ const Chat = () => {
         setShowBabyModal(true);
     };
 
-    const handleSelectBaby = (baby) => {
-        console.log('Baby selected:', baby.name);
+    const handleSelectBaby = async (baby) => {
+        // console.log('Baby selected:', baby.name);
         setSelectedBaby(baby);
         setShowBabyModal(false);
+        
+        // Guardar la selección en AsyncStorage
+        try {
+            await AsyncStorage.setItem(`selectedBaby_${user.id}`, baby.id);
+            console.log('Selección de bebé guardada:', baby.name);
+        } catch (storageError) {
+            console.log('Error guardando selección de bebé:', storageError);
+        }
+        
         // Las conversaciones se cargarán automáticamente gracias al useEffect que detecta cambios en selectedBaby
+    };
+
+    const clearSelectedBaby = async () => {
+        try {
+            await AsyncStorage.removeItem(`selectedBaby_${user.id}`);
+            console.log('Selección de bebé limpiada');
+        } catch (storageError) {
+            console.log('Error limpiando selección de bebé:', storageError);
+        }
     };
 
     const handleCloseBabyModal = () => {
