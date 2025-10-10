@@ -3,6 +3,8 @@ import { View, Text, Modal, TouchableOpacity, ScrollView, Alert } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import FavoritesCategoriesService from '../../services/FavoritesCategoriesService';
 import FavoritesService from '../../services/FavoritesService';
+import EditCategoryModal from './EditCategoryModal';
+import EditCategoryFormModal from './EditCategoryFormModal';
 
 const CategorySelectionModal = ({ visible, onClose, categories, selectedCategoryId, onSelect }) => {
     console.log('CategorySelectionModal rendered:', { visible, categoriesCount: categories?.length });
@@ -85,6 +87,9 @@ const FavoriteDetailOptionsModal = ({
     const [categories, setCategories] = useState([]);
     const [selectedCategoryId, setSelectedCategoryId] = useState(currentCategoryId);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
+    const [showEditCategoryModal, setShowEditCategoryModal] = useState(false);
+    const [showEditCategoryFormModal, setShowEditCategoryFormModal] = useState(false);
+    const [categoryForEdit, setCategoryForEdit] = useState(null);
     const [loading, setLoading] = useState(false);
 
     const { conversation, custom_title, notes, created_at, category: favoriteCategory } = favorite || {};
@@ -153,6 +158,49 @@ const FavoriteDetailOptionsModal = ({
         }
     };
 
+    const handleEditCategory = async () => {
+        setShowEditCategoryModal(false);
+        
+        // Obtener la categoría con todos los datos antes de abrir el modal
+        const categoryToEdit = getCurrentCategoryForEdit();
+        console.log('Category to edit stored:', categoryToEdit);
+        setCategoryForEdit(categoryToEdit);
+        
+        // Asegurarse de que las categorías estén cargadas
+        if (categories.length === 0) {
+            await loadCategories();
+        }
+        
+        // Esperar un pequeño delay para asegurar que currentCategory esté actualizado
+        setTimeout(() => {
+            setShowEditCategoryFormModal(true);
+        }, 100);
+    };
+
+    const handleCategoryUpdated = async (updatedData) => {
+        try {
+            await FavoritesCategoriesService.updateCategory(currentCategory.id, updatedData);
+            // Recargar categorías para reflejar cambios
+            loadCategories();
+            setShowEditCategoryFormModal(false);
+            Alert.alert('Éxito', 'Categoría actualizada correctamente');
+        } catch (error) {
+            console.error('Error updating category:', error);
+            Alert.alert('Error', 'No se pudo actualizar la categoría');
+        }
+    };
+
+    const handleDeleteCategory = async () => {
+        try {
+            await FavoritesCategoriesService.deleteCategory(currentCategory.id);
+            Alert.alert('Éxito', 'Categoría eliminada correctamente');
+            onClose();
+        } catch (error) {
+            console.error('Error deleting category:', error);
+            Alert.alert('Error', 'No se pudo eliminar la categoría');
+        }
+    };
+
     const handleDelete = () => {
         Alert.alert(
             'Eliminar favorito',
@@ -185,8 +233,37 @@ const FavoriteDetailOptionsModal = ({
 
     if (!visible || !favorite) return null;
 
+    // Función para obtener la categoría actual con todos los datos necesarios
+    const getCurrentCategoryForEdit = () => {
+        // 1. Intentar encontrar en categories cargadas (datos completos)
+        let foundCategory = categories.find(cat => cat.id === currentCategoryId);
+        
+        // 2. Si no se encuentra, usar initialCategory (desde CategoryDetailView)
+        if (!foundCategory && initialCategory) {
+            foundCategory = initialCategory;
+        }
+        
+        // 3. Si no se encuentra, usar favoriteCategory (del objeto favorite)
+        if (!foundCategory && favoriteCategory) {
+            foundCategory = favoriteCategory;
+        }
+        
+        // 4. Último fallback con datos básicos
+        if (!foundCategory) {
+            foundCategory = {
+                id: currentCategoryId,
+                name: 'Categoría sin nombre',
+                description: '',
+                icon: '📁',
+                color: '#6B7280'
+            };
+        }
+        
+        return foundCategory;
+    };
+
     // Encontrar la categoría actual para mostrar su información
-    const currentCategory = categories.find(cat => cat.id === currentCategoryId) || favoriteCategory || initialCategory;
+    const currentCategory = getCurrentCategoryForEdit();
     
     // Debug log para verificar la estructura
     console.log('Debug Modal:', {
@@ -195,6 +272,12 @@ const FavoriteDetailOptionsModal = ({
         initialCategory,
         currentCategory,
         categoriesCount: categories.length
+    });
+
+    console.log('Current category data for modal:', currentCategory);
+    console.log('About to pass to EditCategoryFormModal:', {
+        visible: showEditCategoryFormModal,
+        category: currentCategory
     });
 
     return (
@@ -274,7 +357,7 @@ const FavoriteDetailOptionsModal = ({
                         {/* Cambiar categoría */}
                         <View className="bg-white mx-4 mb-4 rounded-2xl shadow-sm border border-gray-100">
                             <TouchableOpacity
-                                onPress={() => setShowCategoryModal(true)}
+                                onPress={() => setShowEditCategoryModal(true)}
                                 disabled={loading}
                                 className="p-4"
                             >
@@ -293,7 +376,7 @@ const FavoriteDetailOptionsModal = ({
                                                 {currentCategory?.name || 'Categoría'}
                                             </Text>
                                             <Text className="text-gray-500 text-sm mt-1">
-                                                Cambiar categoría del favorito
+                                                Editar o cambiar categoría
                                             </Text>
                                         </View>
                                     </View>
@@ -336,6 +419,29 @@ const FavoriteDetailOptionsModal = ({
                 onSelect={handleCategorySelect}
                 onClose={() => setShowCategoryModal(false)}
                 loading={loading}
+            />
+
+            {/* Modal de opciones de categoría (editar/eliminar) */}
+            <EditCategoryModal
+                visible={showEditCategoryModal}
+                onClose={() => {
+                    setShowEditCategoryModal(false);
+                    setCategoryForEdit(null);
+                }}
+                category={currentCategory}
+                onEdit={handleEditCategory}
+                onDelete={handleDeleteCategory}
+            />
+
+            {/* Modal de formulario de edición */}
+            <EditCategoryFormModal
+                visible={showEditCategoryFormModal}
+                onClose={() => {
+                    setShowEditCategoryFormModal(false);
+                    setCategoryForEdit(null);
+                }}
+                category={categoryForEdit}
+                onSubmit={handleCategoryUpdated}
             />
         </>
     );

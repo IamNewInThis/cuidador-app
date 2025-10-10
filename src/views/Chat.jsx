@@ -340,7 +340,7 @@ const Chat = () => {
                 // Guardar con ambas keys para compatibilidad
                 await AsyncStorage.setItem(`selectedBaby_${user.id}`, selectedBaby.id);
                 await AsyncStorage.setItem('selectedBaby', JSON.stringify(selectedBaby));
-                console.log('Baby saved to AsyncStorage before navigating to Favorites:', selectedBaby);
+                // console.log('Baby saved to AsyncStorage before navigating to Favorites:', selectedBaby);
             }
             navigation.navigate('Favorites');
         } catch (error) {

@@ -15,11 +15,26 @@ const EditCategoryFormModal = ({ visible, onClose, onSubmit, category }) => {
 
     // Cargar datos de la categoría cuando se abre el modal
     useEffect(() => {
-        if (visible && category) {
-            setName(category.name || '');
-            setDescription(category.description || '');
-            setSelectedIcon(category.icon || '⭐');
-            setSelectedColor(category.color || '#3B82F6');
+        console.log('EditCategoryFormModal useEffect triggered:', { visible, category });
+        if (visible) {
+            if (category) {
+                console.log('Setting category data:', {
+                    name: category.name,
+                    description: category.description,
+                    icon: category.icon,
+                    color: category.color
+                });
+                setName(category.name || '');
+                setDescription(category.description || '');
+                setSelectedIcon(category.icon || '⭐');
+                setSelectedColor(category.color || '#3B82F6');
+            } else {
+                console.log('No category provided, using defaults');
+                setName('');
+                setDescription('');
+                setSelectedIcon('⭐');
+                setSelectedColor('#3B82F6');
+            }
         }
     }, [visible, category]);
 
@@ -56,6 +71,14 @@ const EditCategoryFormModal = ({ visible, onClose, onSubmit, category }) => {
     };
 
     if (!visible) return null;
+
+    console.log('EditCategoryFormModal render - Current state:', {
+        name,
+        description,
+        selectedIcon,
+        selectedColor,
+        category
+    });
 
     return (
         <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">

@@ -57,6 +57,7 @@ const FavoritesView = ({ navigation }) => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showEditFormModal, setShowEditFormModal] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [categoryForEdit, setCategoryForEdit] = useState(null);
     const [refreshing, setRefreshing] = useState(false);
     const [isMenuVisible, setIsMenuVisible] = useState(false);
     const [selectedBaby, setSelectedBaby] = useState(null);
@@ -80,7 +81,7 @@ const FavoritesView = ({ navigation }) => {
         try {
             // Primero intentar con la key específica del usuario (usado en Chat)
             let babyData = await AsyncStorage.getItem(`selectedBaby_${user?.id}`);
-            console.log('Baby data from user-specific key:', babyData);
+            // console.log('Baby data from user-specific key:', babyData);
             
             if (babyData) {
                 // Es un ID, necesitamos buscar el bebé completo
@@ -101,7 +102,7 @@ const FavoritesView = ({ navigation }) => {
             
             // Si no se encontró con la key específica, intentar con la key general
             babyData = await AsyncStorage.getItem('selectedBaby');
-            console.log('Baby data from general key:', babyData);
+            // console.log('Baby data from general key:', babyData);
             
             if (babyData) {
                 const parsedBaby = JSON.parse(babyData);
@@ -160,15 +161,20 @@ const FavoritesView = ({ navigation }) => {
     };
 
     const handleEditCategoryForm = () => {
+        console.log('Storing category for edit:', selectedCategory);
+        setCategoryForEdit(selectedCategory); // Almacenar la categoría antes de abrir el modal
         setShowEditModal(false);
         setShowEditFormModal(true);
     };
 
     const handleUpdateCategory = async (categoryData) => {
         try {
-            await FavoritesCategoriesService.updateCategory(selectedCategory.id, categoryData);
+            console.log('Updating category with ID:', categoryForEdit?.id || selectedCategory?.id);
+            const categoryToUpdate = categoryForEdit || selectedCategory;
+            await FavoritesCategoriesService.updateCategory(categoryToUpdate.id, categoryData);
             setShowEditFormModal(false);
             setSelectedCategory(null);
+            setCategoryForEdit(null);
             loadCategories(); // Recargar categorías
             Alert.alert('Éxito', 'Categoría actualizada correctamente');
         } catch (error) {
@@ -347,6 +353,7 @@ const FavoritesView = ({ navigation }) => {
                 onClose={() => {
                     setShowEditModal(false);
                     setSelectedCategory(null);
+                    setCategoryForEdit(null);
                 }}
                 onEdit={handleEditCategoryForm}
                 onDelete={handleDeleteCategory}
@@ -359,9 +366,10 @@ const FavoritesView = ({ navigation }) => {
                 onClose={() => {
                     setShowEditFormModal(false);
                     setSelectedCategory(null);
+                    setCategoryForEdit(null);
                 }}
                 onSubmit={handleUpdateCategory}
-                category={selectedCategory}
+                category={categoryForEdit}
             />
 
             {/* Side Menu */}
