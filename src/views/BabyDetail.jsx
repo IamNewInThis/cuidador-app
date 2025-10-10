@@ -1,16 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Alert, ScrollView } from 'react-native';
+import { View, Text, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { Feather } from '@expo/vector-icons';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import ChatSideMenu from '../components/chat/ChatSideMenu';
 import { updateBaby, deleteBaby } from '../services/BabiesService';
 import { useAuth } from '../contexts/AuthContext';
 
 const BabyDetail = () => {
     const route = useRoute();
     const navigation = useNavigation();
-    const { user } = useAuth();
+    const { user, signOut } = useAuth();
+    const [isMenuVisible, setIsMenuVisible] = useState(false);
 
     const babyParam = route.params?.baby ?? {};
 
@@ -87,10 +90,51 @@ const BabyDetail = () => {
         ]);
     };
 
+    // Menu functions
+    const handleMenuPress = () => {
+        setIsMenuVisible(true);
+    };
+
+    const handleCloseMenu = () => {
+        setIsMenuVisible(false);
+    };
+
+    const handleNavigateToChat = () => {
+        navigation.navigate('Chat');
+    };
+
+    const handleNavigateToFavorites = () => {
+        navigation.navigate('Favorites');
+    };
+
+    const handleNavigateToAccount = () => {
+        navigation.navigate('ProfileSettings');
+    };
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+        }
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-gray-50">
-            <View className="p-4 bg-white border-b border-gray-200">
-                <Text className="text-xl font-bold text-blue-500 text-center">Detalle del Bebé</Text>
+            {/* Header */}
+            <View className="bg-white px-6 py-4 border-b border-gray-200">
+                <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center flex-1">
+                        <TouchableOpacity
+                            onPress={handleMenuPress}
+                            className="p-2 -ml-2 mr-3"
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <Feather name="menu" size={24} color="#374151" />
+                        </TouchableOpacity>
+                        <Text className="text-2xl font-bold text-gray-900">Perfil de {name || 'Bebé'}</Text>
+                    </View>
+                </View>
             </View>
 
             <ScrollView contentContainerStyle={{ paddingVertical: 16 }}>
@@ -166,6 +210,20 @@ const BabyDetail = () => {
                     />
                 </View>
             </ScrollView>
+
+            {/* Side Menu */}
+            <ChatSideMenu
+                visible={isMenuVisible}
+                onClose={handleCloseMenu}
+                onChangeBaby={() => {}} // No aplica aquí
+                onNavigateToChat={handleNavigateToChat}
+                onNavigateToFavorites={handleNavigateToFavorites}
+                onNavigateToProfile={() => {}} // Ya estamos aquí
+                onNavigateToAccount={handleNavigateToAccount}
+                onLogout={handleLogout}
+                babyName={name || 'Tu bebé'}
+                babyAgeLabel=""
+            />
         </SafeAreaView>
     );
 };

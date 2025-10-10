@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Entypo from '@expo/vector-icons/Entypo';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import ConversationsService from '../services/ConversationsService';
 import FeedbackService from '../services/FeedbackService';
@@ -13,10 +14,51 @@ import UserMessage from '../components/chat/UserMessage';
 import LoadingMessage from '../components/chat/LoadingMessage';
 import ChatHeader from '../components/chat/ChatHeader';
 import BabySelectionModal from '../components/chat/BabySelectionModal';
+import ChatSideMenu from '../components/chat/ChatSideMenu';
+
+const formatBabyAge = (birthdate) => {
+    if (!birthdate) return '';
+
+    const parsedDate = new Date(birthdate);
+    if (Number.isNaN(parsedDate.getTime())) {
+        return '';
+    }
+
+    const now = new Date();
+    let years = now.getFullYear() - parsedDate.getFullYear();
+    let months = now.getMonth() - parsedDate.getMonth();
+
+    if (now.getDate() < parsedDate.getDate()) {
+        months -= 1;
+    }
+
+    if (months < 0) {
+        years -= 1;
+        months += 12;
+    }
+
+    years = Math.max(years, 0);
+    months = Math.max(months, 0);
+
+    const parts = [];
+    if (years > 0) {
+        parts.push(`${years} año${years !== 1 ? 's' : ''}`);
+    }
+    if (months > 0) {
+        parts.push(`${months} mes${months !== 1 ? 'es' : ''}`);
+    }
+
+    if (parts.length === 0) {
+        return 'recién nacido';
+    }
+
+    return parts.join(' ');
+};
 
 const Chat = () => {
+    const navigation = useNavigation();
     const [message, setMessage] = useState('');
-    const { session, user } = useAuth();
+    const { session, user, signOut } = useAuth();
     const [messages, setMessages] = useState([]);
     const [feedbacks, setFeedbacks] = useState({});
     const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +66,7 @@ const Chat = () => {
     const [babies, setBabies] = useState([]);
     const [selectedBaby, setSelectedBaby] = useState(null);
     const [showBabyModal, setShowBabyModal] = useState(false);
+    const [isMenuVisible, setIsMenuVisible] = useState(false);
     const scrollViewRef = useRef();
 
     const appendMessage = useCallback((newMessage) => {
@@ -185,6 +228,14 @@ const Chat = () => {
         }
     }, [loadBabies]);
 
+    // Recargar datos cuando el componente se enfoque (útil cuando se regresa de otras pantallas)
+    useFocusEffect(
+        useCallback(() => {
+            // Recargar bebés y restaurar selección cada vez que se enfoque el chat
+            loadBabies();
+        }, [loadBabies])
+    );
+
     const handleOnSendMessage = async () => {
         if (message.trim() === '' || isLoading) {
             return;
@@ -259,8 +310,11 @@ const Chat = () => {
     };
 
     const handleMenuPress = () => {
-        // TODO: Implementar side menu
-        console.log('Menu pressed');
+        setIsMenuVisible(true);
+    };
+
+    const handleCloseMenu = () => {
+        setIsMenuVisible(false);
     };
 
     const handleSearchPress = () => {
@@ -270,6 +324,38 @@ const Chat = () => {
 
     const handleBabyPress = () => {
         setShowBabyModal(true);
+    };
+
+    const handleBabyPressFromMenu = () => {
+        setIsMenuVisible(false);
+        setTimeout(() => {
+            setShowBabyModal(true);
+        }, 220);
+    };
+
+    const handleNavigateToFavorites = () => {
+        navigation.navigate('Favorites');
+    };
+
+    const handleNavigateToProfile = () => {
+        if (selectedBaby) {
+            navigation.navigate('BabyDetail', { baby: selectedBaby });
+        } else {
+            // Si no hay bebé seleccionado, ir a la lista de bebés
+            navigation.navigate('Babies');
+        }
+    };
+
+    const handleNavigateToAccount = () => {
+        navigation.navigate('ProfileSettings');
+    };
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+        }
     };
 
     const handleSelectBaby = async (baby) => {
@@ -302,6 +388,7 @@ const Chat = () => {
     };
 
     const isSendDisabled = message.trim() === '' || isLoading;
+    const selectedBabyAge = selectedBaby?.birthdate ? formatBabyAge(selectedBaby.birthdate) : '';
 
     return (
         <SafeAreaView className="flex-1 bg-white">
@@ -312,7 +399,7 @@ const Chat = () => {
                 onSearchPress={handleSearchPress}
                 onBabyPress={handleBabyPress}
             />
-            
+
             {/* Modal de selección de bebés */}
             <BabySelectionModal
                 visible={showBabyModal}
@@ -396,6 +483,19 @@ const Chat = () => {
                     </View>
                 </View>
             </KeyboardAvoidingView>
+
+            <ChatSideMenu
+                visible={isMenuVisible}
+                onClose={handleCloseMenu}
+                onChangeBaby={handleBabyPressFromMenu}
+                onNavigateToChat={() => {}} // Ya estamos aquí
+                onNavigateToFavorites={handleNavigateToFavorites}
+                onNavigateToProfile={handleNavigateToProfile}
+                onNavigateToAccount={handleNavigateToAccount}
+                onLogout={handleLogout}
+                babyName={selectedBaby?.name || 'Martín'}
+                babyAgeLabel={selectedBabyAge}
+            />
         </SafeAreaView>
     );
 };

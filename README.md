@@ -19,7 +19,6 @@ A React Native application designed to help caregivers manage and track baby car
 - **Supabase**: Backend and authentication
 - **NativeWind**: Styling with Tailwind CSS
 - **React i18next**: Internationalization
-# QUE TROLAZO
 ## 📱 Screenshots
 
 *Screenshots will be added soon*

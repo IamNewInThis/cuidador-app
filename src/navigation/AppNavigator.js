@@ -39,7 +39,7 @@ const AuthStack = () => (
 // Stack para usuarios autenticados
 const AppStack = () => (
     <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName="Chat"
         screenOptions={{
             headerShown: false,
         }}

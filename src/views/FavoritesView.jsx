@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import FavoritesCategoriesService from '../services/FavoritesCategoriesService';
 import CreateCategoryModal from '../components/favorites/CreateCategoryModal';
 import CategoryCard from '../components/favorites/CategoryCard';
+import ChatSideMenu from '../components/chat/ChatSideMenu';
 import { useTranslation } from 'react-i18next';
 
 const FavoritesView = ({ navigation }) => {
-    const { user } = useAuth();
+    const { user, signOut } = useAuth();
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [isMenuVisible, setIsMenuVisible] = useState(false);
     const { t } = useTranslation();
 
     useEffect(() => {
@@ -63,6 +65,35 @@ const FavoritesView = ({ navigation }) => {
         navigation.navigate('EditCategory', { category });
     };
 
+    // Menu functions
+    const handleMenuPress = () => {
+        setIsMenuVisible(true);
+    };
+
+    const handleCloseMenu = () => {
+        setIsMenuVisible(false);
+    };
+
+    const handleNavigateToChat = () => {
+        navigation.navigate('Chat');
+    };
+
+    const handleNavigateToProfile = () => {
+        navigation.navigate('BabyDetail');
+    };
+
+    const handleNavigateToAccount = () => {
+        navigation.navigate('ProfileSettings');
+    };
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+        }
+    };
+
     if (loading) {
         return (
             <SafeAreaView className="flex-1 bg-gray-50">
@@ -79,11 +110,20 @@ const FavoritesView = ({ navigation }) => {
             {/* Header */}
             <View className="bg-white px-6 py-4 border-b border-gray-200">
                 <View className="flex-row items-center justify-between">
-                    <View>
-                        <Text className="text-2xl font-bold text-gray-900">{t('favorites.title')}</Text>
-                        <Text className="text-gray-500 mt-1">
-                            {categories.length} {categories.length === 1 ? t('favorites.category') : t('favorites.categories')}
-                        </Text>
+                    <View className="flex-row items-center flex-1">
+                        <TouchableOpacity
+                            onPress={handleMenuPress}
+                            className="p-2 -ml-2 mr-3"
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <Feather name="menu" size={24} color="#374151" />
+                        </TouchableOpacity>
+                        <View>
+                            <Text className="text-2xl font-bold text-gray-900">{t('favorites.title')}</Text>
+                            <Text className="text-gray-500 mt-1">
+                                {categories.length} {categories.length === 1 ? t('favorites.category') : t('favorites.categories')}
+                            </Text>
+                        </View>
                     </View>
                     <TouchableOpacity
                         onPress={() => setShowCreateModal(true)}
@@ -144,6 +184,20 @@ const FavoritesView = ({ navigation }) => {
                 visible={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
                 onSubmit={handleCreateCategory}
+            />
+
+            {/* Side Menu */}
+            <ChatSideMenu
+                visible={isMenuVisible}
+                onClose={handleCloseMenu}
+                onChangeBaby={() => {}} // No aplica en favorites
+                onNavigateToChat={handleNavigateToChat}
+                onNavigateToFavorites={() => {}} // Ya estamos aquí
+                onNavigateToProfile={handleNavigateToProfile}
+                onNavigateToAccount={handleNavigateToAccount}
+                onLogout={handleLogout}
+                babyName="Tu bebé"
+                babyAgeLabel=""
             />
         </SafeAreaView>
     );
