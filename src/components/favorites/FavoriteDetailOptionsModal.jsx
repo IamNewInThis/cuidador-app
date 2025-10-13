@@ -274,11 +274,11 @@ const FavoriteDetailOptionsModal = ({
         categoriesCount: categories.length
     });
 
-    console.log('Current category data for modal:', currentCategory);
-    console.log('About to pass to EditCategoryFormModal:', {
-        visible: showEditCategoryFormModal,
-        category: currentCategory
-    });
+    // console.log('Current category data for modal:', currentCategory);
+    // console.log('About to pass to EditCategoryFormModal:', {
+    //     visible: showEditCategoryFormModal,
+    //     category: currentCategory
+    // });
 
     return (
         <>

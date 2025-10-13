@@ -31,10 +31,9 @@ export async function createBaby(userId, baby) {
                 gender: baby.gender || null,
                 weight: baby.weight || null,
                 height: baby.height || null,
-                routines: baby.routines || {},
-                preferences: baby.preferences || {},
             },
-        ]);
+        ])
+        .select();  // Agregar .select() para obtener los datos creados
 
         if (error) throw error;
         return { data, error: null };
@@ -53,8 +52,6 @@ export async function updateBaby(userId, babyId, updates) {
                 gender: updates.gender ?? null,
                 weight: updates.weight ?? null,
                 height: updates.height ?? null,
-                routines: updates.routines ?? null,
-                preferences: updates.preferences ?? null,
             })
             .eq("id", babyId)
             .eq("user_id", userId)

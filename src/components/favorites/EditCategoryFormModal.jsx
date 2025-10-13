@@ -15,7 +15,7 @@ const EditCategoryFormModal = ({ visible, onClose, onSubmit, category }) => {
 
     // Cargar datos de la categoría cuando se abre el modal
     useEffect(() => {
-        console.log('EditCategoryFormModal useEffect triggered:', { visible, category });
+        // console.log('EditCategoryFormModal useEffect triggered:', { visible, category });
         if (visible) {
             if (category) {
                 console.log('Setting category data:', {
@@ -72,13 +72,13 @@ const EditCategoryFormModal = ({ visible, onClose, onSubmit, category }) => {
 
     if (!visible) return null;
 
-    console.log('EditCategoryFormModal render - Current state:', {
-        name,
-        description,
-        selectedIcon,
-        selectedColor,
-        category
-    });
+    // console.log('EditCategoryFormModal render - Current state:', {
+    //     name,
+    //     description,
+    //     selectedIcon,
+    //     selectedColor,
+    //     category
+    // });
 
     return (
         <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">

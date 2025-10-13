@@ -166,6 +166,10 @@ const BabyDetail = () => {
         navigation.navigate('ProfileSettings');
     };
 
+    const handleNavigateToCreateBaby = () => {
+        navigation.navigate('Babies');
+    }
+
     const handleLogout = async () => {
         try {
             await signOut();
@@ -256,14 +260,6 @@ const BabyDetail = () => {
                         className="bg-red-500 border border-red-500"
                     />
                 </View>
-
-                <View className="px-4 mt-3 mb-8">
-                    <Button
-                        title="Volver"
-                        onPress={() => navigation.goBack()}
-                        className="bg-gray-100 border border-gray-300"
-                    />
-                </View>
             </ScrollView>
 
             {/* Side Menu */}
@@ -275,6 +271,7 @@ const BabyDetail = () => {
                 onNavigateToFavorites={handleNavigateToFavorites}
                 onNavigateToProfile={() => {}} 
                 onNavigateToAccount={handleNavigateToAccount}
+                onNavigateToCreateBaby={handleNavigateToCreateBaby}
                 onLogout={handleLogout}
                 babyName={name || babyParam.name || 'Tu bebé'}
                 babyAgeLabel={babyAge}

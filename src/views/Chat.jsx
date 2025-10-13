@@ -362,6 +362,10 @@ const Chat = () => {
         navigation.navigate('ProfileSettings');
     };
 
+    const handleNavigateToCreateBaby = () => {
+        navigation.navigate('Babies');
+    };
+
     const handleLogout = async () => {
         try {
             await signOut();
@@ -500,12 +504,13 @@ const Chat = () => {
                 visible={isMenuVisible}
                 onClose={handleCloseMenu}
                 onChangeBaby={handleBabyPressFromMenu}
-                onNavigateToChat={() => {}} // Ya estamos aquí
+                onNavigateToChat={() => {}} 
                 onNavigateToFavorites={handleNavigateToFavorites}
                 onNavigateToProfile={handleNavigateToProfile}
                 onNavigateToAccount={handleNavigateToAccount}
+                onNavigateToCreateBaby={handleNavigateToCreateBaby}
                 onLogout={handleLogout}
-                babyName={selectedBaby?.name || 'Martín'}
+                babyName={selectedBaby?.name || ''}
                 babyAgeLabel={selectedBabyAge}
             />
         </SafeAreaView>

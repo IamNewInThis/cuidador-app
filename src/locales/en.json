@@ -74,5 +74,13 @@
         "errorLoadingMessages": "Error loading messages",
         "errorSendingMessage": "Error sending message",
         "messageOptions": "Message Options"
+    },
+    "sideMenu": {
+        "yourParentingAssistant": "Your Parenting Assistant",
+        "chatWithLumi": "Chat with Lumi",
+        "profileOf": "Profile of",
+        "createBabyProfile": "Create Baby Profile",
+        "myAccount": "My Account",
+        "signOut": "Sign Out"
     }
 }

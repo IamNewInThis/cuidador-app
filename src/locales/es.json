@@ -74,6 +74,14 @@
         "errorLoadingMessages": "Error al cargar mensajes",
         "errorSendingMessage": "Error al enviar mensaje",
         "messageOptions": "Opciones del Mensaje"
+    },
+    "sideMenu": {
+        "yourParentingAssistant": "Tu asistente de crianza",
+        "chatWithLumi": "Chatear con Lumi",
+        "profileOf": "Perfil de",
+        "createBabyProfile": "Crear perfil bebé",
+        "myAccount": "Mi Cuenta",
+        "signOut": "Cerrar Sesión"
     }
  }
  

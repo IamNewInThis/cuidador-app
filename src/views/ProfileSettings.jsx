@@ -198,6 +198,10 @@ const ProfileSettings = () => {
         }
     };
 
+    const handleNavigateToCreateBaby = () => {
+        navigation.navigate('Babies');
+    }
+
     const handleLogout = async () => {
         try {
             await signOut();
@@ -270,6 +274,7 @@ const ProfileSettings = () => {
                 onNavigateToChat={handleNavigateToChat}
                 onNavigateToFavorites={handleNavigateToFavorites}
                 onNavigateToProfile={handleNavigateToProfile}
+                onNavigateToCreateBaby={handleNavigateToCreateBaby}
                 onNavigateToAccount={() => {}} 
                 onLogout={handleLogout}
                 babyName={selectedBaby?.name || "Sin seleccionar"}

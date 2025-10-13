@@ -8,38 +8,12 @@ import {
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import {Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const ANIMATION_DURATION = 220;
-
-const menuOptions = [
-  {
-    key: "chat",
-    icon: "chatbubble-outline",
-    label: "Chat con Lumi",
-    color: "#7BA5F2",
-  },
-  {
-    key: "favorites",
-    icon: "heart-outline",
-    label: "Favoritos",
-    color: "#F9865B",
-  },
-  {
-    key: "profile",
-    icon: "person-circle-outline",
-    dynamicLabel: (name) => `Perfil de ${name}`,
-    color: "#D9625E",
-  },
-  {
-    key: "account",
-    icon: "settings-outline",
-    label: "Mi cuenta",
-    color: "#7BA5F2",
-  },
-];
 
 const SideMenu = ({
   visible,
@@ -49,12 +23,47 @@ const SideMenu = ({
   onNavigateToFavorites,
   onNavigateToProfile,
   onNavigateToAccount,
+  onNavigateToCreateBaby,
   onLogout,
-  babyName = "Martín",
-  babyAgeLabel = "1 año 5 meses",
+  babyName = "",
+  babyAgeLabel = "",
 }) => {
   const [isMounted, setIsMounted] = useState(visible);
   const translateX = useRef(new Animated.Value(-SCREEN_WIDTH)).current;
+  const { t } = useTranslation();
+
+  const menuOptions = [
+    {
+      key: "chat",
+      icon: "chatbubble-outline",
+      label: t("sideMenu.chatWithLumi"),
+      color: "#7BA5F2",
+    },
+    {
+      key: "favorites",
+      icon: "heart-outline",
+      label: t("favorites.title"),
+      color: "#F9865B",
+    },
+    {
+      key: "profile",
+      icon: "person-circle-outline",
+      dynamicLabel: (name, translate) => `${translate("sideMenu.profileOf")} ${name}`,
+      color: "#D9625E",
+    },
+    {
+      key: "baby",
+      icon: "person-add-outline",
+      label: t("sideMenu.createBabyProfile"),
+      color: "#F9A825",
+    },
+    {
+      key: "account",
+      icon: "settings-outline",
+      label: t("sideMenu.myAccount"),
+      color: "#7BA5F2",
+    },
+  ];
 
   useEffect(() => {
     if (visible) {
@@ -102,8 +111,6 @@ const SideMenu = ({
             {/* Header */}
             <View className="px-6 py-6 border-b border-gray-100">
               <View className="flex-row items-center justify-between mb-4">
-                <View className="w-10 h-10" />
-                
                 <View className="flex-row items-center">
                   <View className="w-12 h-12 bg-primary-500 rounded-full items-center justify-center mr-3">
                     <Text className="text-white text-xl font-bold">L</Text>
@@ -113,7 +120,7 @@ const SideMenu = ({
                       Lumi
                     </Text>
                     <Text className="text-sm text-gray-500">
-                      Tu asistente de crianza
+                      {t("sideMenu.yourParentingAssistant")}
                     </Text>
                   </View>
                 </View>
@@ -170,7 +177,7 @@ const SideMenu = ({
                 {menuOptions.map((option, index) => {
                   const optionLabel =
                     typeof option.dynamicLabel === "function"
-                      ? option.dynamicLabel(babyName || "tu bebé")
+                      ? option.dynamicLabel(babyName || "tu bebé", t)
                       : option.label;
 
                   const handlePress = () => {
@@ -187,6 +194,9 @@ const SideMenu = ({
                         break;
                       case "chat":
                         onNavigateToChat?.();
+                        break;
+                      case "baby":
+                        onNavigateToCreateBaby?.();
                         break;
                     }
                   };
@@ -246,7 +256,7 @@ const SideMenu = ({
                 </View>
                 <View className="flex-1">
                   <Text className="text-base font-medium text-red-500">
-                    Cerrar sesión
+                    {t("sideMenu.signOut")}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#FCA5A5" />

@@ -89,7 +89,7 @@ const FavoritesView = ({ navigation }) => {
                     const { data: babies } = await getBabies(user.id);
                     const selectedBabyData = babies.find(baby => baby.id === babyData);
                     if (selectedBabyData) {
-                        console.log('Found complete baby data:', selectedBabyData);
+                        // console.log('Found complete baby data:', selectedBabyData);
                         setSelectedBaby(selectedBabyData);
                         // Guardar también en la key general para consistencia
                         await AsyncStorage.setItem('selectedBaby', JSON.stringify(selectedBabyData));
@@ -247,6 +247,10 @@ const FavoritesView = ({ navigation }) => {
         }
     };
 
+    const handleNavigateToCreateBaby = () => {
+        navigation.navigate('Babies');
+    };
+
     const handleLogout = async () => {
         try {
             await signOut();
@@ -381,6 +385,7 @@ const FavoritesView = ({ navigation }) => {
                 onNavigateToFavorites={() => {}} // Ya estamos aquí
                 onNavigateToProfile={handleNavigateToProfile}
                 onNavigateToAccount={handleNavigateToAccount}
+                onNavigateToCreateBaby={handleNavigateToCreateBaby}
                 onLogout={handleLogout}
                 babyName={selectedBaby?.name || "Sin seleccionar"}
                 babyAgeLabel={selectedBabyAge}

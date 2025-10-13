@@ -68,6 +68,14 @@
     "chat":{
         "tiping": "Digitando...",
         "messageOptions": "Opções da mensagem"
+    },
+    "sideMenu": {
+        "yourParentingAssistant": "Seu assistente de parentalidade",
+        "chatWithLumi": "Conversar com Lumi",
+        "profileOf": "Perfil de",
+        "createBabyProfile": "Criar perfil de bebê",
+        "myAccount": "Minha Conta",
+        "signOut": "Sair"
     }
 }
   
