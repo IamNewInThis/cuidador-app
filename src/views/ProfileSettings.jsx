@@ -202,6 +202,30 @@ const ProfileSettings = () => {
         navigation.navigate('Babies');
     }
 
+    const handleNavigateToSubscription = () => {
+        navigation.navigate('SubscriptionView');
+    };
+
+    const handleNavigateToLanguage = () => {
+        console.log('Navigate to language settings');
+        // navigation.navigate('LanguageSettings');
+    };
+
+    const handleNavigateToHelpCenter = () => {
+        console.log('Navigate to help center');
+        // navigation.navigate('HelpCenter');
+    };
+
+    const handleNavigateToTermsOfUse = () => {
+        console.log('Navigate to terms of use');
+        // navigation.navigate('TermsOfUse');
+    };
+
+    const handleNavigateToPrivacyPolicy = () => {
+        console.log('Navigate to privacy policy');
+        // navigation.navigate('PrivacyPolicy');
+    };
+
     const handleLogout = async () => {
         try {
             await signOut();
@@ -276,9 +300,15 @@ const ProfileSettings = () => {
                 onNavigateToProfile={handleNavigateToProfile}
                 onNavigateToCreateBaby={handleNavigateToCreateBaby}
                 onNavigateToAccount={() => {}} 
+                onNavigateToSubscription={handleNavigateToSubscription}
+                onNavigateToLanguage={handleNavigateToLanguage}
+                onNavigateToHelpCenter={handleNavigateToHelpCenter}
+                onNavigateToTermsOfUse={handleNavigateToTermsOfUse}
+                onNavigateToPrivacyPolicy={handleNavigateToPrivacyPolicy}
                 onLogout={handleLogout}
                 babyName={selectedBaby?.name || "Sin seleccionar"}
                 babyAgeLabel={selectedBabyAge}
+                userEmail={user?.email || ""}
             />
         </SafeAreaView>
     );

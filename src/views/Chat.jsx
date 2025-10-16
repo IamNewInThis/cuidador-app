@@ -268,7 +268,7 @@ const Chat = () => {
                 babyId: selectedBaby?.id || null
             });
 
-            const API_URL = 'http://192.168.1.88:8000/api/';
+            const API_URL = process.env.SERVER ;
             console.log('Usando API_URL:', API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',

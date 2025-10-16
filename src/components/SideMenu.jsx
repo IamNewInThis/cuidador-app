@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
+import { ConfigurationModal } from "./configuration";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const ANIMATION_DURATION = 220;
@@ -24,11 +25,18 @@ const SideMenu = ({
   onNavigateToProfile,
   onNavigateToAccount,
   onNavigateToCreateBaby,
+  onNavigateToSubscription,
+  onNavigateToLanguage,
+  onNavigateToHelpCenter,
+  onNavigateToTermsOfUse,
+  onNavigateToPrivacyPolicy,
   onLogout,
   babyName = "",
   babyAgeLabel = "",
+  userEmail = "",
 }) => {
   const [isMounted, setIsMounted] = useState(visible);
+  const [showConfigurationModal, setShowConfigurationModal] = useState(false);
   const translateX = useRef(new Animated.Value(-SCREEN_WIDTH)).current;
   const { t } = useTranslation();
 
@@ -58,9 +66,9 @@ const SideMenu = ({
       color: "#F9A825",
     },
     {
-      key: "account",
+      key: "configuration",
       icon: "settings-outline",
-      label: t("sideMenu.myAccount"),
+      label: t("sideMenu.configuration"),
       color: "#7BA5F2",
     },
   ];
@@ -181,21 +189,24 @@ const SideMenu = ({
                       : option.label;
 
                   const handlePress = () => {
-                    onClose();
                     switch (option.key) {
                       case "favorites":
+                        onClose();
                         onNavigateToFavorites?.();
                         break;
                       case "profile":
+                        onClose();
                         onNavigateToProfile?.();
                         break;
-                      case "account":
-                        onNavigateToAccount?.();
+                      case "configuration":
+                        setShowConfigurationModal(true);
                         break;
                       case "chat":
+                        onClose();
                         onNavigateToChat?.();
                         break;
                       case "baby":
+                        onClose();
                         onNavigateToCreateBaby?.();
                         break;
                     }
@@ -265,6 +276,43 @@ const SideMenu = ({
           </SafeAreaView>
         </LinearGradient>
       </Animated.View>
+
+      {/* Configuration Modal */}
+      <ConfigurationModal
+        visible={showConfigurationModal}
+        onClose={() => setShowConfigurationModal(false)}
+        onNavigateToProfile={() => {
+          setShowConfigurationModal(false);
+          onClose();
+          onNavigateToProfile?.();
+        }}
+        onNavigateToSubscription={() => {
+          setShowConfigurationModal(false);
+          onClose();
+          onNavigateToSubscription?.();
+        }}
+        onNavigateToLanguage={() => {
+          setShowConfigurationModal(false);
+          onClose();
+          onNavigateToLanguage?.();
+        }}
+        onNavigateToHelpCenter={() => {
+          setShowConfigurationModal(false);
+          onClose();
+          onNavigateToHelpCenter?.();
+        }}
+        onNavigateToTermsOfUse={() => {
+          setShowConfigurationModal(false);
+          onClose();
+          onNavigateToTermsOfUse?.();
+        }}
+        onNavigateToPrivacyPolicy={() => {
+          setShowConfigurationModal(false);
+          onClose();
+          onNavigateToPrivacyPolicy?.();
+        }}
+        userEmail={userEmail}
+      />
     </View>
   );
 };

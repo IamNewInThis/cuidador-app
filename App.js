@@ -8,6 +8,7 @@ import i18n from './src/lib/18n';
 import * as Linking from 'expo-linking';
 import { useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import { StripeProvider } from "@stripe/stripe-react-native";
 
 // 🔹 Componente para manejar manualmente los deep links
 function DeepLinkHandler() {

@@ -90,6 +90,12 @@ expo build:ios
 # Build preview para dispositivos físicos
 eas build --platform all --profile preview
 
+# Build development para dispositivos físicos
+eas build --platform all --profile development
+
+# Build development para dispositivos android
+eas build --platform android --profile development
+
 # Actualizar apps existentes con canal preview
 eas update --channel preview
 
