@@ -107,6 +107,10 @@ const Babies = () => {
     const handleNavigateToAccount = () => {
         navigation.navigate('ProfileSettings');
     };
+
+    const handleNavigateToSubscription = () => {
+        navigation.navigate('SubscriptionView');
+    };
     
     const handleNavigateToProfile = () => {
         if (selectedBaby) {
@@ -452,6 +456,7 @@ const Babies = () => {
                 onNavigateToFavorites={handleNavigateToFavorites}
                 onNavigateToProfile={handleNavigateToProfile}
                 onNavigateToAccount={handleNavigateToAccount}
+                onNavigateToSubscription={handleNavigateToSubscription}
                 onNavigateToCreateBaby={() => {}} 
                 onLogout={handleLogout}
                 babyName={selectedBaby?.name || "Sin seleccionar"}

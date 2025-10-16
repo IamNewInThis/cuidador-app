@@ -166,6 +166,10 @@ const BabyDetail = () => {
         navigation.navigate('ProfileSettings');
     };
 
+    const handleNavigateToSubscription = () => {
+        navigation.navigate('SubscriptionView');
+    };
+
     const handleNavigateToCreateBaby = () => {
         navigation.navigate('Babies');
     }
@@ -271,6 +275,7 @@ const BabyDetail = () => {
                 onNavigateToFavorites={handleNavigateToFavorites}
                 onNavigateToProfile={() => {}} 
                 onNavigateToAccount={handleNavigateToAccount}
+                onNavigateToSubscription={handleNavigateToSubscription}
                 onNavigateToCreateBaby={handleNavigateToCreateBaby}
                 onLogout={handleLogout}
                 babyName={name || babyParam.name || 'Tu bebé'}

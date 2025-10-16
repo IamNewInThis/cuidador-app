@@ -225,7 +225,7 @@ const SubscriptionView = () => {
                                     <View className="mt-4 flex-row items-center justify-center">
                                         <Ionicons name="radio-button-on" size={20} color="#3B82F6" />
                                         <Text className="text-blue-600 font-medium ml-2">
-                                            Plan seleccionado
+                                            {t('subscription.planSelected')}
                                         </Text>
                                     </View>
                                 )}
@@ -237,7 +237,7 @@ const SubscriptionView = () => {
                 {/* Benefits Section */}
                 <View className="mx-5 mt-6 mb-8">
                     <Text className="text-xl font-bold text-gray-900 mb-4">
-                        ¿Por qué suscribirse?
+                        {t('subscription.whySubscribe')}
                     </Text>
                     
                     <View className="bg-white rounded-xl p-5 border border-gray-200">
@@ -247,9 +247,9 @@ const SubscriptionView = () => {
                                     <Ionicons name="chatbubbles" size={20} color="#3B82F6" />
                                 </View>
                                 <View className="flex-1">
-                                    <Text className="font-medium text-gray-900">Chat Inteligente</Text>
+                                    <Text className="font-medium text-gray-900">{t('subscription.smartChat')}</Text>
                                     <Text className="text-gray-600 text-sm">
-                                        Respuestas personalizadas basadas en la edad y características únicas de tu bebé
+                                        {t('subscription.smartChatDesc')}
                                     </Text>
                                 </View>
                             </View>
@@ -259,9 +259,9 @@ const SubscriptionView = () => {
                                     <Ionicons name="calendar" size={20} color="#F97316" />
                                 </View>
                                 <View className="flex-1">
-                                    <Text className="font-medium text-gray-900">Seguimiento Avanzado</Text>
+                                    <Text className="font-medium text-gray-900">{t('subscription.advancedTracking')}</Text>
                                     <Text className="text-gray-600 text-sm">
-                                        Monitorea patrones de sueño, alimentación y desarrollo
+                                        {t('subscription.advancedTrackingDesc')}
                                     </Text>
                                 </View>
                             </View>
@@ -271,9 +271,9 @@ const SubscriptionView = () => {
                                     <Ionicons name="medical" size={20} color="#10B981" />
                                 </View>
                                 <View className="flex-1">
-                                    <Text className="font-medium text-gray-900">Asesoría Especializada</Text>
+                                    <Text className="font-medium text-gray-900">{t('subscription.specializedAdvice')}</Text>
                                     <Text className="text-gray-600 text-sm">
-                                        Acceso a consultas con profesionales en desarrollo infantil
+                                        {t('subscription.specializedAdviceDesc')}
                                     </Text>
                                 </View>
                             </View>
@@ -289,12 +289,12 @@ const SubscriptionView = () => {
                     className="bg-blue-600 rounded-xl py-4 items-center"
                 >
                     <Text className="text-white font-bold text-lg">
-                        Suscribirse por {plans.find(p => p.id === selectedPlan)?.price}
+                        {t('subscription.subscribeButton')} {plans.find(p => p.id === selectedPlan)?.price}
                     </Text>
                 </TouchableOpacity>
                 
                 <Text className="text-gray-500 text-center text-xs mt-3">
-                    Cancela en cualquier momento. Sin compromisos a largo plazo.
+                    {t('subscription.disclaimer')}
                 </Text>
             </View>
         </SafeAreaView>

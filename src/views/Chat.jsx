@@ -362,6 +362,10 @@ const Chat = () => {
         navigation.navigate('ProfileSettings');
     };
 
+    const handleNavigateToSubscription = () => {
+        navigation.navigate('SubscriptionView');
+    };
+
     const handleNavigateToCreateBaby = () => {
         navigation.navigate('Babies');
     };
@@ -508,6 +512,7 @@ const Chat = () => {
                 onNavigateToFavorites={handleNavigateToFavorites}
                 onNavigateToProfile={handleNavigateToProfile}
                 onNavigateToAccount={handleNavigateToAccount}
+                onNavigateToSubscription={handleNavigateToSubscription}
                 onNavigateToCreateBaby={handleNavigateToCreateBaby}
                 onLogout={handleLogout}
                 babyName={selectedBaby?.name || ''}
