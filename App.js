@@ -98,7 +98,7 @@ const linking = {
 
 export default function App() {
   return (
-    <StripeProvider publishableKey="pk_test_51SIE6jPC5k9kGAvvJUxQaeiR8LIEyjWaOiJcrUhnZmapYjpHKcwrMqYu63YX23k8HxMFvGu4LuLdiSaxB0IUZ4xa00e9FEeS5L">
+    <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}>
       <AuthProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <NavigationContainer linking={linking}>
