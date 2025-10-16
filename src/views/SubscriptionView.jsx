@@ -5,17 +5,24 @@ import {
     ScrollView,
     TouchableOpacity,
     Alert,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useStripe } from '@stripe/stripe-react-native';
+import { useAuth } from '../contexts/AuthContext';
+import PaymentService from '../services/PaymentService';
 
 const SubscriptionView = () => {
     const navigation = useNavigation();
     const { t } = useTranslation();
+    const stripe = useStripe();
+    const { user } = useAuth();
     const [selectedPlan, setSelectedPlan] = useState('monthly');
+    const [loading, setLoading] = useState(false);
 
     const plans = [
         {
@@ -73,13 +80,93 @@ const SubscriptionView = () => {
         setSelectedPlan(planId);
     };
 
-    const handleSubscribe = () => {
+    const handleSubscribe = async () => {
+        if (!stripe) {
+            Alert.alert('Error', 'Stripe is not initialized. Please try again.');
+            return;
+        }
+
+        if (loading) return;
+
         const plan = plans.find(p => p.id === selectedPlan);
-        Alert.alert(
-            t('subscription.confirmTitle'),
-            t('subscription.confirmMessage', { plan: plan.name }),
-            [{ text: t('subscription.understood'), style: 'default' }]
-        );
+        if (!plan) {
+            Alert.alert('Error', 'Please select a plan first.');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            // Show confirmation dialog first
+            Alert.alert(
+                t('subscription.confirmTitle') || 'Confirm Subscription',
+                `Are you sure you want to subscribe to ${plan.name} for ${plan.price}?`,
+                [
+                    {
+                        text: 'Cancel',
+                        style: 'cancel',
+                        onPress: () => setLoading(false)
+                    },
+                    {
+                        text: 'Subscribe',
+                        onPress: async () => {
+                            try {
+                                // Get user info from auth context
+                                const userId = user?.id || 'guest-' + Date.now();
+                                const email = user?.email || 'guest@example.com';
+
+                                console.log('🔐 User info:', { userId, email });
+                                console.log('💰 Creating subscription payment intent for:', selectedPlan);
+                                
+                                const paymentData = await PaymentService.subscribeUser(
+                                    selectedPlan,
+                                    userId,
+                                    email
+                                );
+
+                                console.log('💳 Processing payment with Payment Sheet...');
+                                const result = await PaymentService.processPaymentWithSheet(
+                                    paymentData.clientSecret,
+                                    stripe,
+                                    email
+                                );
+
+                                if (result.success) {
+                                    Alert.alert(
+                                        '🎉 Payment Successful!',
+                                        `Welcome to Lumi ${plan.name}! Your subscription is now active.`,
+                                        [
+                                            {
+                                                text: 'Continue',
+                                                onPress: () => {
+                                                    // Navigate to main app or success screen
+                                                    navigation.goBack();
+                                                }
+                                            }
+                                        ]
+                                    );
+                                } else if (result.canceled) {
+                                    Alert.alert('Payment Canceled', 'You can try again anytime.');
+                                }
+                            } catch (error) {
+                                console.error('Payment error:', error);
+                                Alert.alert(
+                                    'Payment Failed',
+                                    error.message || 'Something went wrong. Please try again.',
+                                    [{ text: 'OK' }]
+                                );
+                            } finally {
+                                setLoading(false);
+                            }
+                        }
+                    }
+                ]
+            );
+        } catch (error) {
+            console.error('Subscription error:', error);
+            Alert.alert('Error', 'Failed to start subscription process. Please try again.');
+            setLoading(false);
+        }
     };
 
     const handleGoBack = () => {
@@ -286,15 +373,27 @@ const SubscriptionView = () => {
             <View className="bg-white border-t border-gray-200 px-5 py-4">
                 <TouchableOpacity
                     onPress={handleSubscribe}
-                    className="bg-blue-600 rounded-xl py-4 items-center"
+                    disabled={loading}
+                    className={`rounded-xl py-4 items-center ${
+                        loading ? 'bg-gray-400' : 'bg-blue-600'
+                    }`}
                 >
-                    <Text className="text-white font-bold text-lg">
-                        {t('subscription.subscribeButton')} {plans.find(p => p.id === selectedPlan)?.price}
-                    </Text>
+                    {loading ? (
+                        <View className="flex-row items-center">
+                            <ActivityIndicator color="white" size="small" />
+                            <Text className="text-white font-bold text-lg ml-2">
+                                Processing...
+                            </Text>
+                        </View>
+                    ) : (
+                        <Text className="text-white font-bold text-lg">
+                            {t('subscription.subscribeButton') || 'Subscribe for'} {plans.find(p => p.id === selectedPlan)?.price}
+                        </Text>
+                    )}
                 </TouchableOpacity>
                 
                 <Text className="text-gray-500 text-center text-xs mt-3">
-                    {t('subscription.disclaimer')}
+                    {t('subscription.disclaimer') || 'Secure payment processed by Stripe. Cancel anytime.'}
                 </Text>
             </View>
         </SafeAreaView>
