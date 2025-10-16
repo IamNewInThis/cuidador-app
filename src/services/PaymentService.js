@@ -20,8 +20,6 @@ class PaymentService {
             // Define plan amounts (in cents)
             const planAmounts = {
                 monthly: 999,     // $9.99
-                yearly: 8999,     // $89.99 (2 months free)
-                premium: 14999    // $149.99 (family plan)
             };
 
             const amount = planAmounts[planId];
@@ -197,21 +195,6 @@ class PaymentService {
                 period: 'month',
                 description: 'Access to all features with monthly billing'
             },
-            yearly: {
-                name: 'Yearly Plan',
-                price: '$89.99',
-                amount: 8999,
-                period: 'year',
-                description: 'Best value - 2 months free with yearly billing',
-                savings: 'Save $29.89'
-            },
-            premium: {
-                name: 'Family Plan',
-                price: '$149.99',
-                amount: 14999,
-                period: 'year',
-                description: 'Perfect for families with multiple children'
-            }
         };
 
         return plans[planId] || null;

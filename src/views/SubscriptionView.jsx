@@ -28,7 +28,7 @@ const SubscriptionView = () => {
         {
             id: 'monthly',
             name: t('subscription.monthlyPlan'),
-            price: t('subscription.monthlyPrice'),
+            price: '$9.99',
             period: t('subscription.perMonth'),
             description: t('subscription.monthlyDescription'),
             features: [
@@ -37,40 +37,6 @@ const SubscriptionView = () => {
                 t('subscription.features.personalizedTips'),
                 t('subscription.features.prioritySupport'),
                 t('subscription.features.allFeatures')
-            ],
-            popular: false,
-        },
-        {
-            id: 'yearly',
-            name: t('subscription.yearlyPlan'),
-            price: t('subscription.yearlyPrice'),
-            period: t('subscription.perYear'),
-            originalPrice: t('subscription.originalYearlyPrice'),
-            description: t('subscription.yearlyDescription'),
-            features: [
-                t('subscription.features.everythingMonthly'),
-                t('subscription.features.twoMonthsFree'),
-                t('subscription.features.specialistConsultations'),
-                t('subscription.features.detailedReports'),
-                t('subscription.features.cloudBackup'),
-                t('subscription.features.betaAccess')
-            ],
-            popular: true,
-            savings: t('subscription.savings'),
-        },
-        {
-            id: 'premium',
-            name: t('subscription.familyPlan'),
-            price: t('subscription.familyPrice'),
-            period: t('subscription.perYear'),
-            description: t('subscription.familyDescription'),
-            features: [
-                t('subscription.features.everythingYearly'),
-                t('subscription.features.fiveBabyProfiles'),
-                t('subscription.features.familySharing'),
-                t('subscription.features.monthlyFamilyAdvice'),
-                t('subscription.features.specializedContent'),
-                t('subscription.features.support247')
             ],
             popular: false,
         }
@@ -97,74 +63,54 @@ const SubscriptionView = () => {
         setLoading(true);
 
         try {
-            // Show confirmation dialog first
-            Alert.alert(
-                t('subscription.confirmTitle') || 'Confirm Subscription',
-                `Are you sure you want to subscribe to ${plan.name} for ${plan.price}?`,
-                [
-                    {
-                        text: 'Cancel',
-                        style: 'cancel',
-                        onPress: () => setLoading(false)
-                    },
-                    {
-                        text: 'Subscribe',
-                        onPress: async () => {
-                            try {
-                                // Get user info from auth context
-                                const userId = user?.id || 'guest-' + Date.now();
-                                const email = user?.email || 'guest@example.com';
+            // Get user info from auth context
+            const userId = user?.id || 'guest-' + Date.now();
+            const email = user?.email || 'guest@example.com';
 
-                                console.log('🔐 User info:', { userId, email });
-                                console.log('💰 Creating subscription payment intent for:', selectedPlan);
-                                
-                                const paymentData = await PaymentService.subscribeUser(
-                                    selectedPlan,
-                                    userId,
-                                    email
-                                );
+            console.log('🔐 User info:', { userId, email });
+            console.log('💰 Creating subscription payment intent for:', selectedPlan);
+            
+            // Create payment intent
+            const paymentData = await PaymentService.subscribeUser(
+                selectedPlan,
+                userId,
+                email
+            );
 
-                                console.log('💳 Processing payment with Payment Sheet...');
-                                const result = await PaymentService.processPaymentWithSheet(
-                                    paymentData.clientSecret,
-                                    stripe,
-                                    email
-                                );
+            console.log('💳 Processing payment with Payment Sheet...');
+            
+            // Open Payment Sheet directly
+            const result = await PaymentService.processPaymentWithSheet(
+                paymentData.clientSecret,
+                stripe,
+                email
+            );
 
-                                if (result.success) {
-                                    Alert.alert(
-                                        '🎉 Payment Successful!',
-                                        `Welcome to Lumi ${plan.name}! Your subscription is now active.`,
-                                        [
-                                            {
-                                                text: 'Continue',
-                                                onPress: () => {
-                                                    // Navigate to main app or success screen
-                                                    navigation.goBack();
-                                                }
-                                            }
-                                        ]
-                                    );
-                                } else if (result.canceled) {
-                                    Alert.alert('Payment Canceled', 'You can try again anytime.');
-                                }
-                            } catch (error) {
-                                console.error('Payment error:', error);
-                                Alert.alert(
-                                    'Payment Failed',
-                                    error.message || 'Something went wrong. Please try again.',
-                                    [{ text: 'OK' }]
-                                );
-                            } finally {
-                                setLoading(false);
+            if (result.success) {
+                Alert.alert(
+                    '🎉 Payment Successful!',
+                    `Welcome to Lumi ${plan.name}! Your subscription is now active.`,
+                    [
+                        {
+                            text: 'Continue',
+                            onPress: () => {
+                                // Navigate to main app or success screen
+                                navigation.goBack();
                             }
                         }
-                    }
-                ]
-            );
+                    ]
+                );
+            } else if (result.canceled) {
+                Alert.alert('Payment Canceled', 'You can try again anytime.');
+            }
         } catch (error) {
-            console.error('Subscription error:', error);
-            Alert.alert('Error', 'Failed to start subscription process. Please try again.');
+            console.error('Payment error:', error);
+            Alert.alert(
+                'Payment Failed',
+                error.message || 'Something went wrong. Please try again.',
+                [{ text: 'OK' }]
+            );
+        } finally {
             setLoading(false);
         }
     };
@@ -225,100 +171,53 @@ const SubscriptionView = () => {
                     </View>
                 </View>
 
-                {/* Plans */}
+                {/* Plan */}
                 <View className="mx-5 mt-6">
                     <Text className="text-xl font-bold text-gray-900 mb-4">
-                        {t('subscription.choosePlan')}
+                        {t('subscription.choosePlan') || 'Subscription Plan'}
                     </Text>
                     
-                    {plans.map((plan, index) => (
-                        <TouchableOpacity
-                            key={plan.id}
-                            onPress={() => handleSelectPlan(plan.id)}
-                            className={`mb-4 rounded-2xl border-2 overflow-hidden ${
-                                selectedPlan === plan.id
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-200 bg-white'
-                            }`}
-                        >
-                            {plan.popular && (
-                                <View className="bg-gradient-to-r from-blue-500 to-purple-600">
-                                    <LinearGradient
-                                        colors={['#3B82F6', '#8B5CF6']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
-                                        className="py-2"
-                                    >
-                                        <Text className="text-white text-center font-medium text-sm">
-                                            {t('subscription.mostPopular')}
-                                        </Text>
-                                    </LinearGradient>
+                    <View className="mb-4 rounded-2xl border-2 border-blue-500 bg-white overflow-hidden">
+                        <View className="p-5">
+                            <View className="flex-row items-center justify-between mb-2">
+                                <View className="flex-1">
+                                    <Text className="text-lg font-bold text-gray-900">
+                                        {plans[0].name}
+                                    </Text>
+                                    <Text className="text-gray-600 text-sm mt-1">
+                                        {plans[0].description}
+                                    </Text>
                                 </View>
-                            )}
-                            
-                            <View className="p-5">
-                                <View className="flex-row items-center justify-between mb-2">
-                                    <View className="flex-1">
-                                        <Text className="text-lg font-bold text-gray-900">
-                                            {plan.name}
+                                
+                                <View className="items-end">
+                                    <View className="flex-row items-baseline">
+                                        <Text className="text-2xl font-bold text-gray-900">
+                                            {plans[0].price}
                                         </Text>
-                                        <Text className="text-gray-600 text-sm mt-1">
-                                            {plan.description}
+                                        <Text className="text-gray-600 text-sm ml-1">
+                                            {plans[0].period}
                                         </Text>
                                     </View>
-                                    
-                                    <View className="items-end">
-                                        <View className="flex-row items-baseline">
-                                            <Text className="text-2xl font-bold text-gray-900">
-                                                {plan.price}
-                                            </Text>
-                                            <Text className="text-gray-600 text-sm ml-1">
-                                                {plan.period}
-                                            </Text>
-                                        </View>
-                                        
-                                        {plan.originalPrice && (
-                                            <Text className="text-gray-400 text-sm line-through">
-                                                {plan.originalPrice}
-                                            </Text>
-                                        )}
-                                        
-                                        {plan.savings && (
-                                            <Text className="text-green-600 text-xs font-medium">
-                                                {plan.savings}
-                                            </Text>
-                                        )}
-                                    </View>
                                 </View>
-
-                                {/* Features */}
-                                <View className="mt-4 space-y-2">
-                                    {plan.features.map((feature, featureIndex) => (
-                                        <View key={featureIndex} className="flex-row items-center">
-                                            <Ionicons 
-                                                name="checkmark-circle" 
-                                                size={16} 
-                                                color="#10B981" 
-                                            />
-                                            <Text className="text-gray-700 text-sm ml-2 flex-1">
-                                                {feature}
-                                            </Text>
-                                        </View>
-                                    ))}
-                                </View>
-
-                                {/* Selection Indicator */}
-                                {selectedPlan === plan.id && (
-                                    <View className="mt-4 flex-row items-center justify-center">
-                                        <Ionicons name="radio-button-on" size={20} color="#3B82F6" />
-                                        <Text className="text-blue-600 font-medium ml-2">
-                                            {t('subscription.planSelected')}
-                                        </Text>
-                                    </View>
-                                )}
                             </View>
-                        </TouchableOpacity>
-                    ))}
+
+                            {/* Features */}
+                            <View className="mt-4 space-y-2">
+                                {plans[0].features.map((feature, featureIndex) => (
+                                    <View key={featureIndex} className="flex-row items-center mb-2">
+                                        <Ionicons 
+                                            name="checkmark-circle" 
+                                            size={16} 
+                                            color="#10B981" 
+                                        />
+                                        <Text className="text-gray-700 text-sm ml-2 flex-1">
+                                            {feature}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+                    </View>
                 </View>
 
                 {/* Benefits Section */}
@@ -387,7 +286,7 @@ const SubscriptionView = () => {
                         </View>
                     ) : (
                         <Text className="text-white font-bold text-lg">
-                            {t('subscription.subscribeButton') || 'Subscribe for'} {plans.find(p => p.id === selectedPlan)?.price}
+                            {t('subscription.subscribeButton') || 'Subscribe for'} $9.99/month
                         </Text>
                     )}
                 </TouchableOpacity>
