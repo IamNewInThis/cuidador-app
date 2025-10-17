@@ -8,6 +8,8 @@ import { useAuth } from '../contexts/AuthContext';
 import ConversationsService from '../services/ConversationsService';
 import FeedbackService from '../services/FeedbackService';
 import { getBabies } from '../services/BabiesService';
+import { SERVER } from '@env';
+
 
 import AssistantMessage from '../components/chat/AssistantMessage';
 import UserMessage from '../components/chat/UserMessage';
@@ -70,7 +72,7 @@ const Chat = () => {
     const scrollViewRef = useRef();
     const [showSearch, setShowSearch] = useState(false);
     const [searchText, setSearchText] = useState('');
-    const [highlightedMessageId, setHighlightedMessageId] = useState(null);
+    const [highlightedMessageIds, setHighlightedMessageIds] = useState([]);
 
 
     const appendMessage = useCallback((newMessage) => {
@@ -332,13 +334,10 @@ const Chat = () => {
             const results = await ConversationsService.searchMessagesByText(selectedBaby.id, searchText);
 
             if (results && results.length > 0) {
-                // Tomamos el primero encontrado (puedes ajustar esto si quieres resaltar varios)
-                setHighlightedMessageId(results[0].id);
-
-                // Opcional: puedes hacer scroll automático hacia el mensaje encontrado
-                scrollRef.current?.scrollToIndex({ index: results[0].id, animated: true });
+                // Guardamos todos los IDs encontrados
+                setHighlightedMessageIds(results.map(r => r.id));
             } else {
-                setHighlightedMessageId(null);
+                setHighlightedMessageIds([]);
                 Alert.alert('Sin resultados', 'No se encontraron mensajes con ese texto.');
             }
         } catch (error) {
@@ -349,7 +348,7 @@ const Chat = () => {
     const handleSearchClose = () => {
         setShowSearch(false);
         setSearchText('');
-        setHighlightedMessageId(null);
+        setHighlightedMessageIds([]);
     };
 
 
@@ -512,7 +511,8 @@ const Chat = () => {
                                         key={msg.id}
                                         messageId={msg.id}
                                         text={msg.text}
-                                        isHighlighted={msg.id === highlightedMessageId}
+                                        isHighlighted={highlightedMessageIds.includes(msg.id)}
+                                        highlightText={searchText}
                                         feedback={feedbacks[msg.id]}
                                         onFeedback={handleFeedback}
                                     />

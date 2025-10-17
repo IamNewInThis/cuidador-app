@@ -12,7 +12,7 @@ import MarkdownText, { splitTextAndTable } from './MarkdownText';
 import FavoritesService from '../../services/FavoritesService';
 import SelectCategoryModal from '../favorites/SelectCategoryModal';
 
-const AssistantMessage = ({ text, messageId, onFeedback, feedback, isHighlighted }) => {
+const AssistantMessage = ({ text, messageId, onFeedback, feedback, isHighlighted, highlightText }) => {
     const [showComment, setShowComment] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [showOptionsModal, setShowOptionsModal] = useState(false);
@@ -95,12 +95,57 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback, isHighlighted
         }
     };
 
+    const renderHighlightedText = (text, highlight) => {
+        if (!highlight || highlight.trim() === '') {
+            return <MarkdownText text={text} />;
+        }
+
+        // Normaliza acentos
+        const normalize = (str) =>
+            str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        const normalizedText = normalize(text);
+        const normalizedHighlight = normalize(highlight);
+        const regex = new RegExp(`(${normalizedHighlight})`, 'gi');
+
+        const parts = normalizedText.split(regex);
+        let originalIndex = 0;
+
+        return (
+            <Text>
+                {parts.map((part, index) => {
+                    const originalPart = text.slice(originalIndex, originalIndex + part.length);
+                    originalIndex += part.length;
+
+                    const isMatch = normalize(part).toLowerCase() === normalizedHighlight.toLowerCase();
+
+                    if (isMatch) {
+                        // ✅ Resalta solo la palabra, manteniendo el resto del estilo del contenedor
+                        return (
+                            <Text
+                                key={index}
+                                style={{
+                                    backgroundColor: 'rgba(255, 235, 59, 0.5)', // amarillo con opacidad
+                                    borderRadius: 4,
+                                }}
+                            >
+                                {originalPart}
+                            </Text>
+                        );
+                    }
+
+                    return <Text key={index}>{originalPart}</Text>;
+                })}
+            </Text>
+        );
+    };
+
+
     return (
         <>
             <View
                 className={`
                     w-full py-4 px-4 border-b border-gray-100
-                    ${isHighlighted ? 'bg-yellow-100 border-yellow-300' : 'bg-gray-50'}
                 `}
             >
                 <View className="max-w-4xl mx-auto w-full">
@@ -115,12 +160,12 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback, isHighlighted
 
                     {table ? (
                         <>
-                            {before && <MarkdownText text={before} />}
+                            {before && renderHighlightedText(before, highlightText)}
                             <TableView data={table} />
-                            {after && <MarkdownText text={after} />}
+                            {after && renderHighlightedText(after, highlightText)}
                         </>
                     ) : (
-                        <MarkdownText text={text} />
+                        renderHighlightedText(text, highlightText)
                     )}
 
                     <View className="flex-row items-center justify-between mt-3">
