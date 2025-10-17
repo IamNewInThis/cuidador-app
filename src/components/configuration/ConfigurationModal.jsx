@@ -15,7 +15,7 @@ import ConfigurationOption from "./ConfigurationOption";
 const ConfigurationModal = ({
     visible,
     onClose,
-    onNavigateToProfile,
+    onNavigateToUserProfile,
     onNavigateToSubscription,
     onNavigateToLanguage,
     onNavigateToHelpCenter,
@@ -33,7 +33,7 @@ const ConfigurationModal = ({
             subtitle: t("configuration.profileSubtitle"),
             onPress: () => {
                 onClose();
-                onNavigateToProfile?.();
+                onNavigateToUserProfile?.();
             },
         },
         {

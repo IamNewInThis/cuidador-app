@@ -280,14 +280,6 @@ const ProfileSettings = () => {
                         className="bg-blue-500 border border-blue-500"
                     />
                 </View>
-
-                <View className="px-4 mt-3 mb-8">
-                    <Button
-                        title="Volver"
-                        onPress={() => navigation.goBack()}
-                        className="bg-gray-100 border border-gray-300"
-                    />
-                </View>
             </ScrollView>
 
             {/* Side Menu */}

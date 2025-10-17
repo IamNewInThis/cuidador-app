@@ -87,9 +87,19 @@ const SubscriptionView = () => {
             );
 
             if (result.success) {
+                console.log('✅ Payment completed successfully!');
+                console.log('📊 Subscription data:', {
+                    subscriptionId: paymentData.subscriptionId,
+                    customerId: paymentData.customerId
+                });
+                
+                // Note: Stripe webhooks will automatically update Supabase
+                // with subscription and payment records
+                console.log('🔔 Waiting for Stripe webhooks to sync data...');
+
                 Alert.alert(
                     '🎉 Payment Successful!',
-                    `Welcome to Lumi ${plan.name}! Your subscription is now active.`,
+                    `Welcome to Lumi ${plan.name}! Your subscription is now active. Stripe Subscription ID: ${paymentData.subscriptionId}`,
                     [
                         {
                             text: 'Continue',

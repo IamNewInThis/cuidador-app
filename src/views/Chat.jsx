@@ -407,7 +407,7 @@ const Chat = () => {
         }
     };
 
-    const handleNavigateToProfile = () => {
+    const handleNavigateToBabyProfile = () => {
         if (selectedBaby) {
             navigation.navigate('BabyDetail', { baby: selectedBaby });
         } else {
@@ -416,7 +416,7 @@ const Chat = () => {
         }
     };
 
-    const handleNavigateToAccount = () => {
+    const handleNavigateToUserProfile = () => {
         navigation.navigate('ProfileSettings');
     };
 
@@ -626,8 +626,8 @@ const Chat = () => {
                 onChangeBaby={handleBabyPressFromMenu}
                 onNavigateToChat={() => { }}
                 onNavigateToFavorites={handleNavigateToFavorites}
-                onNavigateToProfile={handleNavigateToProfile}
-                onNavigateToAccount={handleNavigateToAccount}
+                onNavigateToBabyProfile={handleNavigateToBabyProfile}
+                onNavigateToUserProfile={handleNavigateToUserProfile}
                 onNavigateToSubscription={handleNavigateToSubscription}
                 onNavigateToCreateBaby={handleNavigateToCreateBaby}
                 onLogout={handleLogout}
