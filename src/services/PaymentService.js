@@ -3,12 +3,12 @@ import { Alert } from 'react-native';
 
 class PaymentService {
     constructor() {
-        // Use your computer's IP for development with physical devices
-        // For iOS Simulator: use 'localhost'
-        // For Android Emulator: use '10.0.2.2'
-        // For physical devices: use your computer's local IP
+        // Get Stripe API URL from environment variables
+        // Falls back to localhost if not set
+        const stripeApiUrl = process.env.EXPO_PUBLIC_STRIPE_API_URL || 'http://localhost:8001/api/payments';
+        
         this.baseURL = __DEV__ 
-            ? 'http://192.168.1.155:8001/api/payments' 
+            ? stripeApiUrl
             : 'https://your-production-server.com/api/payments';
     }
 

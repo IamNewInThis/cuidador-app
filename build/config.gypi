@@ -505,14 +505,14 @@
     "target": "24.8.0",
     "build_v8_with_gn": "false",
     "global_prefix": "/opt/homebrew",
-    "local_prefix": "/Users/inter-mac-602/Documents/GitHub/Lumi/cuidador-app",
+    "local_prefix": "/Users/inter-mac-602/Documents/GitHub/lumi/cuidador-app",
     "globalconfig": "/opt/homebrew/etc/npmrc",
     "userconfig": "/Users/inter-mac-602/.npmrc",
     "init_module": "/Users/inter-mac-602/.npm-init.js",
-    "npm_version": "11.6.0",
+    "npm_version": "11.6.1",
     "node_gyp": "/opt/homebrew/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js",
     "cache": "/Users/inter-mac-602/.npm",
-    "user_agent": "npm/11.6.0 node/v24.8.0 darwin arm64 workspaces/false",
+    "user_agent": "npm/11.6.1 node/v24.8.0 darwin arm64 workspaces/false",
     "prefix": "/opt/homebrew"
   }
 }
