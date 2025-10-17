@@ -22,9 +22,9 @@ const SideMenu = ({
   onChangeBaby,
   onNavigateToChat,
   onNavigateToFavorites,
-  onNavigateToProfile,
-  onNavigateToAccount,
+  onNavigateToBabyProfile,
   onNavigateToCreateBaby,
+  onNavigateToUserProfile,
   onNavigateToSubscription,
   onNavigateToLanguage,
   onNavigateToHelpCenter,
@@ -196,7 +196,7 @@ const SideMenu = ({
                         break;
                       case "profile":
                         onClose();
-                        onNavigateToProfile?.();
+                        onNavigateToBabyProfile?.();
                         break;
                       case "configuration":
                         setShowConfigurationModal(true);
@@ -281,10 +281,10 @@ const SideMenu = ({
       <ConfigurationModal
         visible={showConfigurationModal}
         onClose={() => setShowConfigurationModal(false)}
-        onNavigateToProfile={() => {
+        onNavigateToUserProfile={() => {
           setShowConfigurationModal(false);
           onClose();
-          onNavigateToProfile?.();
+          onNavigateToUserProfile?.();
         }}
         onNavigateToSubscription={() => {
           setShowConfigurationModal(false);

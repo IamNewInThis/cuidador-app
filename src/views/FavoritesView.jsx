@@ -223,7 +223,7 @@ const FavoritesView = ({ navigation }) => {
         navigation.navigate('Chat');
     };
 
-    const handleNavigateToProfile = () => {
+    const handleNavigateToBabyProfile= () => {
         if (selectedBaby) {
             navigation.navigate('BabyDetail', { baby: selectedBaby });
         } else {
@@ -232,19 +232,8 @@ const FavoritesView = ({ navigation }) => {
         }
     };
 
-    const handleNavigateToAccount = async () => {
-        try {
-            // Asegurar que el bebé seleccionado esté guardado en AsyncStorage
-            if (selectedBaby && user) {
-                await AsyncStorage.setItem(`selectedBaby_${user.id}`, selectedBaby.id);
-                await AsyncStorage.setItem('selectedBaby', JSON.stringify(selectedBaby));
-                console.log('Baby saved before navigating to ProfileSettings:', selectedBaby.name);
-            }
-            navigation.navigate('ProfileSettings');
-        } catch (error) {
-            console.error('Error saving baby before navigation to ProfileSettings:', error);
-            navigation.navigate('ProfileSettings');
-        }
+    const handleNavigateToUserProfile = () => {
+        navigation.navigate('ProfileSettings');
     };
 
     const handleNavigateToSubscription = () => {
@@ -387,8 +376,8 @@ const FavoritesView = ({ navigation }) => {
                 onChangeBaby={() => navigation.navigate('BabyList')}
                 onNavigateToChat={handleNavigateToChat}
                 onNavigateToFavorites={() => {}} // Ya estamos aquí
-                onNavigateToProfile={handleNavigateToProfile}
-                onNavigateToAccount={handleNavigateToAccount}
+                onNavigateToBabyProfile={handleNavigateToBabyProfile}
+                onNavigateToUserProfile={handleNavigateToUserProfile}
                 onNavigateToSubscription={handleNavigateToSubscription}
                 onNavigateToCreateBaby={handleNavigateToCreateBaby}
                 onLogout={handleLogout}
