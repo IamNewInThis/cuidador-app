@@ -56,6 +56,26 @@ class ConversationsService {
             throw error;
         }
     }
+
+    async searchMessagesByText(babyId, searchText, limit = 50) {
+        try {
+            const { data, error } = await supabase
+                .from('conversations')
+                .select('*')
+                .eq('baby_id', babyId)
+                .ilike('content', `%${searchText}%`) // búsqueda insensible a mayúsculas
+                .order('created_at', { ascending: false })
+                .limit(limit);
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Error searching messages:', error);
+            throw error;
+        }
+    }
+
+
 }
 
 export default new ConversationsService();

@@ -8,6 +8,8 @@ import { useAuth } from '../contexts/AuthContext';
 import ConversationsService from '../services/ConversationsService';
 import FeedbackService from '../services/FeedbackService';
 import { getBabies } from '../services/BabiesService';
+import { SERVER } from '@env';
+
 
 import AssistantMessage from '../components/chat/AssistantMessage';
 import UserMessage from '../components/chat/UserMessage';
@@ -68,6 +70,10 @@ const Chat = () => {
     const [showBabyModal, setShowBabyModal] = useState(false);
     const [isMenuVisible, setIsMenuVisible] = useState(false);
     const scrollViewRef = useRef();
+    const [showSearch, setShowSearch] = useState(false);
+    const [searchText, setSearchText] = useState('');
+    const [highlightedMessageIds, setHighlightedMessageIds] = useState([]);
+
 
     const appendMessage = useCallback((newMessage) => {
         setMessages((prevMessages) => [...prevMessages, newMessage]);
@@ -161,22 +167,22 @@ const Chat = () => {
 
     const loadBabies = useCallback(async () => {
         if (!user?.id) return;
-        
+
         try {
             const { data, error } = await getBabies(user.id);
             if (error) {
                 console.error('Error loading babies:', error);
                 return;
             }
-            
+
             setBabies(data || []);
-            
+
             if (!data || data.length === 0) {
                 console.log('No hay bebés disponibles');
                 setSelectedBaby(null);
                 return;
             }
-            
+
             // Intentar recuperar la selección guardada
             try {
                 const savedBabyId = await AsyncStorage.getItem(`selectedBaby_${user.id}`);
@@ -196,7 +202,7 @@ const Chat = () => {
             } catch (storageError) {
                 console.log('Error recuperando selección de bebé:', storageError);
             }
-            
+
             // Si llegamos aquí, no había selección guardada válida, seleccionar el primer bebé
             console.log('Seleccionando primer bebé por defecto:', data[0].name);
             setSelectedBaby(data[0]);
@@ -206,7 +212,7 @@ const Chat = () => {
             } catch (storageError) {
                 console.log('Error guardando selección por defecto:', storageError);
             }
-            
+
         } catch (error) {
             console.error('Error loading babies:', error);
         }
@@ -256,19 +262,19 @@ const Chat = () => {
         try {
             const savedUserMessage = await ConversationsService.createMessage({
                 userId: user.id,
-                babyId: selectedBaby?.id || null, 
+                babyId: selectedBaby?.id || null,
                 content: messageToSend,
                 role: 'user',
             });
 
-            appendMessage({ 
-                id: savedUserMessage.id, 
-                role: 'user', 
+            appendMessage({
+                id: savedUserMessage.id,
+                role: 'user',
                 text: messageToSend,
                 babyId: selectedBaby?.id || null
             });
 
-            const API_URL = process.env.SERVER ;
+            const API_URL = process.env.SERVER;
             console.log('Usando API_URL:', API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
@@ -288,14 +294,14 @@ const Chat = () => {
             const assistantContent = data?.answer || 'Lo siento, no pude obtener una respuesta.';
             const savedAssistantMessage = await ConversationsService.createMessage({
                 userId: user.id,
-                babyId: selectedBaby?.id || null, 
+                babyId: selectedBaby?.id || null,
                 content: assistantContent,
                 role: 'assistant',
             });
 
-            appendMessage({ 
-                id: savedAssistantMessage.id, 
-                role: 'assistant', 
+            appendMessage({
+                id: savedAssistantMessage.id,
+                role: 'assistant',
                 text: assistantContent,
                 babyId: selectedBaby?.id || null
             });
@@ -318,9 +324,33 @@ const Chat = () => {
     };
 
     const handleSearchPress = () => {
-        // TODO: Implementar búsqueda
+        setShowSearch(!showSearch);
         console.log('Search pressed');
     };
+
+    const handleSubmitSearch = async () => {
+        console.log('Buscando mensaje:', searchText);
+        try {
+            const results = await ConversationsService.searchMessagesByText(selectedBaby.id, searchText);
+
+            if (results && results.length > 0) {
+                // Guardamos todos los IDs encontrados
+                setHighlightedMessageIds(results.map(r => r.id));
+            } else {
+                setHighlightedMessageIds([]);
+                Alert.alert('Sin resultados', 'No se encontraron mensajes con ese texto.');
+            }
+        } catch (error) {
+            console.error('Error al buscar mensaje:', error);
+        }
+    };
+
+    const handleSearchClose = () => {
+        setShowSearch(false);
+        setSearchText('');
+        setHighlightedMessageIds([]);
+    };
+
 
     const handleBabyPress = () => {
         setShowBabyModal(true);
@@ -382,7 +412,7 @@ const Chat = () => {
         // console.log('Baby selected:', baby.name);
         setSelectedBaby(baby);
         setShowBabyModal(false);
-        
+
         // Guardar la selección en AsyncStorage
         try {
             await AsyncStorage.setItem(`selectedBaby_${user.id}`, baby.id);
@@ -390,7 +420,7 @@ const Chat = () => {
         } catch (storageError) {
             console.log('Error guardando selección de bebé:', storageError);
         }
-        
+
         // Las conversaciones se cargarán automáticamente gracias al useEffect que detecta cambios en selectedBaby
     };
 
@@ -413,13 +443,34 @@ const Chat = () => {
     return (
         <SafeAreaView className="flex-1 bg-white">
             {/* Header */}
-            <ChatHeader 
-                babyName={selectedBaby?.name || ""} 
+            <ChatHeader
+                babyName={selectedBaby?.name || ""}
                 onMenuPress={handleMenuPress}
                 onSearchPress={handleSearchPress}
                 onBabyPress={handleBabyPress}
             />
-
+            {showSearch && (
+                <View className="flex-row items-center px-4 py-2 border-b border-gray-200 bg-gray-50">
+                    <TextInput
+                        style={{ flex: 1, marginRight: 8, padding: 8, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ccc' }}
+                        placeholder="Buscar mensaje..."
+                        value={searchText}
+                        onChangeText={setSearchText}
+                    />
+                    <TouchableOpacity
+                        className="bg-blue-500 px-4 py-2 rounded"
+                        onPress={handleSubmitSearch}
+                    >
+                        <Text className="text-white">Buscar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        className="bg-gray-300 p-2 rounded-full items-center justify-center ml-3"
+                        onPress={handleSearchClose}
+                    >
+                        <Entypo name="cross" size={20} color="#333" />
+                    </TouchableOpacity>
+                </View>
+            )}
             {/* Modal de selección de bebés */}
             <BabySelectionModal
                 visible={showBabyModal}
@@ -428,7 +479,7 @@ const Chat = () => {
                 onSelectBaby={handleSelectBaby}
                 onClose={handleCloseBabyModal}
             />
-            
+
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -460,6 +511,8 @@ const Chat = () => {
                                         key={msg.id}
                                         messageId={msg.id}
                                         text={msg.text}
+                                        isHighlighted={highlightedMessageIds.includes(msg.id)}
+                                        highlightText={searchText}
                                         feedback={feedbacks[msg.id]}
                                         onFeedback={handleFeedback}
                                     />
@@ -488,9 +541,8 @@ const Chat = () => {
                             testID="send-button"
                             accessibilityRole="button"
                             accessibilityLabel="Enviar mensaje"
-                            className={`m-2 w-10 h-10 rounded-full items-center justify-center ${
-                                isSendDisabled ? 'bg-gray-300' : 'bg-blue-500'
-                            }`}
+                            className={`m-2 w-10 h-10 rounded-full items-center justify-center ${isSendDisabled ? 'bg-gray-300' : 'bg-blue-500'
+                                }`}
                             onPress={handleOnSendMessage}
                             disabled={isSendDisabled}
                         >
@@ -508,7 +560,7 @@ const Chat = () => {
                 visible={isMenuVisible}
                 onClose={handleCloseMenu}
                 onChangeBaby={handleBabyPressFromMenu}
-                onNavigateToChat={() => {}} 
+                onNavigateToChat={() => { }}
                 onNavigateToFavorites={handleNavigateToFavorites}
                 onNavigateToProfile={handleNavigateToProfile}
                 onNavigateToAccount={handleNavigateToAccount}
