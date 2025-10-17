@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ConversationsService from '../services/ConversationsService';
 import FeedbackService from '../services/FeedbackService';
 import { getBabies } from '../services/BabiesService';
+import AntDesign from '@expo/vector-icons/AntDesign';
 import { SERVER } from '@env';
 
 
@@ -73,6 +74,8 @@ const Chat = () => {
     const [showSearch, setShowSearch] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [highlightedMessageIds, setHighlightedMessageIds] = useState([]);
+    const [currentHighlightIndex, setCurrentHighlightIndex] = useState(0);
+    const [messagePositions, setMessagePositions] = useState({});
 
 
     const appendMessage = useCallback((newMessage) => {
@@ -128,6 +131,13 @@ const Chat = () => {
     const scrollToBottom = useCallback(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
     }, []);
+
+    const scrollToMessage = (messageId) => {
+        const y = messagePositions[messageId];
+        if (typeof y === 'number' && scrollViewRef.current) {
+            scrollViewRef.current.scrollTo({ y: y - 100, animated: true });
+        }
+    };
 
     const loadConversationHistory = useCallback(async (babyId = null) => {
         setIsLoadingConversations(true);
@@ -233,6 +243,7 @@ const Chat = () => {
             loadConversationHistory();
         }
     }, [loadBabies]);
+
 
     // Recargar datos cuando el componente se enfoque (útil cuando se regresa de otras pantallas)
     useFocusEffect(
@@ -351,6 +362,23 @@ const Chat = () => {
         setHighlightedMessageIds([]);
     };
 
+    const handleNextResult = () => {
+        if (highlightedMessageIds.length === 0) return;
+        const nextIndex =
+            currentHighlightIndex + 1 < highlightedMessageIds.length ? currentHighlightIndex + 1 : 0;
+        setCurrentHighlightIndex(nextIndex);
+        scrollToMessage(highlightedMessageIds[nextIndex]);
+    };
+
+    const handlePrevResult = () => {
+        if (highlightedMessageIds.length === 0) return;
+        const prevIndex =
+            currentHighlightIndex - 1 >= 0 ? currentHighlightIndex - 1 : highlightedMessageIds.length - 1;
+        setCurrentHighlightIndex(prevIndex);
+        scrollToMessage(highlightedMessageIds[prevIndex]);
+    };
+
+
 
     const handleBabyPress = () => {
         setShowBabyModal(true);
@@ -450,26 +478,53 @@ const Chat = () => {
                 onBabyPress={handleBabyPress}
             />
             {showSearch && (
-                <View className="flex-row items-center px-4 py-2 border-b border-gray-200 bg-gray-50">
-                    <TextInput
-                        style={{ flex: 1, marginRight: 8, padding: 8, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ccc' }}
-                        placeholder="Buscar mensaje..."
-                        value={searchText}
-                        onChangeText={setSearchText}
-                    />
-                    <TouchableOpacity
-                        className="bg-blue-500 px-4 py-2 rounded"
-                        onPress={handleSubmitSearch}
-                    >
-                        <Text className="text-white">Buscar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        className="bg-gray-300 p-2 rounded-full items-center justify-center ml-3"
-                        onPress={handleSearchClose}
-                    >
-                        <Entypo name="cross" size={20} color="#333" />
-                    </TouchableOpacity>
+                <View className="w-full bg-gray-50 border-b border-gray-200 px-4 py-2">
+                    <View className="flex-row items-center w-full">
+                        <TextInput
+                            style={{ flex: 1, marginRight: 8, padding: 8, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ccc' }}
+                            placeholder="Buscar mensaje..."
+                            value={searchText}
+                            onChangeText={setSearchText}
+                        />
+                        <TouchableOpacity
+                            className="bg-gray-300 p-2 rounded-full items-center justify-center ml-3"
+                            onPress={handleSearchClose}
+                        >
+                            <Entypo name="cross" size={20} color="#333" />
+                        </TouchableOpacity>
+                    </View>
+                    <View className="flex-row items-center ">
+                        <TouchableOpacity
+                            className="bg-blue-500 px-4 py-2 rounded m-1"
+                            onPress={handleSubmitSearch}
+                        >
+                            <Text className="text-white">buscar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={handlePrevResult}
+                            className="bg-gray-200 px-3 py-2 rounded ml-1"
+                        >
+                            <AntDesign name="arrowdown" size={18} color="#333" />
+                        </TouchableOpacity>
+
+                        <Text>
+                            {highlightedMessageIds.length > 0
+                                ? `${currentHighlightIndex + 1} / ${highlightedMessageIds.length}`
+                                : ' 0 / 0 '}
+                        </Text>
+
+                        <TouchableOpacity
+                            onPress={handleNextResult}
+                            className="bg-gray-200 px-3 py-2 rounded"
+                        >
+                            <AntDesign name="arrowup" size={18} color="#333" />
+                        </TouchableOpacity>
+
+                    </View>
+
+
                 </View>
+
             )}
             {/* Modal de selección de bebés */}
             <BabySelectionModal
@@ -489,8 +544,6 @@ const Chat = () => {
                     ref={scrollViewRef}
                     className="flex-1"
                     keyboardShouldPersistTaps="handled"
-                    onContentSizeChange={scrollToBottom}
-                    onLayout={scrollToBottom}
                     contentContainerStyle={{ padding: 16 }}
                     showsVerticalScrollIndicator={false}
                 >
@@ -503,25 +556,36 @@ const Chat = () => {
                         </View>
                     ) : (
                         <>
-                            {messages.map((msg) =>
-                                msg.role === 'user' ? (
-                                    <UserMessage key={msg.id} text={msg.text} />
-                                ) : (
-                                    <AssistantMessage
-                                        key={msg.id}
-                                        messageId={msg.id}
-                                        text={msg.text}
-                                        isHighlighted={highlightedMessageIds.includes(msg.id)}
-                                        highlightText={searchText}
-                                        feedback={feedbacks[msg.id]}
-                                        onFeedback={handleFeedback}
-                                    />
-                                )
-                            )}
+                            {messages.map((msg) => (
+                                <View
+                                    key={msg.id}
+                                    // ✅ Medimos posición dentro del ScrollView
+                                    onLayout={(event) => {
+                                        const { y } = event.nativeEvent.layout;
+                                        setMessagePositions((prev) => ({ ...prev, [msg.id]: y }));
+                                    }}
+                                >
+                                    {msg.role === 'user' ? (
+                                        <UserMessage text={msg.text} />
+                                    ) : (
+                                        <AssistantMessage
+                                            messageId={msg.id}
+                                            text={msg.text}
+                                            isHighlighted={highlightedMessageIds.includes(msg.id)}
+                                            highlightText={searchText}
+                                            isFocused={highlightedMessageIds[currentHighlightIndex] === msg.id}
+                                            feedback={feedbacks[msg.id]}
+                                            onFeedback={handleFeedback}
+                                        />
+                                    )}
+                                </View>
+                            ))}
+
                             {isLoading && <LoadingMessage />}
                         </>
                     )}
                 </ScrollView>
+
 
                 {/* Input mejorado */}
                 <View className="border-t border-gray-200 bg-white px-4 py-3">
