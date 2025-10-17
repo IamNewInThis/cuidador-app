@@ -12,7 +12,7 @@ import MarkdownText, { splitTextAndTable } from './MarkdownText';
 import FavoritesService from '../../services/FavoritesService';
 import SelectCategoryModal from '../favorites/SelectCategoryModal';
 
-const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
+const AssistantMessage = ({ text, messageId, onFeedback, feedback, isHighlighted }) => {
     const [showComment, setShowComment] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [showOptionsModal, setShowOptionsModal] = useState(false);
@@ -78,13 +78,13 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
 
         try {
             setIsAddingFavorite(true);
-            await FavoritesService.addToFavorites({ 
+            await FavoritesService.addToFavorites({
                 conversationMessageId: messageId,
                 categoryId: categoryId,
                 babyId: selectedBaby?.id // ✅ Incluir baby_id
             });
             Alert.alert('¡Guardado!', 'Mensaje agregado a favoritos exitosamente', [
-                { text: 'Ver favoritos', onPress: () => {/* Navegar a favoritos */} },
+                { text: 'Ver favoritos', onPress: () => {/* Navegar a favoritos */ } },
                 { text: 'OK', style: 'default' }
             ]);
         } catch (error) {
@@ -97,7 +97,12 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
 
     return (
         <>
-            <View className="w-full py-4 px-4 bg-gray-50 border-b border-gray-100">
+            <View
+                className={`
+                    w-full py-4 px-4 border-b border-gray-100
+                    ${isHighlighted ? 'bg-yellow-100 border-yellow-300' : 'bg-gray-50'}
+                `}
+            >
                 <View className="max-w-4xl mx-auto w-full">
                     <View className="flex-row items-center justify-between mb-2">
                         <Text className="text-sm font-medium text-gray-500">Lumi</Text>
@@ -149,14 +154,14 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
                                     </TouchableOpacity>
                                 </>
                             )}
-                            
+
                             <TouchableOpacity
                                 onPress={handleCopyMessage}
-                                className="p-1 "
+                                className="p-1"
                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             >
                                 <FontAwesome name="copy" size={18} color="#6B7280" />
-                            </TouchableOpacity> 
+                            </TouchableOpacity>
                         </View>
 
                         {/* Lado derecho: Dots */}
@@ -171,6 +176,8 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
                     </View>
                 </View>
             </View>
+
+            {/* Modales */}
             <CommentModal
                 visible={showComment}
                 onClose={() => setShowComment(false)}
@@ -187,7 +194,7 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback }) => {
                 onClose={() => setShowCategoryModal(false)}
                 onSelectCategory={handleCategorySelected}
                 messageId={messageId}
-                babyId={selectedBaby?.id} // ✅ Pasar baby_id
+                babyId={selectedBaby?.id}
             />
         </>
     );
