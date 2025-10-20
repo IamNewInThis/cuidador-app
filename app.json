@@ -23,7 +23,8 @@
         "com.apple.developer.applesignin": [
           "Default",
           "Default"
-        ]
+        ],
+        "com.apple.developer.in-app-payments": ["merchant.cuidador-app"]
       },
       "runtimeVersion": "1.0.2"
     },

@@ -68,10 +68,10 @@ const SubscriptionView = () => {
             const email = user?.email || 'guest@example.com';
 
             console.log('🔐 User info:', { userId, email });
-            console.log('💰 Creating subscription payment intent for:', selectedPlan);
+            console.log('💰 Creating subscription payment sheet session for:', selectedPlan);
             
-            // Create payment intent
-            const paymentData = await PaymentService.subscribeUser(
+            // Create payment sheet session
+            const paymentData = await PaymentService.createPaymentSheetSession(
                 selectedPlan,
                 userId,
                 email
@@ -81,16 +81,16 @@ const SubscriptionView = () => {
             
             // Open Payment Sheet directly
             const result = await PaymentService.processPaymentWithSheet(
-                paymentData.clientSecret,
+                paymentData,
                 stripe,
                 email
             );
 
             if (result.success) {
                 console.log('✅ Payment completed successfully!');
-                console.log('📊 Subscription data:', {
-                    subscriptionId: paymentData.subscriptionId,
-                    customerId: paymentData.customerId
+                console.log('📊 Payment session data:', {
+                    paymentIntentId: paymentData.paymentIntentId,
+                    customerId: paymentData.customer
                 });
                 
                 // Note: Stripe webhooks will automatically update Supabase
@@ -99,7 +99,7 @@ const SubscriptionView = () => {
 
                 Alert.alert(
                     '🎉 Payment Successful!',
-                    `Welcome to Lumi ${plan.name}! Your subscription is now active. Stripe Subscription ID: ${paymentData.subscriptionId}`,
+                    `Welcome to Lumi ${plan.name}! Your subscription is now active. Payment Intent ID: ${paymentData.paymentIntentId}`,
                     [
                         {
                             text: 'Continue',

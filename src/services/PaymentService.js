@@ -1,11 +1,9 @@
-import { useStripe } from '@stripe/stripe-react-native';
-import { Alert } from 'react-native';
-
 class PaymentService {
     constructor() {
         // Get Stripe API URL from environment variables
         // Falls back to localhost if not set
         const stripeApiUrl = process.env.EXPO_PUBLIC_STRIPE_API_URL || 'http://localhost:8001/api/payments';
+        this.merchantIdentifier = process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER || 'merchant.cuidador-app';
         
         this.baseURL = __DEV__ 
             ? stripeApiUrl
@@ -13,9 +11,9 @@ class PaymentService {
     }
 
     /**
-     * Creates a PaymentIntent for subscription payments
+     * Creates all resources required for the Stripe Payment Sheet
      */
-    async createSubscriptionPaymentIntent(planId, userId, email) {
+    async createPaymentSheetSession(planId, userId, email) {
         try {
             // Define plan amounts (in cents)
             const planAmounts = {
@@ -27,7 +25,7 @@ class PaymentService {
                 throw new Error('Invalid plan selected');
             }
 
-            const response = await fetch(`${this.baseURL}/create-payment-intent`, {
+            const response = await fetch(`${this.baseURL}/create-payment-sheet`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -36,6 +34,7 @@ class PaymentService {
                     amount,
                     currency: 'usd',
                     userId,
+                    email,
                     description: `Lumi ${planId} subscription`,
                     metadata: {
                         planId,
@@ -46,13 +45,13 @@ class PaymentService {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to create payment intent');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to create payment sheet session');
             }
 
             return await response.json();
         } catch (error) {
-            console.error('PaymentService - createSubscriptionPaymentIntent error:', error);
+            console.error('PaymentService - createPaymentSheetSession error:', error);
             throw error;
         }
     }
@@ -89,22 +88,42 @@ class PaymentService {
      * Processes payment using Stripe's Payment Sheet (recommended for better UX)
      * Shows Google Pay, Apple Pay, and saved cards automatically
      */
-    async processPaymentWithSheet(clientSecret, stripe, customerEmail = 'customer@example.com') {
+    async processPaymentWithSheet(sessionData, stripe, customerEmail = 'customer@example.com') {
         try {
+            if (!sessionData) {
+                throw new Error('Missing payment session data');
+            }
+
+            const { paymentIntent, ephemeralKey, customer } = sessionData;
+
+            if (!paymentIntent || !ephemeralKey || !customer) {
+                throw new Error('Incomplete payment session data');
+            }
+
             console.log('🔄 Initializing Payment Sheet...');
-            console.log('📋 Client Secret:', clientSecret ? 'Present' : 'Missing');
+            console.log('👤 Customer:', customer);
+            console.log('🔑 Ephemeral Key:', ephemeralKey ? 'Present' : 'Missing');
+            console.log('📋 Client Secret:', paymentIntent ? 'Present' : 'Missing');
             
             // Initialize the Payment Sheet with Google Pay enabled
             const initParams = {
                 merchantDisplayName: 'Lumi Cuidador App',
-                paymentIntentClientSecret: clientSecret,
+                merchantCountryCode: 'US',
+                customerId: customer,
+                customerEphemeralKeySecret: ephemeralKey,
+                paymentIntentClientSecret: paymentIntent,
                 defaultBillingDetails: {
                     email: customerEmail,
                 },
                 // Enable Google Pay for Android
+                // TODO : cambiar el idioma dependiendo de la configuración del dispositivo
                 googlePay: {
                     merchantCountryCode: 'US',
-                    testEnv: true, // Set to false in production
+                    testEnv: true, 
+                },
+                applePay: {
+                    merchantCountryCode: 'US',
+                    ...(this.merchantIdentifier ? { merchantId: this.merchantIdentifier } : {}),
                 },
                 // Allow card payments
                 allowsDelayedPaymentMethods: true,
@@ -167,15 +186,13 @@ class PaymentService {
             // Show loading state
             console.log(`Starting subscription process for plan: ${planId}`);
 
-            // Create PaymentIntent
-            const paymentData = await this.createSubscriptionPaymentIntent(planId, userId, email);
+            // Create Payment Sheet session on backend
+            const paymentData = await this.createPaymentSheetSession(planId, userId, email);
 
             return {
                 success: true,
-                clientSecret: paymentData.clientSecret,
-                paymentIntentId: paymentData.paymentIntentId,
-                amount: paymentData.amount,
-                currency: paymentData.currency,
+                ...paymentData,
+                clientSecret: paymentData.paymentIntent,
             };
         } catch (error) {
             console.error('PaymentService - subscribeUser error:', error);
