@@ -17,7 +17,7 @@ class PaymentService {
         try {
             // Define plan amounts (in cents)
             const planAmounts = {
-                monthly: 999,     // $9.99
+                monthly: 1000,     // $9.99
             };
 
             const amount = planAmounts[planId];
@@ -97,63 +97,79 @@ class PaymentService {
             const { paymentIntent, ephemeralKey, customer } = sessionData;
 
             if (!paymentIntent || !ephemeralKey || !customer) {
-                throw new Error('Incomplete payment session data');
+                console.error('❌ Missing required data:', {
+                    hasPaymentIntent: !!paymentIntent,
+                    hasEphemeralKey: !!ephemeralKey,
+                    hasCustomer: !!customer
+                });
+                throw new Error('Incomplete payment session data. Missing: ' + 
+                    [!paymentIntent && 'paymentIntent', !ephemeralKey && 'ephemeralKey', !customer && 'customer']
+                    .filter(Boolean).join(', '));
             }
 
-            console.log('🔄 Initializing Payment Sheet...');
-            console.log('👤 Customer:', customer);
-            console.log('🔑 Ephemeral Key:', ephemeralKey ? 'Present' : 'Missing');
-            console.log('📋 Client Secret:', paymentIntent ? 'Present' : 'Missing');
+            console.log('� Initializing Payment Sheet...');
             
-            // Initialize the Payment Sheet with Google Pay enabled
+            // Initialize the Payment Sheet with Google Pay and Apple Pay enabled
             const initParams = {
                 merchantDisplayName: 'Lumi Cuidador App',
-                merchantCountryCode: 'US',
                 customerId: customer,
                 customerEphemeralKeySecret: ephemeralKey,
                 paymentIntentClientSecret: paymentIntent,
                 defaultBillingDetails: {
                     email: customerEmail,
                 },
+                // IMPORTANT: returnURL for Android 3D Secure and redirects
+                returnURL: 'cuidador-app://stripe-redirect',
                 // Enable Google Pay for Android
-                // TODO : cambiar el idioma dependiendo de la configuración del dispositivo
                 googlePay: {
                     merchantCountryCode: 'US',
-                    testEnv: true, 
+                    testEnv: __DEV__, // Use test environment in development
+                    currencyCode: 'USD',
                 },
+                // Enable Apple Pay for iOS
                 applePay: {
                     merchantCountryCode: 'US',
-                    ...(this.merchantIdentifier ? { merchantId: this.merchantIdentifier } : {}),
                 },
-                // Allow card payments
+                // Allow card payments and digital wallets
                 allowsDelayedPaymentMethods: true,
                 // Customize appearance
                 appearance: {
                     colors: {
                         primary: '#3B82F6',
+                        background: '#FFFFFF',
+                        componentBackground: '#F3F4F6',
+                        componentBorder: '#E5E7EB',
+                        componentDivider: '#E5E7EB',
+                        primaryText: '#111827',
+                        secondaryText: '#6B7280',
+                        componentText: '#111827',
+                        placeholderText: '#9CA3AF',
                     },
                 },
             };
-
-            console.log('📦 Initializing with params:', JSON.stringify(initParams, null, 2));
+            console.log('📦 Init params prepared. Initializing...');
             
             const { error: initError } = await stripe.initPaymentSheet(initParams);
 
             if (initError) {
-                console.error('❌ Payment Sheet init error:', initError);
-                throw new Error(initError.message);
+                console.error('❌ Payment Sheet init error:', {
+                    code: initError.code,
+                    message: initError.message,
+                    localizedMessage: initError.localizedMessage
+                });
+                throw new Error(`Payment Sheet initialization failed: ${initError.message || initError.code}`);
             }
 
             console.log('✅ Payment Sheet initialized successfully');
-            console.log('🎨 Presenting Payment Sheet...');
 
             // Present the Payment Sheet
             const presentResult = await stripe.presentPaymentSheet();
-            
-            console.log('📱 Present result:', JSON.stringify(presentResult, null, 2));
 
             if (presentResult.error) {
-                console.log('⚠️ Payment Sheet presentation error:', presentResult.error);
+                console.log('⚠️ Payment Sheet presentation error:', {
+                    code: presentResult.error.code,
+                    message: presentResult.error.message
+                });
                 
                 // Check if user canceled
                 if (presentResult.error.code === 'Canceled') {
@@ -163,11 +179,11 @@ class PaymentService {
                 
                 // Check for Failed error
                 if (presentResult.error.code === 'Failed') {
-                    console.error('❌ Payment Sheet failed to present:', presentResult.error.message);
+                    console.error('❌ Payment Sheet failed to present');
                     throw new Error(`Payment sheet failed: ${presentResult.error.message}`);
                 }
                 
-                throw new Error(presentResult.error.message);
+                throw new Error(presentResult.error.message || presentResult.error.code);
             }
 
             console.log('✅ Payment successful!');

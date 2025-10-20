@@ -28,7 +28,7 @@ const SubscriptionView = () => {
         {
             id: 'monthly',
             name: t('subscription.monthlyPlan'),
-            price: '$9.99',
+            price: '$10.00',
             period: t('subscription.perMonth'),
             description: t('subscription.monthlyDescription'),
             features: [
@@ -48,7 +48,7 @@ const SubscriptionView = () => {
 
     const handleSubscribe = async () => {
         if (!stripe) {
-            Alert.alert('Error', 'Stripe is not initialized. Please try again.');
+            Alert.alert('Error', 'Stripe is not initialized. Please restart the app and try again.');
             return;
         }
 
@@ -67,17 +67,32 @@ const SubscriptionView = () => {
             const userId = user?.id || 'guest-' + Date.now();
             const email = user?.email || 'guest@example.com';
 
-            console.log('🔐 User info:', { userId, email });
-            console.log('💰 Creating subscription payment sheet session for:', selectedPlan);
+            console.log('🔐 Starting payment process...');
+            console.log('👤 User:', userId);
+            console.log('� Email:', email);
+            console.log('💰 Plan:', selectedPlan);
             
             // Create payment sheet session
+            console.log('📡 Requesting payment session from server...');
             const paymentData = await PaymentService.createPaymentSheetSession(
                 selectedPlan,
                 userId,
                 email
             );
 
-            console.log('💳 Processing payment with Payment Sheet...');
+            console.log('✅ Payment session received:', {
+                hasPaymentIntent: !!paymentData.paymentIntent,
+                hasEphemeralKey: !!paymentData.ephemeralKey,
+                hasCustomer: !!paymentData.customer,
+                paymentIntentId: paymentData.paymentIntentId
+            });
+
+            // Validate response
+            if (!paymentData.paymentIntent || !paymentData.ephemeralKey || !paymentData.customer) {
+                throw new Error('Server response is missing required payment data. Please try again.');
+            }
+
+            console.log('� Opening Payment Sheet...');
             
             // Open Payment Sheet directly
             const result = await PaymentService.processPaymentWithSheet(
@@ -88,18 +103,10 @@ const SubscriptionView = () => {
 
             if (result.success) {
                 console.log('✅ Payment completed successfully!');
-                console.log('📊 Payment session data:', {
-                    paymentIntentId: paymentData.paymentIntentId,
-                    customerId: paymentData.customer
-                });
                 
-                // Note: Stripe webhooks will automatically update Supabase
-                // with subscription and payment records
-                console.log('🔔 Waiting for Stripe webhooks to sync data...');
-
                 Alert.alert(
                     '🎉 Payment Successful!',
-                    `Welcome to Lumi ${plan.name}! Your subscription is now active. Payment Intent ID: ${paymentData.paymentIntentId}`,
+                    `Welcome to Lumi ${plan.name}! Your subscription is now active.`,
                     [
                         {
                             text: 'Continue',
@@ -110,14 +117,19 @@ const SubscriptionView = () => {
                         }
                     ]
                 );
-            } else if (result.canceled) {
-                Alert.alert('Payment Canceled', 'You can try again anytime.');
-            }
+            } 
         } catch (error) {
-            console.error('Payment error:', error);
+            console.error('❌ Payment error:', error);
+            
+            // More detailed error message
+            let errorMessage = 'Something went wrong. Please try again.';
+            if (error.message) {
+                errorMessage = error.message;
+            }
+            
             Alert.alert(
                 'Payment Failed',
-                error.message || 'Something went wrong. Please try again.',
+                errorMessage,
                 [{ text: 'OK' }]
             );
         } finally {
@@ -296,7 +308,7 @@ const SubscriptionView = () => {
                         </View>
                     ) : (
                         <Text className="text-white font-bold text-lg">
-                            {t('subscription.subscribeButton') || 'Subscribe for'} $9.99/month
+                            {t('subscription.subscribeButton') || 'Subscribe for'} $10.00/month
                         </Text>
                     )}
                 </TouchableOpacity>
