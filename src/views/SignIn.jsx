@@ -46,7 +46,7 @@ const SignIn = () => {
 
     return (
         <SafeAreaView className="flex-1 items-center justify-center bg-white px-6">
-            <Text className="text-2xl font-bold text-blue-500 mb-8">{t('auth.signInTitle')} cc695a8</Text>
+            <Text className="text-2xl font-bold text-blue-500 mb-8">{t('auth.signInTitle')} 51330d3</Text>
 
             <Input
                 placeholder={t('auth.email')}

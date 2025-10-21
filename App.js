@@ -97,8 +97,9 @@ const linking = {
 };
 
 export default function App() {
+  const merchantIdentifier = process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER || 'merchant.cuidador-app';
   return (
-    <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}>
+    <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY} merchantIdentifier={merchantIdentifier}>
       <AuthProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <NavigationContainer linking={linking}>

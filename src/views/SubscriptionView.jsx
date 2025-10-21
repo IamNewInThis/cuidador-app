@@ -1,3 +1,4 @@
+// cuidador-app/src/views/SubscriptionView.jsx
 import React, { useState } from 'react';
 import {
     View,
@@ -28,7 +29,7 @@ const SubscriptionView = () => {
         {
             id: 'monthly',
             name: t('subscription.monthlyPlan'),
-            price: '$9.99',
+            price: '$10.00',
             period: t('subscription.perMonth'),
             description: t('subscription.monthlyDescription'),
             features: [
@@ -42,13 +43,9 @@ const SubscriptionView = () => {
         }
     ];
 
-    const handleSelectPlan = (planId) => {
-        setSelectedPlan(planId);
-    };
-
     const handleSubscribe = async () => {
         if (!stripe) {
-            Alert.alert('Error', 'Stripe is not initialized. Please try again.');
+            Alert.alert('Error', 'Stripe is not initialized. Please restart the app and try again.');
             return;
         }
 
@@ -67,63 +64,141 @@ const SubscriptionView = () => {
             const userId = user?.id || 'guest-' + Date.now();
             const email = user?.email || 'guest@example.com';
 
-            console.log('🔐 User info:', { userId, email });
-            console.log('💰 Creating subscription payment intent for:', selectedPlan);
+            console.log('🔐 Starting subscription flow...');
+            console.log('👤 User:', userId);
+            console.log('📧 Email:', email);
+            console.log('💳 Plan:', selectedPlan);
             
-            // Create payment intent
-            const paymentData = await PaymentService.subscribeUser(
+            // Step 1: prepare SetupIntent session
+            console.log('📡 Requesting subscription session (SetupIntent)...');
+            const setupSession = await PaymentService.createSubscriptionSession(
                 selectedPlan,
                 userId,
                 email
             );
 
-            console.log('💳 Processing payment with Payment Sheet...');
-            
-            // Open Payment Sheet directly
-            const result = await PaymentService.processPaymentWithSheet(
-                paymentData.clientSecret,
+            console.log('✅ Setup session received:', {
+                customerId: setupSession.customerId,
+                hasEphemeralKey: !!setupSession.customerEphemeralKeySecret,
+                hasSetupIntent: !!setupSession.setupIntentClientSecret,
+                priceId: setupSession.priceId || 'price_1SIbYTPC5k9kGAvvZvy5EA36',
+            });
+
+            // Step 2: save payment method via SetupIntent + PaymentSheet
+            const setupResult = await PaymentService.presentSetupPaymentSheet(
+                setupSession,
                 stripe,
                 email
             );
 
-            if (result.success) {
-                console.log('✅ Payment completed successfully!');
-                console.log('📊 Subscription data:', {
-                    subscriptionId: paymentData.subscriptionId,
-                    customerId: paymentData.customerId
-                });
-                
-                // Note: Stripe webhooks will automatically update Supabase
-                // with subscription and payment records
-                console.log('🔔 Waiting for Stripe webhooks to sync data...');
-
-                Alert.alert(
-                    '🎉 Payment Successful!',
-                    `Welcome to Lumi ${plan.name}! Your subscription is now active. Stripe Subscription ID: ${paymentData.subscriptionId}`,
-                    [
-                        {
-                            text: 'Continue',
-                            onPress: () => {
-                                // Navigate to main app or success screen
-                                navigation.goBack();
-                            }
-                        }
-                    ]
-                );
-            } else if (result.canceled) {
-                Alert.alert('Payment Canceled', 'You can try again anytime.');
+            if (setupResult.canceled) {
+                console.log('ℹ️ User canceled during payment method setup');
+                setLoading(false);
+                Alert.alert('Payment Canceled', 'No worries, you can try subscribing again whenever you want.');
+                return;
             }
+
+            console.log('💾 Payment method saved. Creating subscription...');
+
+            // Step 3: create subscription on backend
+            const subscriptionData = await PaymentService.createSubscription(
+                selectedPlan,
+                setupSession.customerId,
+                userId,
+                email
+            );
+
+            console.log('🧾 Subscription response:', {
+                subscriptionId: subscriptionData.subscriptionId,
+                status: subscriptionData.subscriptionStatus,
+                paymentIntentStatus: subscriptionData.paymentIntentStatus,
+                requiresAction: subscriptionData.requiresAction,
+            });
+
+            if (
+                subscriptionData.paymentIntentStatus &&
+                subscriptionData.paymentIntentStatus === 'requires_payment_method'
+            ) {
+                throw new Error('The saved payment method could not be used. Please try another card.');
+            }
+
+            // Step 4: confirm initial invoice payment if required
+            if (subscriptionData.requiresAction) {
+                console.log('⚠️ Additional confirmation required. Presenting Payment Sheet again...');
+                const confirmationResult = await PaymentService.confirmSubscriptionPayment(
+                    subscriptionData,
+                    stripe,
+                    email
+                );
+
+                if (confirmationResult.canceled) {
+                    Alert.alert(
+                        'Payment Incomplete',
+                        'You canceled the payment confirmation. Your subscription is still pending.',
+                        [{ text: 'OK' }]
+                    );
+                    return;
+                }
+
+                console.log('✅ Payment confirmation completed.');
+
+                // 🆕 Espera unos segundos antes de consultar estado
+                console.log('⏳ Waiting for Stripe to finalize subscription status...');
+                await new Promise(r => setTimeout(r, 3000));
+            }
+
+            // Step 5: verify final subscription status (reconsulta después de confirmar pago)
+            let subscriptionStatusDetails = null;
+            try {
+                subscriptionStatusDetails = await PaymentService.getSubscriptionStatus(setupSession.customerId);
+            } catch (statusError) {
+                console.warn('⚠️ Unable to fetch subscription status:', statusError.message);
+            }
+
+            const subscriptionId =
+                subscriptionStatusDetails?.subscription?.id ||
+                subscriptionData.subscriptionId;
+            const subscriptionStatus =
+                subscriptionStatusDetails?.status ||
+                subscriptionStatusDetails?.subscription?.status ||
+                subscriptionData.subscriptionStatus ||
+                'active';
+
+            console.log('🏁 Final subscription status:', {
+                subscriptionId,
+                subscriptionStatus,
+            });
+
+            Alert.alert(
+                '🎉 Payment Successful!',
+                `Welcome to Lumi ${plan.name}!\nSubscription ID: ${subscriptionId || 'N/A'}\nStatus: ${subscriptionStatus}`,
+                [
+                    {
+                        text: 'Continue',
+                        onPress: () => {
+                            navigation.goBack();
+                        }
+                    }
+                ]
+            );
         } catch (error) {
-            console.error('Payment error:', error);
+            console.error('❌ Payment error:', error);
+            
+            let errorMessage = 'Something went wrong. Please try again.';
+            if (error.message) {
+                errorMessage = error.message;
+            }
+            
             Alert.alert(
                 'Payment Failed',
-                error.message || 'Something went wrong. Please try again.',
+                errorMessage,
                 [{ text: 'OK' }]
             );
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleGoBack = () => {
         navigation.goBack();
@@ -296,7 +371,7 @@ const SubscriptionView = () => {
                         </View>
                     ) : (
                         <Text className="text-white font-bold text-lg">
-                            {t('subscription.subscribeButton') || 'Subscribe for'} $9.99/month
+                            {t('subscription.subscribeButton') || 'Subscribe for'} $10.00/month
                         </Text>
                     )}
                 </TouchableOpacity>
