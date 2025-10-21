@@ -1,8 +1,9 @@
+// cuidador-app/src/services/PaymentService.js
 class PaymentService {
     constructor() {
         // Get Stripe API URL from environment variables
         // Falls back to localhost if not set
-        const stripeApiUrl = process.env.EXPO_PUBLIC_STRIPE_API_URL || 'http://localhost:8001/api/payments';
+        const stripeApiUrl = process.env.EXPO_PUBLIC_STRIPE_API_URL || 'http://192.168.1.83:8001/api/payments';
         this.merchantIdentifier = process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER || 'merchant.cuidador-app';
         
         this.baseURL = __DEV__ 
@@ -247,6 +248,24 @@ class PaymentService {
             console.error('PaymentService - confirmSubscriptionPayment error:', error);
             throw error;
         }
+    }
+
+    /**
+     * Obtiene el estado actual de la suscripción en Stripe para un cliente.
+     */
+    async getSubscriptionStatus(customerId) {
+        if (!customerId) {
+            throw new Error('customerId is required to fetch subscription status');
+        }
+
+        const response = await fetch(`${this.baseURL}/subscription/${customerId}`);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || errorData.error || 'Failed to fetch subscription status');
+        }
+
+        return await response.json();
     }
 
     /**

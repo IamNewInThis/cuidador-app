@@ -1,3 +1,4 @@
+// cuidador-app/src/views/SubscriptionView.jsx
 import React, { useState } from 'react';
 import {
     View,
@@ -41,10 +42,6 @@ const SubscriptionView = () => {
             popular: false,
         }
     ];
-
-    const handleSelectPlan = (planId) => {
-        setSelectedPlan(planId);
-    };
 
     const handleSubscribe = async () => {
         if (!stripe) {
@@ -144,9 +141,13 @@ const SubscriptionView = () => {
                 }
 
                 console.log('✅ Payment confirmation completed.');
+
+                // 🆕 Espera unos segundos antes de consultar estado
+                console.log('⏳ Waiting for Stripe to finalize subscription status...');
+                await new Promise(r => setTimeout(r, 3000));
             }
 
-            // Step 5: verify final subscription status
+            // Step 5: verify final subscription status (reconsulta después de confirmar pago)
             let subscriptionStatusDetails = null;
             try {
                 subscriptionStatusDetails = await PaymentService.getSubscriptionStatus(setupSession.customerId);
@@ -183,7 +184,6 @@ const SubscriptionView = () => {
         } catch (error) {
             console.error('❌ Payment error:', error);
             
-            // More detailed error message
             let errorMessage = 'Something went wrong. Please try again.';
             if (error.message) {
                 errorMessage = error.message;
@@ -198,6 +198,7 @@ const SubscriptionView = () => {
             setLoading(false);
         }
     };
+
 
     const handleGoBack = () => {
         navigation.goBack();
