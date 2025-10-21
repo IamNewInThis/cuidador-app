@@ -13,10 +13,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useStripe } from '@stripe/stripe-react-native';
+import { useStripe, CardField } from '@stripe/stripe-react-native';
 import { useAuth } from '../contexts/AuthContext';
 import PaymentService from '../services/PaymentService';
 import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
+
 
 const SubscriptionView = () => {
     const navigation = useNavigation();
@@ -31,8 +32,6 @@ const SubscriptionView = () => {
     useEffect(() => {
         const getUserAndFetchSubscription = async () => {
             try {
-
-
                 if (!user) {
                     setStatus({ error: "No user authenticated" });
                     setLoading(false);
@@ -89,10 +88,26 @@ const SubscriptionView = () => {
         }
     ];
 
+    const handleAddCard = async () => {
+
+    };
+
     const handleCancel = async () => {
         // Confirmación al usuario
-        console.log("🔐 Iniciando proceso de cancelación de suscripción...");
-        
+        Alert.alert(
+            t('¿Estás seguro?'),
+            t('Se cancelará tu suscripción al final del período actual.'),
+            [
+                {
+                    text: t('volver'),
+                    style: 'cancel',
+                },
+                {
+                    text: t('confirmar'),
+                    onPress: async () => await PaymentService.cancelSubscription(status.subscriptionId),
+                },
+            ]
+        );
     };
 
     const handleSubscribe = async () => {
@@ -136,7 +151,7 @@ const SubscriptionView = () => {
                 customerId: setupSession.customerId,
                 hasEphemeralKey: !!setupSession.customerEphemeralKeySecret,
                 hasSetupIntent: !!setupSession.setupIntentClientSecret,
-                priceId: setupSession.priceId || 'price_1SIbYTPC5k9kGAvvZvy5EA36',
+                priceId: setupSession.priceId || 'price_1SKlk1PC5k9kGAvvwCV6A4wv',
             });
 
             // Step 2: save payment method via SetupIntent + PaymentSheet
@@ -297,38 +312,37 @@ const SubscriptionView = () => {
                     </View>
                 </LinearGradient>
 
-                {/* Current Plan Status */}
+                {/* Estado suscripción */}
                 <View className="mx-5 mt-5 bg-white rounded-xl p-4 border border-gray-200">
                     <View className="flex-row items-center">
                         <View className="w-3 h-3 bg-green-500 rounded-full mr-3" />
                         <View className="flex-1">
-                            <Text className="text-gray-900 font-medium">{t('subscription.currentPlan')}</Text>
+                            <Text className="text-gray-900 font-medium">{status?.status === 'active' ? t('Estás suscrito') : t('No estás suscrito')}</Text>
                             <Text className="text-gray-600 text-sm">
-                                {t('subscription.currentPlanSubtitle')}
+                                {status?.status === 'active' ? t('Tienes acceso a mayor cantidad de consultas') : t('No posees acceso a todo el potencial de Lumi')}
                             </Text>
                         </View>
-                        <Ionicons name="information-circle-outline" size={20} color="#7BA5F2" />
+                        <Ionicons name="information-circle-outline" size={20} color="#279608ff" />
                     </View>
                 </View>
-                {/* Cancel Plan Status */}
-                <TouchableOpacity
-                    onPress={handleCancel}
-                    activeOpacity={0.7}
-                    className="mx-5 mt-5 bg-white rounded-xl p-4 border border-gray-200"
-                >
-                    <View className="flex-row items-center">
-                        <View className="w-3 h-3 bg-red-500 rounded-full mr-3" />
-                        <View className="flex-1">
-                            <Text className="text-gray-900 font-medium">{t("Cancelar")}</Text>
-                            <Text className="text-gray-600 text-sm">
-                                {status && status.error
-                                    ? status.error
-                                    : t("Cancelar su suscripción")}
-                            </Text>
+                {status?.status === 'active' && (
+                    <TouchableOpacity
+                        onPress={handleCancel}
+                        activeOpacity={0.7}
+                        className="mx-5 mt-5 bg-white rounded-xl p-4 border border-gray-200"
+                    >
+                        <View className="flex-row items-center">
+                            <View className="w-3 h-3 bg-red-500 rounded-full mr-3" />
+                            <View className="flex-1">
+                                <Text className="text-gray-900 font-medium">{t("Cancelar suscripción")}</Text>
+                                <Text className="text-gray-600 text-sm">
+                                    {t("Seguirás teniendo acceso hasta el final del período")}
+                                </Text>
+                            </View>
+                            <Ionicons name="close-circle" size={22} color="#FF0000" />
                         </View>
-                        <Ionicons name="close-circle" size={22} color="#FF0000" />
-                    </View>
-                </TouchableOpacity>
+                    </TouchableOpacity>
+                )}
 
                 {/* Plan */}
                 <View className="mx-5 mt-6">
@@ -423,6 +437,48 @@ const SubscriptionView = () => {
                                 </View>
                             </View>
                         </View>
+                    </View>
+                </View>
+                {/* Cards section */}
+                <View className="mt-6">
+                    <Text className="text-lg font-bold text-gray-900 mb-4">
+                        Tarjetas guardadas
+                    </Text>
+
+                    <View className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm space-y-3">
+
+                        {/* Tarjeta predeterminada */}
+                        <View className="flex-row items-center justify-between bg-gray-50 p-4 rounded-xl">
+                            <View>
+                                <Text className="font-medium text-gray-900">**** **** **** 4242</Text>
+                                <Text className="text-gray-600 text-sm">Exp: 12/24</Text>
+                                <Text className="text-gray-500 text-xs capitalize">visa</Text>
+                            </View>
+                            <View className="flex-row items-center">
+                                <Ionicons
+                                    name="checkmark-circle"
+                                    size={22}
+                                    color="#10B981"
+                                    style={{ marginRight: 6 }}
+                                />
+                                <Text className="text-green-600 text-sm font-semibold">
+                                    Predeterminada
+                                </Text>
+                            </View>
+                        </View>
+                        {/* Agregar nueva tarjeta */}
+                        <TouchableOpacity onPress={handleAddCard} className="mt-4 flex-row items-center justify-center bg-blue-600 border border-blue-200 rounded-xl py-3">
+                            <Ionicons
+                                name="add-circle-outline"
+                                size={22}
+                                color="white"
+                                style={{ marginRight: 6 }}
+                            />
+                            <Text className="text-white text-base font-semibold">
+                                {t('Agregar tarjeta')}
+                            </Text>
+                        </TouchableOpacity>
+
                     </View>
                 </View>
             </ScrollView>

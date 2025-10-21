@@ -5,8 +5,8 @@ class PaymentService {
         // Falls back to localhost if not set
         const stripeApiUrl = process.env.EXPO_PUBLIC_STRIPE_API_URL || 'http://192.168.1.61:8001/api/payments';
         this.merchantIdentifier = process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER || 'merchant.cuidador-app';
-        
-        this.baseURL = __DEV__ 
+
+        this.baseURL = __DEV__
             ? stripeApiUrl
             : 'http://192.168.1.61:8001/api/payments';
     }
@@ -47,7 +47,7 @@ class PaymentService {
         }
     }
 
-    
+
     /**
      * Presenta el Payment Sheet en modo SetupIntent para guardar el método de pago.
      */
@@ -252,6 +252,19 @@ class PaymentService {
         }
     }
 
+    async cancelSubscription(subscriptionId) {
+        if (!subscriptionId) {
+            throw new Error('subscriptionId is required to cancel subscription');
+        }
+        const response = await fetch(`${this.baseURL}/subscription/cancel/${subscriptionId}`, {
+            method: 'POST',
+        });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || errorData.error || 'Failed to cancel subscription');
+        }
+        return await response.json();
+    }
     /**
      * Obtiene el estado actual de la suscripción en Stripe para un cliente.
      */
@@ -265,6 +278,27 @@ class PaymentService {
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.message || errorData.error || 'Failed to fetch subscription status');
+        }
+
+        return await response.json();
+    }
+
+    async createCard(userId, cardDetails, makeDefault ) {
+       const response = await fetch(`${this.baseURL}/create-card`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId,
+                cardDetails,
+                makeDefault
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || errorData.error || 'Failed to create card');
         }
 
         return await response.json();
