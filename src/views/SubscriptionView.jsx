@@ -29,43 +29,45 @@ const SubscriptionView = () => {
 
 
     useEffect(() => {
-        if (!user?.id) {
-            console.log("⏳ Esperando a que se cargue el usuario...");
-            return;
-        }
-
-        console.log("👤 Usuario cargado, obteniendo suscripción:", user.id);
-
-        const fetchSubscriptionStatus = async () => {
+        const getUserAndFetchSubscription = async () => {
             try {
+
+
+                if (!user) {
+                    setStatus({ error: "No user authenticated" });
+                    setLoading(false);
+                    return;
+                }
+
+                // 🔹 2. Obtener estado de suscripción
                 const baseURL =
                     process.env.EXPO_PUBLIC_STRIPE_API_URL ||
                     "http://192.168.1.61/api/payments";
 
+
                 const response = await fetch(`${baseURL}/subscription/user/${user.id}`);
-                const data = await response.json();
+                const dataResponse = await response.json();
 
                 if (!response.ok) {
+                    console.log("❌ Error en el response:", dataResponse);
                     setStatus({
-                        error: data.message || "Failed to fetch subscription status",
+                        error: dataResponse.message || "Failed to fetch subscription status",
                     });
-                    return;
-                }
+                } else {
 
-                setStatus(data);
-                console.log("✅ Subscription status:", data.status);
+                    setStatus(dataResponse);
+                }
             } catch (error) {
-                console.error("❌ Error fetching subscription status:", error);
-                setStatus({
-                    error: "Network error while fetching subscription status",
-                });
+                console.error("❌ Error general:", error);
+                setStatus({ error: "Network error while fetching subscription status" });
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchSubscriptionStatus();
-    }, [user?.id]);
+        // 🔸 Ejecutar una sola vez al montar
+        getUserAndFetchSubscription();
+    }, []);
 
 
 
@@ -86,6 +88,12 @@ const SubscriptionView = () => {
             popular: false,
         }
     ];
+
+    const handleCancel = async () => {
+        // Confirmación al usuario
+        console.log("🔐 Iniciando proceso de cancelación de suscripción...");
+        
+    };
 
     const handleSubscribe = async () => {
         if (!stripe) {
@@ -302,6 +310,25 @@ const SubscriptionView = () => {
                         <Ionicons name="information-circle-outline" size={20} color="#7BA5F2" />
                     </View>
                 </View>
+                {/* Cancel Plan Status */}
+                <TouchableOpacity
+                    onPress={handleCancel}
+                    activeOpacity={0.7}
+                    className="mx-5 mt-5 bg-white rounded-xl p-4 border border-gray-200"
+                >
+                    <View className="flex-row items-center">
+                        <View className="w-3 h-3 bg-red-500 rounded-full mr-3" />
+                        <View className="flex-1">
+                            <Text className="text-gray-900 font-medium">{t("Cancelar")}</Text>
+                            <Text className="text-gray-600 text-sm">
+                                {status && status.error
+                                    ? status.error
+                                    : t("Cancelar su suscripción")}
+                            </Text>
+                        </View>
+                        <Ionicons name="close-circle" size={22} color="#FF0000" />
+                    </View>
+                </TouchableOpacity>
 
                 {/* Plan */}
                 <View className="mx-5 mt-6">
@@ -404,9 +431,9 @@ const SubscriptionView = () => {
             <View className="bg-white border-t border-gray-200 px-5 py-4">
                 <TouchableOpacity
                     onPress={handleSubscribe}
-                    disabled={loading}
+                    disabled={loading || status?.status === 'active'}
                     className={`rounded-xl py-4 items-center ${loading ? 'bg-gray-400' : 'bg-blue-600'
-                        }`}
+                        } ${status?.status === 'active' ? 'bg-gray-400' : ''}`}
                 >
                     {loading ? (
                         <View className="flex-row items-center">
