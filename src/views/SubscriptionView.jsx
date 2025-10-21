@@ -1,5 +1,5 @@
 // cuidador-app/src/views/SubscriptionView.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useStripe } from '@stripe/stripe-react-native';
 import { useAuth } from '../contexts/AuthContext';
 import PaymentService from '../services/PaymentService';
+import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 
 const SubscriptionView = () => {
     const navigation = useNavigation();
@@ -24,6 +25,49 @@ const SubscriptionView = () => {
     const { user } = useAuth();
     const [selectedPlan, setSelectedPlan] = useState('monthly');
     const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState(null);
+
+
+    useEffect(() => {
+        if (!user?.id) {
+            console.log("⏳ Esperando a que se cargue el usuario...");
+            return;
+        }
+
+        console.log("👤 Usuario cargado, obteniendo suscripción:", user.id);
+
+        const fetchSubscriptionStatus = async () => {
+            try {
+                const baseURL =
+                    process.env.EXPO_PUBLIC_STRIPE_API_URL ||
+                    "http://192.168.1.61/api/payments";
+
+                const response = await fetch(`${baseURL}/subscription/user/${user.id}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    setStatus({
+                        error: data.message || "Failed to fetch subscription status",
+                    });
+                    return;
+                }
+
+                setStatus(data);
+                console.log("✅ Subscription status:", data.status);
+            } catch (error) {
+                console.error("❌ Error fetching subscription status:", error);
+                setStatus({
+                    error: "Network error while fetching subscription status",
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSubscriptionStatus();
+    }, [user?.id]);
+
+
 
     const plans = [
         {
@@ -63,18 +107,21 @@ const SubscriptionView = () => {
             // Get user info from auth context
             const userId = user?.id || 'guest-' + Date.now();
             const email = user?.email || 'guest@example.com';
+            const userName = user?.user_metadata?.full_name || 'Guest User';
 
             console.log('🔐 Starting subscription flow...');
             console.log('👤 User:', userId);
+            console.log('👤 Name:', userName);
             console.log('📧 Email:', email);
             console.log('💳 Plan:', selectedPlan);
-            
+
             // Step 1: prepare SetupIntent session
             console.log('📡 Requesting subscription session (SetupIntent)...');
             const setupSession = await PaymentService.createSubscriptionSession(
                 selectedPlan,
                 userId,
-                email
+                email,
+                userName
             );
 
             console.log('✅ Setup session received:', {
@@ -183,12 +230,12 @@ const SubscriptionView = () => {
             );
         } catch (error) {
             console.error('❌ Payment error:', error);
-            
+
             let errorMessage = 'Something went wrong. Please try again.';
             if (error.message) {
                 errorMessage = error.message;
             }
-            
+
             Alert.alert(
                 'Payment Failed',
                 errorMessage,
@@ -261,7 +308,7 @@ const SubscriptionView = () => {
                     <Text className="text-xl font-bold text-gray-900 mb-4">
                         {t('subscription.choosePlan') || 'Subscription Plan'}
                     </Text>
-                    
+
                     <View className="mb-4 rounded-2xl border-2 border-blue-500 bg-white overflow-hidden">
                         <View className="p-5">
                             <View className="flex-row items-center justify-between mb-2">
@@ -273,7 +320,7 @@ const SubscriptionView = () => {
                                         {plans[0].description}
                                     </Text>
                                 </View>
-                                
+
                                 <View className="items-end">
                                     <View className="flex-row items-baseline">
                                         <Text className="text-2xl font-bold text-gray-900">
@@ -290,10 +337,10 @@ const SubscriptionView = () => {
                             <View className="mt-4 space-y-2">
                                 {plans[0].features.map((feature, featureIndex) => (
                                     <View key={featureIndex} className="flex-row items-center mb-2">
-                                        <Ionicons 
-                                            name="checkmark-circle" 
-                                            size={16} 
-                                            color="#10B981" 
+                                        <Ionicons
+                                            name="checkmark-circle"
+                                            size={16}
+                                            color="#10B981"
                                         />
                                         <Text className="text-gray-700 text-sm ml-2 flex-1">
                                             {feature}
@@ -310,7 +357,7 @@ const SubscriptionView = () => {
                     <Text className="text-xl font-bold text-gray-900 mb-4">
                         {t('subscription.whySubscribe')}
                     </Text>
-                    
+
                     <View className="bg-white rounded-xl p-5 border border-gray-200">
                         <View className="space-y-4">
                             <View className="flex-row">
@@ -324,7 +371,7 @@ const SubscriptionView = () => {
                                     </Text>
                                 </View>
                             </View>
-                            
+
                             <View className="flex-row">
                                 <View className="w-10 h-10 bg-orange-100 rounded-full items-center justify-center mr-4">
                                     <Ionicons name="calendar" size={20} color="#F97316" />
@@ -336,7 +383,7 @@ const SubscriptionView = () => {
                                     </Text>
                                 </View>
                             </View>
-                            
+
                             <View className="flex-row">
                                 <View className="w-10 h-10 bg-green-100 rounded-full items-center justify-center mr-4">
                                     <Ionicons name="medical" size={20} color="#10B981" />
@@ -358,9 +405,8 @@ const SubscriptionView = () => {
                 <TouchableOpacity
                     onPress={handleSubscribe}
                     disabled={loading}
-                    className={`rounded-xl py-4 items-center ${
-                        loading ? 'bg-gray-400' : 'bg-blue-600'
-                    }`}
+                    className={`rounded-xl py-4 items-center ${loading ? 'bg-gray-400' : 'bg-blue-600'
+                        }`}
                 >
                     {loading ? (
                         <View className="flex-row items-center">
@@ -375,7 +421,7 @@ const SubscriptionView = () => {
                         </Text>
                     )}
                 </TouchableOpacity>
-                
+
                 <Text className="text-gray-500 text-center text-xs mt-3">
                     {t('subscription.disclaimer') || 'Secure payment processed by Stripe. Cancel anytime.'}
                 </Text>

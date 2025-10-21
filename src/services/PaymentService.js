@@ -3,19 +3,19 @@ class PaymentService {
     constructor() {
         // Get Stripe API URL from environment variables
         // Falls back to localhost if not set
-        const stripeApiUrl = process.env.EXPO_PUBLIC_STRIPE_API_URL || 'http://192.168.1.83:8001/api/payments';
+        const stripeApiUrl = process.env.EXPO_PUBLIC_STRIPE_API_URL || 'http://192.168.1.61:8001/api/payments';
         this.merchantIdentifier = process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER || 'merchant.cuidador-app';
         
         this.baseURL = __DEV__ 
             ? stripeApiUrl
-            : 'https://your-production-server.com/api/payments';
+            : 'http://192.168.1.61:8001/api/payments';
     }
 
     /**
      * Solicita al backend los datos necesarios para guardar un método de pago
      * mediante SetupIntent + Payment Sheet.
      */
-    async createSubscriptionSession(planId, userId, email) {
+    async createSubscriptionSession(planId, userId, email, userName) {
         try {
             const plan = this.getPlanDetails(planId);
             if (!plan) {
@@ -31,6 +31,7 @@ class PaymentService {
                     planId,
                     userId,
                     email,
+                    userName,
                 }),
             });
 
@@ -46,6 +47,7 @@ class PaymentService {
         }
     }
 
+    
     /**
      * Presenta el Payment Sheet en modo SetupIntent para guardar el método de pago.
      */
@@ -253,12 +255,12 @@ class PaymentService {
     /**
      * Obtiene el estado actual de la suscripción en Stripe para un cliente.
      */
-    async getSubscriptionStatus(customerId) {
-        if (!customerId) {
-            throw new Error('customerId is required to fetch subscription status');
+    async getSubscriptionStatus(userId) {
+        if (!userId) {
+            throw new Error('userId is required to fetch subscription status');
         }
 
-        const response = await fetch(`${this.baseURL}/subscription/${customerId}`);
+        const response = await fetch(`${this.baseURL}/subscription/user/${userId}`);
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
