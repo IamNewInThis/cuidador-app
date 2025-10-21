@@ -466,6 +466,41 @@ const SubscriptionView = () => {
                                 </Text>
                             </View>
                         </View>
+
+                        <View>
+                            <CardField
+                                postalCodeEnabled={false}
+                                placeholders={{ number: "4242 4242 4242 4242" }} // 👈 usa plural “placeholders” (así lo pide el SDK)
+                                cardStyle={{
+                                    backgroundColor: "#FFFFFF",
+                                    textColor: "#000000",
+                                    borderColor: "#E5E7EB", // gris claro opcional
+                                    borderWidth: 1,
+                                    borderRadius: 8,
+                                }}
+                                style={{
+                                    width: "100%",
+                                    height: 50,
+                                    marginVertical: 20,
+                                }}
+                            />
+
+                            <TouchableOpacity
+                                onPress={handleAddCard}
+                                activeOpacity={0.85}
+                                className="mt-4 flex-row items-center justify-center bg-blue-600 border border-blue-600 rounded-xl py-3"
+                            >
+                                <Ionicons
+                                    name="add-circle-outline"
+                                    size={22}
+                                    color="white"
+                                    style={{ marginRight: 6 }}
+                                />
+                                <Text className="text-white text-base font-semibold">
+                                    {t("Agregar tarjeta")}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                         {/* Agregar nueva tarjeta */}
                         <TouchableOpacity onPress={handleAddCard} className="mt-4 flex-row items-center justify-center bg-blue-600 border border-blue-200 rounded-xl py-3">
                             <Ionicons
