@@ -16,8 +16,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useStripe, CardField } from '@stripe/stripe-react-native';
 import { useAuth } from '../contexts/AuthContext';
 import PaymentService from '../services/PaymentService';
-import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
-
 
 const SubscriptionView = () => {
     const navigation = useNavigation();
@@ -27,7 +25,6 @@ const SubscriptionView = () => {
     const [selectedPlan, setSelectedPlan] = useState('monthly');
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState(null);
-
 
     useEffect(() => {
         const getUserAndFetchSubscription = async () => {
@@ -39,9 +36,7 @@ const SubscriptionView = () => {
                 }
 
                 // 🔹 2. Obtener estado de suscripción
-                const baseURL =
-                    process.env.EXPO_PUBLIC_STRIPE_API_URL ||
-                    "http://192.168.1.61/api/payments";
+                const baseURL = process.env.EXPO_PUBLIC_STRIPE_API_URL || "http://192.168.1.83:8001/api/payments";
 
 
                 const response = await fetch(`${baseURL}/subscription/user/${user.id}`);
@@ -68,8 +63,6 @@ const SubscriptionView = () => {
         getUserAndFetchSubscription();
     }, []);
 
-
-
     const plans = [
         {
             id: 'monthly',
@@ -89,7 +82,7 @@ const SubscriptionView = () => {
     ];
 
     const handleAddCard = async () => {
-
+        console.log('🔐 Starting add card flow...');
     };
 
     const handleCancel = async () => {
@@ -164,7 +157,6 @@ const SubscriptionView = () => {
             if (setupResult.canceled) {
                 console.log('ℹ️ User canceled during payment method setup');
                 setLoading(false);
-                Alert.alert('Payment Canceled', 'No worries, you can try subscribing again whenever you want.');
                 return;
             }
 
