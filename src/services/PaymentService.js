@@ -11,128 +11,81 @@ class PaymentService {
     }
 
     /**
-     * Creates all resources required for the Stripe Payment Sheet
+     * Solicita al backend los datos necesarios para guardar un método de pago
+     * mediante SetupIntent + Payment Sheet.
      */
-    async createPaymentSheetSession(planId, userId, email) {
+    async createSubscriptionSession(planId, userId, email) {
         try {
-            // Define plan amounts (in cents)
-            const planAmounts = {
-                monthly: 1000,     // $9.99
-            };
-
-            const amount = planAmounts[planId];
-            if (!amount) {
+            const plan = this.getPlanDetails(planId);
+            if (!plan) {
                 throw new Error('Invalid plan selected');
             }
 
-            const response = await fetch(`${this.baseURL}/create-payment-sheet`, {
+            const response = await fetch(`${this.baseURL}/create-subscription-session`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    amount,
-                    currency: 'usd',
+                    planId,
                     userId,
                     email,
-                    description: `Lumi ${planId} subscription`,
-                    metadata: {
-                        planId,
-                        email,
-                        subscriptionType: planId
-                    }
                 }),
             });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to create payment sheet session');
+                throw new Error(errorData.message || errorData.error || 'Failed to create subscription session');
             }
 
             return await response.json();
         } catch (error) {
-            console.error('PaymentService - createPaymentSheetSession error:', error);
+            console.error('PaymentService - createSubscriptionSession error:', error);
             throw error;
         }
     }
 
     /**
-     * Processes payment using Stripe's native payment sheet
+     * Presenta el Payment Sheet en modo SetupIntent para guardar el método de pago.
      */
-    async processPayment(clientSecret, stripe) {
-        try {
-            const { error, paymentIntent } = await stripe.confirmPayment(clientSecret, {
-                paymentMethodType: 'Card',
-                paymentMethodData: {
-                    billingDetails: {
-                        email: 'customer@example.com', // You can pass this from user data
-                    },
-                },
-            });
-
-            if (error) {
-                throw new Error(error.message);
-            }
-
-            return {
-                success: true,
-                paymentIntent,
-            };
-        } catch (error) {
-            console.error('PaymentService - processPayment error:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Processes payment using Stripe's Payment Sheet (recommended for better UX)
-     * Shows Google Pay, Apple Pay, and saved cards automatically
-     */
-    async processPaymentWithSheet(sessionData, stripe, customerEmail = 'customer@example.com') {
+    async presentSetupPaymentSheet(sessionData, stripe, customerEmail = 'customer@example.com') {
         try {
             if (!sessionData) {
-                throw new Error('Missing payment session data');
+                throw new Error('Missing subscription session data');
             }
 
-            const { paymentIntent, ephemeralKey, customer } = sessionData;
+            const {
+                customerId,
+                customerEphemeralKeySecret,
+                setupIntentClientSecret,
+            } = sessionData;
 
-            if (!paymentIntent || !ephemeralKey || !customer) {
-                console.error('❌ Missing required data:', {
-                    hasPaymentIntent: !!paymentIntent,
-                    hasEphemeralKey: !!ephemeralKey,
-                    hasCustomer: !!customer
-                });
-                throw new Error('Incomplete payment session data. Missing: ' + 
-                    [!paymentIntent && 'paymentIntent', !ephemeralKey && 'ephemeralKey', !customer && 'customer']
-                    .filter(Boolean).join(', '));
+            if (!customerId || !customerEphemeralKeySecret || !setupIntentClientSecret) {
+                throw new Error('Incomplete subscription session data');
             }
 
-            console.log('� Initializing Payment Sheet...');
-            
-            // Initialize the Payment Sheet with Google Pay and Apple Pay enabled
+            console.log('🧾 Initializing Payment Sheet for SetupIntent...');
+
             const initParams = {
                 merchantDisplayName: 'Lumi Cuidador App',
-                customerId: customer,
-                customerEphemeralKeySecret: ephemeralKey,
-                paymentIntentClientSecret: paymentIntent,
+                merchantCountryCode: 'US',
+                customerId,
+                customerEphemeralKeySecret,
+                setupIntentClientSecret,
                 defaultBillingDetails: {
                     email: customerEmail,
                 },
-                // IMPORTANT: returnURL for Android 3D Secure and redirects
                 returnURL: 'cuidador-app://stripe-redirect',
-                // Enable Google Pay for Android
                 googlePay: {
                     merchantCountryCode: 'US',
-                    testEnv: __DEV__, // Use test environment in development
                     currencyCode: 'USD',
+                    testEnv: __DEV__,
                 },
-                // Enable Apple Pay for iOS
                 applePay: {
                     merchantCountryCode: 'US',
+                    ...(this.merchantIdentifier ? { merchantId: this.merchantIdentifier } : {}),
                 },
-                // Allow card payments and digital wallets
                 allowsDelayedPaymentMethods: true,
-                // Customize appearance
                 appearance: {
                     colors: {
                         primary: '#3B82F6',
@@ -147,71 +100,151 @@ class PaymentService {
                     },
                 },
             };
-            console.log('📦 Init params prepared. Initializing...');
-            
+
             const { error: initError } = await stripe.initPaymentSheet(initParams);
 
             if (initError) {
-                console.error('❌ Payment Sheet init error:', {
-                    code: initError.code,
-                    message: initError.message,
-                    localizedMessage: initError.localizedMessage
-                });
-                throw new Error(`Payment Sheet initialization failed: ${initError.message || initError.code}`);
+                console.error('❌ Payment Sheet init (setup) error:', initError);
+                throw new Error(initError.message || initError.code || 'Failed to initialize Payment Sheet');
             }
 
-            console.log('✅ Payment Sheet initialized successfully');
-
-            // Present the Payment Sheet
             const presentResult = await stripe.presentPaymentSheet();
 
             if (presentResult.error) {
-                console.log('⚠️ Payment Sheet presentation error:', {
-                    code: presentResult.error.code,
-                    message: presentResult.error.message
-                });
-                
-                // Check if user canceled
                 if (presentResult.error.code === 'Canceled') {
-                    console.log('ℹ️ User canceled the payment');
                     return { success: false, canceled: true };
                 }
-                
-                // Check for Failed error
-                if (presentResult.error.code === 'Failed') {
-                    console.error('❌ Payment Sheet failed to present');
-                    throw new Error(`Payment sheet failed: ${presentResult.error.message}`);
-                }
-                
+
                 throw new Error(presentResult.error.message || presentResult.error.code);
             }
 
-            console.log('✅ Payment successful!');
             return { success: true };
         } catch (error) {
-            console.error('❌ PaymentService - processPaymentWithSheet error:', error);
+            console.error('PaymentService - presentSetupPaymentSheet error:', error);
             throw error;
         }
     }
 
     /**
-     * Complete subscription flow
+     * Crea la suscripción en Stripe tras guardar el método de pago del cliente.
      */
-    async subscribeUser(planId, userId, email) {
+    async createSubscription(planId, customerId, userId, email) {
         try {
-            // Show loading state
-            console.log(`Starting subscription process for plan: ${planId}`);
+            const plan = this.getPlanDetails(planId);
+            if (!plan) {
+                throw new Error('Invalid plan selected');
+            }
 
-            // Create Payment Sheet session on backend
-            const paymentData = await this.createPaymentSheetSession(planId, userId, email);
+            const response = await fetch(`${this.baseURL}/create-subscription`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    planId,
+                    customerId,
+                    userId,
+                    email,
+                }),
+            });
 
-            return {
-                success: true,
-                ...paymentData,
-                clientSecret: paymentData.paymentIntent,
-            };
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || errorData.error || 'Failed to create subscription');
+            }
+
+            return await response.json();
         } catch (error) {
-            console.error('PaymentService - subscribeUser error:', error);
+            console.error('PaymentService - createSubscription error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Confirma el PaymentIntent inicial en caso de que Stripe requiera acción adicional.
+     */
+    async confirmSubscriptionPayment(subscriptionData, stripe, customerEmail = 'customer@example.com') {
+        try {
+            if (!subscriptionData) {
+                throw new Error('Missing subscription confirmation data');
+            }
+
+            const {
+                paymentIntentClientSecret,
+                paymentIntentStatus,
+                customerId,
+                customerEphemeralKeySecret,
+            } = subscriptionData;
+
+            if (!paymentIntentClientSecret) {
+                return { success: true, skipped: true };
+            }
+
+            if (!customerId || !customerEphemeralKeySecret) {
+                throw new Error('Missing customer data to confirm subscription payment');
+            }
+
+            if (paymentIntentStatus && !['requires_action', 'requires_payment_method', 'requires_confirmation'].includes(paymentIntentStatus)) {
+                return { success: true, alreadyConfirmed: true };
+            }
+
+            console.log('🔁 Initializing Payment Sheet for subscription confirmation...');
+
+            const initParams = {
+                merchantDisplayName: 'Lumi Cuidador App',
+                merchantCountryCode: 'US',
+                customerId,
+                customerEphemeralKeySecret,
+                paymentIntentClientSecret,
+                defaultBillingDetails: {
+                    email: customerEmail,
+                },
+                returnURL: 'cuidador-app://stripe-redirect',
+                googlePay: {
+                    merchantCountryCode: 'US',
+                    currencyCode: 'USD',
+                    testEnv: __DEV__,
+                },
+                applePay: {
+                    merchantCountryCode: 'US',
+                    ...(this.merchantIdentifier ? { merchantId: this.merchantIdentifier } : {}),
+                },
+                allowsDelayedPaymentMethods: true,
+                appearance: {
+                    colors: {
+                        primary: '#3B82F6',
+                        background: '#FFFFFF',
+                        componentBackground: '#F3F4F6',
+                        componentBorder: '#E5E7EB',
+                        componentDivider: '#E5E7EB',
+                        primaryText: '#111827',
+                        secondaryText: '#6B7280',
+                        componentText: '#111827',
+                        placeholderText: '#9CA3AF',
+                    },
+                },
+            };
+
+            const { error: initError } = await stripe.initPaymentSheet(initParams);
+
+            if (initError) {
+                console.error('❌ Payment Sheet init (confirmation) error:', initError);
+                throw new Error(initError.message || initError.code || 'Failed to initialize Payment Sheet for confirmation');
+            }
+
+            const presentResult = await stripe.presentPaymentSheet();
+
+            if (presentResult.error) {
+                if (presentResult.error.code === 'Canceled') {
+                    return { success: false, canceled: true };
+                }
+
+                throw new Error(presentResult.error.message || presentResult.error.code);
+            }
+
+            return { success: true };
+        } catch (error) {
+            console.error('PaymentService - confirmSubscriptionPayment error:', error);
             throw error;
         }
     }

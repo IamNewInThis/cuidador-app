@@ -67,57 +67,119 @@ const SubscriptionView = () => {
             const userId = user?.id || 'guest-' + Date.now();
             const email = user?.email || 'guest@example.com';
 
-            console.log('🔐 Starting payment process...');
+            console.log('🔐 Starting subscription flow...');
             console.log('👤 User:', userId);
-            console.log('� Email:', email);
-            console.log('💰 Plan:', selectedPlan);
+            console.log('📧 Email:', email);
+            console.log('💳 Plan:', selectedPlan);
             
-            // Create payment sheet session
-            console.log('📡 Requesting payment session from server...');
-            const paymentData = await PaymentService.createPaymentSheetSession(
+            // Step 1: prepare SetupIntent session
+            console.log('📡 Requesting subscription session (SetupIntent)...');
+            const setupSession = await PaymentService.createSubscriptionSession(
                 selectedPlan,
                 userId,
                 email
             );
 
-            console.log('✅ Payment session received:', {
-                hasPaymentIntent: !!paymentData.paymentIntent,
-                hasEphemeralKey: !!paymentData.ephemeralKey,
-                hasCustomer: !!paymentData.customer,
-                paymentIntentId: paymentData.paymentIntentId
+            console.log('✅ Setup session received:', {
+                customerId: setupSession.customerId,
+                hasEphemeralKey: !!setupSession.customerEphemeralKeySecret,
+                hasSetupIntent: !!setupSession.setupIntentClientSecret,
+                priceId: setupSession.priceId || 'price_1SIbYTPC5k9kGAvvZvy5EA36',
             });
 
-            // Validate response
-            if (!paymentData.paymentIntent || !paymentData.ephemeralKey || !paymentData.customer) {
-                throw new Error('Server response is missing required payment data. Please try again.');
-            }
-
-            console.log('� Opening Payment Sheet...');
-            
-            // Open Payment Sheet directly
-            const result = await PaymentService.processPaymentWithSheet(
-                paymentData,
+            // Step 2: save payment method via SetupIntent + PaymentSheet
+            const setupResult = await PaymentService.presentSetupPaymentSheet(
+                setupSession,
                 stripe,
                 email
             );
 
-            if (result.success) {
-                console.log('✅ Payment completed successfully!');
-                
-                Alert.alert(
-                    '🎉 Payment Successful!',
-                    `Welcome to Lumi ${plan.name}! Your subscription is now active.`,
-                    [
-                        {
-                            text: 'Continue',
-                            onPress: () => {
-                                // Navigate to main app or success screen
-                                navigation.goBack();
-                            }
-                        }
-                    ]
+            if (setupResult.canceled) {
+                console.log('ℹ️ User canceled during payment method setup');
+                setLoading(false);
+                Alert.alert('Payment Canceled', 'No worries, you can try subscribing again whenever you want.');
+                return;
+            }
+
+            console.log('💾 Payment method saved. Creating subscription...');
+
+            // Step 3: create subscription on backend
+            const subscriptionData = await PaymentService.createSubscription(
+                selectedPlan,
+                setupSession.customerId,
+                userId,
+                email
+            );
+
+            console.log('🧾 Subscription response:', {
+                subscriptionId: subscriptionData.subscriptionId,
+                status: subscriptionData.subscriptionStatus,
+                paymentIntentStatus: subscriptionData.paymentIntentStatus,
+                requiresAction: subscriptionData.requiresAction,
+            });
+
+            if (
+                subscriptionData.paymentIntentStatus &&
+                subscriptionData.paymentIntentStatus === 'requires_payment_method'
+            ) {
+                throw new Error('The saved payment method could not be used. Please try another card.');
+            }
+
+            // Step 4: confirm initial invoice payment if required
+            if (subscriptionData.requiresAction) {
+                console.log('⚠️ Additional confirmation required. Presenting Payment Sheet again...');
+                const confirmationResult = await PaymentService.confirmSubscriptionPayment(
+                    subscriptionData,
+                    stripe,
+                    email
                 );
-            } 
+
+                if (confirmationResult.canceled) {
+                    Alert.alert(
+                        'Payment Incomplete',
+                        'You canceled the payment confirmation. Your subscription is still pending.',
+                        [{ text: 'OK' }]
+                    );
+                    return;
+                }
+
+                console.log('✅ Payment confirmation completed.');
+            }
+
+            // Step 5: verify final subscription status
+            let subscriptionStatusDetails = null;
+            try {
+                subscriptionStatusDetails = await PaymentService.getSubscriptionStatus(setupSession.customerId);
+            } catch (statusError) {
+                console.warn('⚠️ Unable to fetch subscription status:', statusError.message);
+            }
+
+            const subscriptionId =
+                subscriptionStatusDetails?.subscription?.id ||
+                subscriptionData.subscriptionId;
+            const subscriptionStatus =
+                subscriptionStatusDetails?.status ||
+                subscriptionStatusDetails?.subscription?.status ||
+                subscriptionData.subscriptionStatus ||
+                'active';
+
+            console.log('🏁 Final subscription status:', {
+                subscriptionId,
+                subscriptionStatus,
+            });
+
+            Alert.alert(
+                '🎉 Payment Successful!',
+                `Welcome to Lumi ${plan.name}!\nSubscription ID: ${subscriptionId || 'N/A'}\nStatus: ${subscriptionStatus}`,
+                [
+                    {
+                        text: 'Continue',
+                        onPress: () => {
+                            navigation.goBack();
+                        }
+                    }
+                ]
+            );
         } catch (error) {
             console.error('❌ Payment error:', error);
             
