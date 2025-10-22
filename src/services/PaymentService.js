@@ -283,25 +283,126 @@ class PaymentService {
         return await response.json();
     }
 
-    async createCard(userId, cardDetails, makeDefault ) {
-       const response = await fetch(`${this.baseURL}/create-card`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId,
-                cardDetails,
-                makeDefault
-            })
+    async createCard(userId, stripe, customerEmail = 'customer@example.com') {
+        try {
+            console.log('🧾 Creando sesión de SetupIntent para usuario:', userId);
+
+            // 1️⃣ Llamar al backend para crear SetupIntent + Ephemeral Key
+            const response = await fetch(`${this.baseURL}/create-card/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || errorData.error || 'Failed to create card');
+            }
+
+            const {
+                customer,
+                ephemeralKeySecret,
+                setupIntentClientSecret,
+            } = await response.json();
+
+            if (!customer || !ephemeralKeySecret || !setupIntentClientSecret) {
+                throw new Error('Incomplete Stripe session data');
+            }
+
+            console.log('✅ SetupIntent creado. Inicializando Payment Sheet...');
+
+            // 2️⃣ Configurar PaymentSheet
+            const initParams = {
+                merchantDisplayName: 'Lumi Cuidador App',
+                merchantCountryCode: 'US',
+                customerId: customer,
+                customerEphemeralKeySecret: ephemeralKeySecret,
+                setupIntentClientSecret: setupIntentClientSecret,
+                defaultBillingDetails: {
+                    email: customerEmail,
+                },
+                returnURL: 'cuidador-app://stripe-redirect',
+                googlePay: {
+                    merchantCountryCode: 'US',
+                    currencyCode: 'USD',
+                    testEnv: __DEV__,
+                },
+                applePay: {
+                    merchantCountryCode: 'US',
+                    ...(this.merchantIdentifier ? { merchantId: this.merchantIdentifier } : {}),
+                },
+                allowsDelayedPaymentMethods: true,
+                appearance: {
+                    colors: {
+                        primary: '#3B82F6',
+                        background: '#FFFFFF',
+                        componentBackground: '#F3F4F6',
+                        componentBorder: '#E5E7EB',
+                        componentDivider: '#E5E7EB',
+                        primaryText: '#111827',
+                        secondaryText: '#6B7280',
+                        componentText: '#111827',
+                        placeholderText: '#9CA3AF',
+                    },
+                },
+            };
+
+            // 3️⃣ Inicializar PaymentSheet
+            const { error: initError } = await stripe.initPaymentSheet(initParams);
+
+            if (initError) {
+                console.error('❌ Error al inicializar PaymentSheet:', initError);
+                throw new Error(initError.message || initError.code || 'Failed to initialize Payment Sheet');
+            }
+
+            console.log('📱 Mostrando Payment Sheet al usuario...');
+
+            // 4️⃣ Presentar PaymentSheet al usuario
+            const presentResult = await stripe.presentPaymentSheet();
+
+            if (presentResult.error) {
+                if (presentResult.error.code === 'Canceled') {
+                    console.log('⚠️ Usuario canceló el flujo de tarjeta');
+                    return { success: false, canceled: true };
+                }
+                console.error('❌ Error en PaymentSheet:', presentResult.error);
+                throw new Error(presentResult.error.message || presentResult.error.code);
+            }
+
+            console.log('✅ Tarjeta agregada correctamente a Stripe');
+            return { success: true };
+        } catch (error) {
+            console.error('❌ Error en createCard:', error);
+            throw error;
+        }
+    }
+
+    async getCards(userId) {
+        const res = await fetch(`${this.baseURL}/cards/${userId}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
         });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || errorData.error || 'Failed to create card');
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || err.error || "Failed to fetch cards");
         }
 
-        return await response.json();
+        return await res.json(); // { customer: 'cus_...', cards: [...] }
+    }
+
+    async setDefaultCard(userId, cardId) {
+        const res = await fetch(`${this.baseURL}/cards/default/${userId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cardId }),
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || err.error || "Failed to set default card");
+        }
+
+        return await res.json();
     }
 
     /**

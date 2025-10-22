@@ -27,6 +27,10 @@ const SubscriptionView = () => {
     const [selectedPlan, setSelectedPlan] = useState('monthly');
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState(null);
+    const [cards, setCards] = useState([]);
+    const [refresh, setRefresh] = useState(false);
+
+    const recargarVista = () => setRefresh(!refresh);
 
 
     useEffect(() => {
@@ -64,9 +68,30 @@ const SubscriptionView = () => {
             }
         };
 
+        const fetchCards = async () => {
+            try {
+                if (!user?.id) {
+                    console.log("No user authenticated");
+                    return;
+                }
+                setLoading(true);
+
+                const data = await PaymentService.getCards(user.id);
+                setCards(data.cards || []);
+            } catch (err) {
+                console.error("❌ Error fetching cards:", err);
+                setError(err.message || "Error fetching cards");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+
+
         // 🔸 Ejecutar una sola vez al montar
         getUserAndFetchSubscription();
-    }, []);
+        fetchCards();
+    }, [refresh]);
 
 
 
@@ -88,8 +113,39 @@ const SubscriptionView = () => {
         }
     ];
 
-    const handleAddCard = async () => {
+    const handleAddCard = async (cardId) => {
+        try {
+            setLoading(true);
+            const result = await PaymentService.createCard(user.id, cardId);
 
+            if (result.success) {
+                Alert.alert("✅ Tarjeta guardada correctamente");
+            } else if (result.canceled) {
+                Alert.alert("⚠️ Proceso cancelado por el usuario");
+            }
+        } catch (error) {
+            Alert.alert("Error", error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCardDefault = async (cardId) => {
+        try {
+            setLoading(true);
+            const result = await PaymentService.setDefaultCard(user.id, cardId);
+
+            if (result.success) {
+                Alert.alert("✅ Tarjeta predeterminada establecida correctamente");
+                recargarVista();
+            } else {
+                Alert.alert("⚠️ Error al establecer la tarjeta predeterminada");
+            }
+        } catch (error) {
+            Alert.alert("Error", error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleCancel = async () => {
@@ -441,109 +497,105 @@ const SubscriptionView = () => {
                 </View>
                 {/* Cards section */}
                 <View className="mt-6">
-                    <Text className="text-lg font-bold text-gray-900 mb-4">
-                        Tarjetas guardadas
-                    </Text>
+                    {status?.status === 'active' ? (
+                        <View className="mx-5 mb-6 bg-white rounded-2xl p-5 border border-gray-200 shadow-sm space-y-4">
 
-                    <View className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm space-y-3">
+                            {/* Título */}
+                            <Text className="text-lg font-bold text-gray-900 mb-4">Tarjetas guardadas</Text>
 
-                        {/* Tarjeta predeterminada */}
-                        <View className="flex-row items-center justify-between bg-gray-50 p-4 rounded-xl">
-                            <View>
-                                <Text className="font-medium text-gray-900">**** **** **** 4242</Text>
-                                <Text className="text-gray-600 text-sm">Exp: 12/24</Text>
-                                <Text className="text-gray-500 text-xs capitalize">visa</Text>
-                            </View>
-                            <View className="flex-row items-center">
-                                <Ionicons
-                                    name="checkmark-circle"
-                                    size={22}
-                                    color="#10B981"
-                                    style={{ marginRight: 6 }}
-                                />
-                                <Text className="text-green-600 text-sm font-semibold">
-                                    Predeterminada
+                            {/* Lista de tarjetas */}
+                            {cards.length === 0 ? (
+                                <Text className="text-gray-600 text-center py-4">
+                                    No hay tarjetas guardadas
                                 </Text>
+                            ) : (
+                                cards.map((card) => (
+                                    <TouchableOpacity
+                                        key={card.id}
+                                        onPress={() => handleCardDefault(card.id)} // función callback que cambia la tarjeta por defecto
+                                        activeOpacity={0.8}
+                                        className={`flex-row items-center justify-between bg-gray-50 p-4 rounded-xl border mb-3 shadow-sm 
+        ${card.isDefault ? "border-blue-400" : "border-gray-100"}`}
+                                    >
+                                        {/* Datos de la tarjeta */}
+                                        <View className="flex-row items-center">
+                                            <Ionicons name="card" size={20} color="#4339da" className="mr-2" />
+                                            <View>
+                                                <Text className="font-semibold text-gray-900 text-base tracking-wider">
+                                                    **** **** **** {card.last4}
+                                                </Text>
+                                                <Text className="text-gray-600 text-sm mt-1">
+                                                    {card.brand?.toUpperCase() || "CARD"} • Exp:{" "}
+                                                    {card.exp_month ? String(card.exp_month).padStart(2, "0") : "--"}/
+                                                    {card.exp_year ? String(card.exp_year).slice(-2) : "--"}
+                                                </Text>
+                                            </View>
+                                        </View>
+
+                                        {/* Estado visual (predeterminada o secundaria) */}
+                                        {card.isDefault ? (
+                                            <View className="flex-row items-center space-x-1">
+                                                <Ionicons name="checkmark-circle" size={22} color="#10B981" />
+                                            </View>
+                                        ) : (
+                                            <View className="flex-row items-center space-x-1">
+                                                <Ionicons name="ellipse-outline" size={20} color="#9CA3AF" />
+                                            </View>
+                                        )}
+                                    </TouchableOpacity>
+                                ))
+                            )}
+                            {/* Campo para agregar nueva tarjeta */}
+                            <View className="mt-4">
+                                {/* Botón agregar tarjeta */}
+                                <TouchableOpacity
+                                    onPress={handleAddCard}
+                                    activeOpacity={0.85}
+                                    className="mt-2 flex-row items-center justify-center bg-blue-600 border border-blue-600 rounded-xl py-3 shadow-sm"
+                                >
+                                    <Ionicons
+                                        name="add-circle-outline"
+                                        size={22}
+                                        color="white"
+                                        style={{ marginRight: 6 }}
+                                    />
+                                    <Text className="text-white text-base font-semibold">
+                                        {t("Agregar tarjeta")}
+                                    </Text>
+                                </TouchableOpacity>
                             </View>
                         </View>
-
-                        <View>
-                            <CardField
-                                postalCodeEnabled={false}
-                                placeholders={{ number: "4242 4242 4242 4242" }} // 👈 usa plural “placeholders” (así lo pide el SDK)
-                                cardStyle={{
-                                    backgroundColor: "#FFFFFF",
-                                    textColor: "#000000",
-                                    borderColor: "#E5E7EB", // gris claro opcional
-                                    borderWidth: 1,
-                                    borderRadius: 8,
-                                }}
-                                style={{
-                                    width: "100%",
-                                    height: 50,
-                                    marginVertical: 20,
-                                }}
-                            />
-
-                            <TouchableOpacity
-                                onPress={handleAddCard}
-                                activeOpacity={0.85}
-                                className="mt-4 flex-row items-center justify-center bg-blue-600 border border-blue-600 rounded-xl py-3"
-                            >
-                                <Ionicons
-                                    name="add-circle-outline"
-                                    size={22}
-                                    color="white"
-                                    style={{ marginRight: 6 }}
-                                />
-                                <Text className="text-white text-base font-semibold">
-                                    {t("Agregar tarjeta")}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                        {/* Agregar nueva tarjeta */}
-                        <TouchableOpacity onPress={handleAddCard} className="mt-4 flex-row items-center justify-center bg-blue-600 border border-blue-200 rounded-xl py-3">
-                            <Ionicons
-                                name="add-circle-outline"
-                                size={22}
-                                color="white"
-                                style={{ marginRight: 6 }}
-                            />
-                            <Text className="text-white text-base font-semibold">
-                                {t('Agregar tarjeta')}
-                            </Text>
-                        </TouchableOpacity>
-
-                    </View>
+                    ) : null}
                 </View>
             </ScrollView>
 
-            {/* Bottom Action Button */}
-            <View className="bg-white border-t border-gray-200 px-5 py-4">
-                <TouchableOpacity
-                    onPress={handleSubscribe}
-                    disabled={loading || status?.status === 'active'}
-                    className={`rounded-xl py-4 items-center ${loading ? 'bg-gray-400' : 'bg-blue-600'
-                        } ${status?.status === 'active' ? 'bg-gray-400' : ''}`}
-                >
-                    {loading ? (
-                        <View className="flex-row items-center">
-                            <ActivityIndicator color="white" size="small" />
-                            <Text className="text-white font-bold text-lg ml-2">
-                                Processing...
+            {status?.status !== 'active' ? (
+                <View className="bg-white border-t border-gray-200 px-5 py-4">
+                    <TouchableOpacity
+                        onPress={handleSubscribe}
+                        disabled={loading || status?.status === 'active'}
+                        className={`rounded-xl py-4 items-center ${loading ? 'bg-gray-400' : 'bg-blue-600'
+                            } ${status?.status === 'active' ? 'bg-gray-400' : ''}`}
+                    >
+                        {loading ? (
+                            <View className="flex-row items-center">
+                                <ActivityIndicator color="white" size="small" />
+                                <Text className="text-white font-bold text-lg ml-2">
+                                    Processing...
+                                </Text>
+                            </View>
+                        ) : (
+                            <Text className="text-white font-bold text-lg">
+                                {t('subscription.subscribeButton') || 'Subscribe for'} $10.00/month
                             </Text>
-                        </View>
-                    ) : (
-                        <Text className="text-white font-bold text-lg">
-                            {t('subscription.subscribeButton') || 'Subscribe for'} $10.00/month
-                        </Text>
-                    )}
-                </TouchableOpacity>
+                        )}
+                    </TouchableOpacity>
 
-                <Text className="text-gray-500 text-center text-xs mt-3">
-                    {t('subscription.disclaimer') || 'Secure payment processed by Stripe. Cancel anytime.'}
-                </Text>
-            </View>
+                    <Text className="text-gray-500 text-center text-xs mt-3">
+                        {t('subscription.disclaimer') || 'Secure payment processed by Stripe. Cancel anytime.'}
+                    </Text>
+                </View>
+            ) : null}
         </SafeAreaView>
     );
 };
