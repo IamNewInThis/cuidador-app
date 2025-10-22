@@ -304,6 +304,7 @@ const Chat = () => {
                 body: JSON.stringify({
                     message: messageToSend,
                     profile: null,
+                    baby_id: selectedBaby?.id || null,
                 }),
             });
 
