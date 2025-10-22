@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useStripe, CardField } from '@stripe/stripe-react-native';
+import { useStripe } from '@stripe/stripe-react-native';
 import { useAuth } from '../contexts/AuthContext';
 import PaymentService from '../services/PaymentService';
 
@@ -22,13 +22,23 @@ const SubscriptionView = () => {
     const { t } = useTranslation();
     const stripe = useStripe();
     const { user } = useAuth();
+    const { initPaymentSheet, presentPaymentSheet } = useStripe();
     const [selectedPlan, setSelectedPlan] = useState('monthly');
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState(null);
     const [cards, setCards] = useState([]);
-    const [refresh, setRefresh] = useState(false);
 
-    const recargarVista = () => setRefresh(!refresh);
+    const fetchCards = async () => {
+        if (!user) return;
+
+        try {
+            if (!user) return;
+            const cardsData = await PaymentService.getCards(user.id);
+            setCards(cardsData.cards ?? []);
+        } catch (error) {
+            console.error("❌ Error fetching cards:", error);
+        }
+    };
 
     useEffect(() => {
         const getUserAndFetchSubscription = async () => {
@@ -63,30 +73,14 @@ const SubscriptionView = () => {
             }
         };
 
-        const fetchCards = async () => {
-            try {
-                if (!user?.id) {
-                    console.log("No user authenticated");
-                    return;
-                }
-                setLoading(true);
 
-                const data = await PaymentService.getCards(user.id);
-                setCards(data.cards || []);
-            } catch (err) {
-                console.error("❌ Error fetching cards:", err);
-                setError(err.message || "Error fetching cards");
-            } finally {
-                setLoading(false);
-            }
-        };
 
 
 
         // 🔸 Ejecutar una sola vez al montar
         getUserAndFetchSubscription();
         fetchCards();
-    }, [refresh]);
+    }, [user?.id]);
 
     const plans = [
         {
@@ -106,15 +100,20 @@ const SubscriptionView = () => {
         }
     ];
 
-    const handleAddCard = async (cardId) => {
+    const handleAddCard = async () => {
+        await PaymentService.createCardAndInitSheet(user.id, initPaymentSheet, presentPaymentSheet);
+        fetchCards();
+    };
+
+    const handleDeleteCard = async (cardId) => {
         try {
             setLoading(true);
-            const result = await PaymentService.createCard(user.id, cardId);
-
+            const result = await PaymentService.deleteCard(user.id, cardId);
             if (result.success) {
-                Alert.alert("✅ Tarjeta guardada correctamente");
-            } else if (result.canceled) {
-                Alert.alert("⚠️ Proceso cancelado por el usuario");
+                Alert.alert("✅ Tarjeta eliminada correctamente");
+                fetchCards();
+            } else {
+                Alert.alert("⚠️ Error al eliminar la tarjeta");
             }
         } catch (error) {
             Alert.alert("Error", error.message);
@@ -128,9 +127,10 @@ const SubscriptionView = () => {
             setLoading(true);
             const result = await PaymentService.setDefaultCard(user.id, cardId);
 
+            
             if (result.success) {
                 Alert.alert("✅ Tarjeta predeterminada establecida correctamente");
-                recargarVista();
+                fetchCards();
             } else {
                 Alert.alert("⚠️ Error al establecer la tarjeta predeterminada");
             }
@@ -503,15 +503,26 @@ const SubscriptionView = () => {
                                 </Text>
                             ) : (
                                 cards.map((card) => (
-                                    <TouchableOpacity
+                                    <View
                                         key={card.id}
-                                        onPress={() => handleCardDefault(card.id)} // función callback que cambia la tarjeta por defecto
-                                        activeOpacity={0.8}
                                         className={`flex-row items-center justify-between bg-gray-50 p-4 rounded-xl border mb-3 shadow-sm 
-        ${card.isDefault ? "border-blue-400" : "border-gray-100"}`}
+      ${card.isDefault ? "border-blue-400" : "border-gray-100"}`}
                                     >
-                                        {/* Datos de la tarjeta */}
-                                        <View className="flex-row items-center">
+                                        {/* IZQUIERDA: check predeterminada */}
+                                        <TouchableOpacity
+                                            onPress={() => handleCardDefault(card.id)}
+                                            activeOpacity={0.8}
+                                            className="mr-3"
+                                        >
+                                            {card.isDefault ? (
+                                                <Ionicons name="checkmark-circle" size={24} color="#2563EB" />
+                                            ) : (
+                                                <Ionicons name="ellipse-outline" size={24} color="#9CA3AF" />
+                                            )}
+                                        </TouchableOpacity>
+
+                                        {/* CENTRO: datos de la tarjeta */}
+                                        <View className="flex-row items-center flex-1">
                                             <Ionicons name="card" size={20} color="#4339da" className="mr-2" />
                                             <View>
                                                 <Text className="font-semibold text-gray-900 text-base tracking-wider">
@@ -525,17 +536,15 @@ const SubscriptionView = () => {
                                             </View>
                                         </View>
 
-                                        {/* Estado visual (predeterminada o secundaria) */}
-                                        {card.isDefault ? (
-                                            <View className="flex-row items-center space-x-1">
-                                                <Ionicons name="checkmark-circle" size={22} color="#10B981" />
-                                            </View>
-                                        ) : (
-                                            <View className="flex-row items-center space-x-1">
-                                                <Ionicons name="ellipse-outline" size={20} color="#9CA3AF" />
-                                            </View>
-                                        )}
-                                    </TouchableOpacity>
+                                        {/* DERECHA: botón eliminar */}
+                                        <TouchableOpacity
+                                            onPress={() => handleDeleteCard(card.id)}
+                                            activeOpacity={0.8}
+                                            className="ml-3 flex-row items-center px-2 py-1 bg-red-50 rounded-lg"
+                                        >
+                                            <Ionicons name="trash" size={18} color="#DC2626" />
+                                        </TouchableOpacity>
+                                    </View>
                                 ))
                             )}
                             {/* Campo para agregar nueva tarjeta */}
