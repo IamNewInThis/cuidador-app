@@ -25,6 +25,7 @@ const SideMenu = ({
   onNavigateToBabyProfile,
   onNavigateToCreateBaby,
   onNavigateToUserProfile,
+  onNavigateToSettings,
   onNavigateToSubscription,
   onNavigateToLanguage,
   onNavigateToHelpCenter,
@@ -199,7 +200,9 @@ const SideMenu = ({
                         onNavigateToBabyProfile?.();
                         break;
                       case "configuration":
-                        setShowConfigurationModal(true);
+                        // Navegar a la vista de configuración en lugar de abrir modal
+                        onClose();
+                        onNavigateToSettings?.();
                         break;
                       case "chat":
                         onClose();

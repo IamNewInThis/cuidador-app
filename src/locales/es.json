@@ -83,23 +83,23 @@
         "configuration": "Configuración",
         "signOut": "Cerrar Sesión"
     },
-    "configuration": {
+    "settings": {
         "title": "Configuración",
         "account": "Cuenta",
-        "profile": "Perfil",
+        "generalSettings": "Configuración General",
+        "accountSubtitle": "Gestiona los detalles de tu cuenta",
         "profileSubtitle": "Gestiona tu información personal",
         "subscription": "Suscripción",
         "subscriptionSubtitle": "Administra tu plan y facturación",
-        "application": "Aplicación",
         "language": "Idioma",
         "languageSubtitle": "Cambiar idioma de la aplicación",
-        "about": "Acerca de",
+        "supportAndLegal": "Soporte y Legal",
         "helpCenter": "Centro de ayuda",
         "helpCenterSubtitle": "Obtén soporte y respuestas",
         "termsOfUse": "Términos de uso",
-        "termsOfUseSubtitle": "Lee nuestros términos y condiciones",
+        "termsSubtitle": "Lee nuestros términos y condiciones",
         "privacyPolicy": "Política de privacidad",
-        "privacyPolicySubtitle": "Conoce cómo protegemos tus datos"
+        "privacySubtitle": "Conoce cómo protegemos tus datos"
     },
     "subscription": {
         "title": "Suscripción Premium",

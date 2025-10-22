@@ -76,6 +76,24 @@
         "createBabyProfile": "Criar perfil de bebê",
         "myAccount": "Minha Conta",
         "signOut": "Sair"
+    },
+    "settings": {
+        "title": "Configurações",
+        "account": "Conta",
+        "generalSettings": "Configurações Gerais",
+        "accountSubtitle": "Gerencie os detalhes da sua conta",
+        "profileSubtitle": "Gerencie suas informações pessoais",
+        "subscription": "Assinatura",
+        "subscriptionSubtitle": "Administre seu plano e faturamento",
+        "language": "Idioma",
+        "languageSubtitle": "Alterar idioma do aplicativo",
+        "supportAndLegal": "Suporte e Legal",
+        "helpCenter": "Central de Ajuda",
+        "helpCenterSubtitle": "Obtenha suporte e respostas",
+        "termsOfUse": "Termos de uso",
+        "termsSubtitle": "Leia nossos termos e condições",
+        "privacyPolicy": "Política de privacidade",
+        "privacySubtitle": "Conheça como protegemos seus dados"
     }
 }
   

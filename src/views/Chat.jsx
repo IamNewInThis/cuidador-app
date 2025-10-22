@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Entypo from '@expo/vector-icons/Entypo';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import ConversationsService from '../services/ConversationsService';
 import FeedbackService from '../services/FeedbackService';
@@ -60,6 +60,7 @@ const formatBabyAge = (birthdate) => {
 
 const Chat = () => {
     const navigation = useNavigation();
+    const route = useRoute();
     const [message, setMessage] = useState('');
     const { session, user, signOut } = useAuth();
     const [messages, setMessages] = useState([]);
@@ -250,7 +251,14 @@ const Chat = () => {
         useCallback(() => {
             // Recargar bebés y restaurar selección cada vez que se enfoque el chat
             loadBabies();
-        }, [loadBabies])
+            
+            // Si viene con el parámetro openSideMenu, abrir el SideMenu
+            if (route.params?.openSideMenu) {
+                setIsMenuVisible(true);
+                // Limpiar el parámetro para que no se abra automáticamente la próxima vez
+                navigation.setParams({ openSideMenu: undefined });
+            }
+        }, [loadBabies, route.params?.openSideMenu])
     );
 
     const handleOnSendMessage = async () => {
@@ -627,9 +635,13 @@ const Chat = () => {
                 onNavigateToChat={() => { }}
                 onNavigateToFavorites={handleNavigateToFavorites}
                 onNavigateToBabyProfile={handleNavigateToBabyProfile}
+                onNavigateToCreateBaby={handleNavigateToCreateBaby}
+                onNavigateToSettings={() => {
+                    handleCloseMenu();
+                    navigation.navigate('SettingsView');
+                }}
                 onNavigateToUserProfile={handleNavigateToUserProfile}
                 onNavigateToSubscription={handleNavigateToSubscription}
-                onNavigateToCreateBaby={handleNavigateToCreateBaby}
                 onLogout={handleLogout}
                 babyName={selectedBaby?.name || ''}
                 babyAgeLabel={selectedBabyAge}

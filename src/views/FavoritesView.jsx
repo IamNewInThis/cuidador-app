@@ -244,6 +244,10 @@ const FavoritesView = ({ navigation }) => {
         navigation.navigate('Babies');
     };
 
+    const handleNavigateToSettings = () => {
+        navigation.navigate('SettingsView');
+    }
+
     const handleLogout = async () => {
         try {
             await signOut();
@@ -380,6 +384,7 @@ const FavoritesView = ({ navigation }) => {
                 onNavigateToUserProfile={handleNavigateToUserProfile}
                 onNavigateToSubscription={handleNavigateToSubscription}
                 onNavigateToCreateBaby={handleNavigateToCreateBaby}
+                onNavigateToSettings={handleNavigateToSettings}
                 onLogout={handleLogout}
                 babyName={selectedBaby?.name || "Sin seleccionar"}
                 babyAgeLabel={selectedBabyAge}

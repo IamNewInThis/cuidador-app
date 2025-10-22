@@ -3,7 +3,7 @@ import { View, Text, ActivityIndicator, Alert, ScrollView, Image, TouchableOpaci
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import SideMenu from '../components/SideMenu';
@@ -234,6 +234,11 @@ const ProfileSettings = () => {
         }
     };
 
+    const handleGoBack = () => {
+        // Usar goBack() para volver a SettingsView
+        navigation.goBack();
+    };
+
     if (loading) {
         return (
             <SafeAreaView className="flex-1 items-center justify-center bg-gray-50">
@@ -244,20 +249,21 @@ const ProfileSettings = () => {
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50">
+        <SafeAreaView className="flex-1 bg-background-300">
             {/* Header */}
-            <View className="bg-white px-6 py-4 border-b border-gray-200">
-                <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center flex-1">
-                        <TouchableOpacity
-                            onPress={handleMenuPress}
-                            className="p-2 -ml-2 mr-3"
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                            <Feather name="menu" size={24} color="#374151" />
-                        </TouchableOpacity>
-                        <Text className="text-2xl font-bold text-gray-900">Mi cuenta</Text>
-                    </View>
+            <View className="bg-white border-b border-gray-200">
+                <View className="flex-row items-center justify-between px-5 py-4">
+                    <TouchableOpacity
+                        onPress={handleGoBack}
+                        className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <Ionicons name="arrow-back" size={20} color="#666" />
+                    </TouchableOpacity>
+                    <Text className="text-xl font-semibold text-black">
+                        Mi perfil
+                    </Text>
+                    <View className="w-8" />
                 </View>
             </View>
 
@@ -289,9 +295,13 @@ const ProfileSettings = () => {
                 onChangeBaby={() => navigation.navigate('BabyList')}
                 onNavigateToChat={handleNavigateToChat}
                 onNavigateToFavorites={handleNavigateToFavorites}
-                onNavigateToProfile={handleNavigateToProfile}
+                onNavigateToBabyProfile={handleNavigateToProfile}
                 onNavigateToCreateBaby={handleNavigateToCreateBaby}
-                onNavigateToAccount={() => {}} 
+                onNavigateToSettings={() => {
+                    handleCloseMenu();
+                    navigation.navigate('SettingsView');
+                }}
+                onNavigateToUserProfile={() => navigation.navigate('ProfileSettings')}
                 onNavigateToSubscription={handleNavigateToSubscription}
                 onNavigateToLanguage={handleNavigateToLanguage}
                 onNavigateToHelpCenter={handleNavigateToHelpCenter}

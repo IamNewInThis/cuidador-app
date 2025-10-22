@@ -19,6 +19,7 @@ import CompleteProfile from '../views/CompleteProfile';
 import FavoritesView from '../views/FavoritesView';
 import CategoryDetailView from '../views/CategoryDetailView';
 import SubscriptionView from '../views/SubscriptionView';
+import SettingsView from '../views/SettingsView';
 
 const Stack = createStackNavigator();
 
@@ -54,6 +55,7 @@ const AppStack = () => (
         <Stack.Screen name="CompleteProfile" component={CompleteProfile} />
         <Stack.Screen name="Favorites" component={FavoritesView} />
         <Stack.Screen name="CategoryDetail" component={CategoryDetailView} />
+        <Stack.Screen name="SettingsView" component={SettingsView} />
         <Stack.Screen name="SubscriptionView" component={SubscriptionView} />
     </Stack.Navigator>
 );

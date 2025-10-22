@@ -174,6 +174,10 @@ const BabyDetail = () => {
         navigation.navigate('Babies');
     }
 
+    const handleNavigateToSettings = () => {
+        navigation.navigate('SettingsView');
+    }
+
     const handleLogout = async () => {
         try {
             await signOut();
@@ -277,6 +281,7 @@ const BabyDetail = () => {
                 onNavigateToAccount={handleNavigateToAccount}
                 onNavigateToSubscription={handleNavigateToSubscription}
                 onNavigateToCreateBaby={handleNavigateToCreateBaby}
+                onNavigateToSettings={handleNavigateToSettings}
                 onLogout={handleLogout}
                 babyName={name || babyParam.name || 'Tu bebé'}
                 babyAgeLabel={babyAge}

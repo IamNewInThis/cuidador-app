@@ -82,5 +82,24 @@
         "createBabyProfile": "Create Baby Profile",
         "configuration": "Configuration",
         "signOut": "Sign Out"
+    },
+    "settings": {
+        "title": "Configuration",
+        "account": "Account",
+        "generalSettings": "General Settings",
+        "accountSubtitle": "Manage your account details",
+        "profileSubtitle": "Manage your personal information",
+        "subscription": "Subscription",
+        "subscriptionSubtitle": "Manage your plan and billing",
+        "language": "Language",
+        "languageSubtitle": "Change app language",
+        "supportAndLegal": "Support and Legal",
+        "helpCenter": "Help Center",
+        "helpCenterSubtitle": "Get support and answers",
+        "termsOfUse": "Terms of Use",
+        "termsSubtitle": "Read our terms and conditions",
+        "privacyPolicy": "Privacy Policy",
+        "privacySubtitle": "Learn how we protect your data"
     }
+    
 }

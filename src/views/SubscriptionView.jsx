@@ -263,6 +263,7 @@ const SubscriptionView = () => {
 
 
     const handleGoBack = () => {
+        // Usar goBack() para volver a SettingsView
         navigation.goBack();
     };
 
