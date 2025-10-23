@@ -1,15 +1,25 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { Modal, View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { setAppLanguage } from '../lib/18n';
+
 
 const SettingsView = () => {
     const navigation = useNavigation();
     const { t } = useTranslation();
     const { user } = useAuth();
+    const [modalVisible, setModalVisible] = useState(false);
+
+
+    const changeLanguage = async (lang) => {
+        await setAppLanguage(lang);
+        setLanguageModalVisible(false);
+    };
+
 
     const settingsOptions = [
         {
@@ -37,6 +47,7 @@ const SettingsView = () => {
             onPress: () => {
                 console.log('Navigate to language settings');
                 // navigation.navigate('LanguageSettings');
+                setModalVisible(true);
             },
         },
     ];
@@ -70,6 +81,7 @@ const SettingsView = () => {
             onPress: () => {
                 console.log('Navigate to privacy policy');
                 // navigation.navigate('PrivacyPolicy');
+                setModalVisible(true)
             },
         },
     ];
@@ -204,6 +216,50 @@ const SettingsView = () => {
                     </Text>
                 </View>
             </ScrollView>
+            <Modal
+                animationType="slide"
+                transparent
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View className="flex-1 bg-black/40 justify-center items-center">
+                    <View className="bg-white w-4/5 rounded-2xl p-6 items-center">
+                        <Text className="text-lg font-semibold mb-4 text-gray-800">
+                            {t('settings.selectLanguage') || 'Seleccionar idioma'}
+                        </Text>
+
+                        <TouchableOpacity
+                            className="py-2 w-full items-center"
+                            onPress={() => changeLanguage('es')}
+                        >
+                            <Text className="text-base">🇪🇸 Español</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            className="py-2 w-full items-center"
+                            onPress={() => changeLanguage('en')}
+                        >
+                            <Text className="text-base">🇺🇸 English</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            className="py-2 w-full items-center"
+                            onPress={() => changeLanguage('pt')}
+                        >
+                            <Text className="text-base">🇧🇷 Português</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            className="mt-4 bg-gray-100 rounded-xl py-2 px-6"
+                            onPress={() => setModalVisible(false)}
+                        >
+                            <Text className="text-gray-700 font-medium">
+                                {t('common.cancel') || 'Cancelar'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
