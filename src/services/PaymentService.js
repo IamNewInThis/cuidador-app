@@ -3,7 +3,7 @@ class PaymentService {
     constructor() {
         // Get Stripe API URL from environment variables
         // Falls back to localhost if not set
-        const stripeApiUrl = process.env.EXPO_PUBLIC_STRIPE_API_URL || 'http://192.168.1.61:8001/api/payments';
+        const stripeApiUrl = process.env.EXPO_PUBLIC_STRIPE_API_URL;
         this.merchantIdentifier = process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER || 'merchant.cuidador-app';
 
         this.baseURL = __DEV__
