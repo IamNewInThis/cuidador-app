@@ -5,11 +5,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Entypo from '@expo/vector-icons/Entypo';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import ConversationsService from '../services/ConversationsService';
 import FeedbackService from '../services/FeedbackService';
 import { getBabies } from '../services/BabiesService';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { SERVER } from '@env';
 
 
 import AssistantMessage from '../components/chat/AssistantMessage';
@@ -63,6 +63,7 @@ const Chat = () => {
     const route = useRoute();
     const [message, setMessage] = useState('');
     const { session, user, signOut } = useAuth();
+    const { t } = useTranslation();
     const [messages, setMessages] = useState([]);
     const [feedbacks, setFeedbacks] = useState({});
     const [isLoading, setIsLoading] = useState(false);
@@ -293,7 +294,7 @@ const Chat = () => {
                 babyId: selectedBaby?.id || null
             });
 
-            const API_URL = process.env.SERVER;
+            const API_URL = process.env.LOCAL || LOCAL;
             console.log('Usando API_URL:', API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
@@ -491,7 +492,7 @@ const Chat = () => {
                     <View className="flex-row items-center w-full">
                         <TextInput
                             style={{ flex: 1, marginRight: 8, padding: 8, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ccc' }}
-                            placeholder="Buscar mensaje..."
+                            placeholder= {t("chat.inputPlaceholder")}
                             value={searchText}
                             onChangeText={setSearchText}
                         />
@@ -601,7 +602,7 @@ const Chat = () => {
                     <View className="flex-row items-end bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
                         <TextInput
                             className="flex-1 px-4 py-3 text-base text-gray-800 min-h-[48px] max-h-[120px]"
-                            placeholder="Pregúntale a Lumi..."
+                            placeholder={t("chat.inputPlaceholder")}
                             placeholderTextColor="#9CA3AF"
                             value={message}
                             onChangeText={setMessage}
