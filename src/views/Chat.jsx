@@ -27,6 +27,7 @@ const formatBabyAge = (birthdate) => {
         return '';
     }
 
+
     const now = new Date();
     let years = now.getFullYear() - parsedDate.getFullYear();
     let months = now.getMonth() - parsedDate.getMonth();
@@ -78,6 +79,12 @@ const Chat = () => {
     const [highlightedMessageIds, setHighlightedMessageIds] = useState([]);
     const [currentHighlightIndex, setCurrentHighlightIndex] = useState(0);
     const [messagePositions, setMessagePositions] = useState({});
+    const [remaining, setRemaining] = useState(null); // mensajes restantes
+    const [resetAt, setResetAt] = useState(null);     // hora en la que se reinicia el límite
+    const [countdown, setCountdown] = useState("");
+    const [tier, setTier] = useState("free"); // "free" o "subscriber"
+    const [dailyLimit, setDailyLimit] = useState(10); // nuevo estado para el límite diario
+
 
 
     const appendMessage = useCallback((newMessage) => {
@@ -140,6 +147,7 @@ const Chat = () => {
             scrollViewRef.current.scrollTo({ y: y - 100, animated: true });
         }
     };
+
 
     const loadConversationHistory = useCallback(async (babyId = null) => {
         setIsLoadingConversations(true);
@@ -230,6 +238,29 @@ const Chat = () => {
         }
     }, [user?.id]);
 
+    const fetchLimitStatus = async () => {
+        if (!user?.id) return;
+        try {
+            const result = await ConversationsService.getMessageUsageStatus(user.id); // ✅ solo consulta
+
+            if (!result) return;
+            setTier("free");
+            setRemaining(result.remaining || 0);
+            setResetAt(result.resetAt);
+            setDailyLimit(result.DAILY_LIMIT || 10);
+
+            if (result.remaining === 0 && result.resetAt) {
+                startCountdown(result.resetAt);
+            }
+        } catch (error) {
+            console.error("Error verificando límite inicial:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchLimitStatus();
+    }, [user?.id]);
+
     // Efecto para cargar conversaciones cuando cambia el bebé seleccionado
     useEffect(() => {
         if (selectedBaby) {
@@ -237,6 +268,8 @@ const Chat = () => {
             loadConversationHistory(selectedBaby.id);
         }
     }, [selectedBaby, loadConversationHistory]);
+
+
 
     useEffect(() => {
         loadBabies();
@@ -252,7 +285,7 @@ const Chat = () => {
         useCallback(() => {
             // Recargar bebés y restaurar selección cada vez que se enfoque el chat
             loadBabies();
-            
+
             // Si viene con el parámetro openSideMenu, abrir el SideMenu
             if (route.params?.openSideMenu) {
                 setIsMenuVisible(true);
@@ -263,23 +296,26 @@ const Chat = () => {
     );
 
     const handleOnSendMessage = async () => {
-        if (message.trim() === '' || isLoading) {
+        if (message.trim() === '' || isLoading) return;
+
+        // 🚫 Si no tiene mensajes restantes, no permitir enviar
+        if (tier !== "subscriber" && remaining !== null && remaining <= 0) {
+            pushAssistantNotice("Has alcanzado tu límite diario de mensajes. Espera el reinicio para continuar.");
             return;
         }
 
+
         if (!session?.access_token) {
-            console.error('No hay sesión activa o token de acceso');
             pushAssistantNotice('Error: Debes iniciar sesión para usar el chat.');
             return;
         }
-
-        console.log('Mensaje enviado:', message);
 
         const messageToSend = message.trim();
         setMessage('');
         setIsLoading(true);
 
         try {
+            // 1️⃣ Guardar mensaje localmente y en BD
             const savedUserMessage = await ConversationsService.createMessage({
                 userId: user.id,
                 babyId: selectedBaby?.id || null,
@@ -291,11 +327,11 @@ const Chat = () => {
                 id: savedUserMessage.id,
                 role: 'user',
                 text: messageToSend,
-                babyId: selectedBaby?.id || null
+                babyId: selectedBaby?.id || null,
             });
 
-            const API_URL = process.env.LOCAL || LOCAL;
-            console.log('Usando API_URL:', API_URL);
+            // 2️⃣ Llamar a tu API /chat (que ya valida el límite)
+            const API_URL = process.env.LOCAL || 'http://192.168.1.61:3000/api/';
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
                 headers: {
@@ -310,8 +346,29 @@ const Chat = () => {
             });
 
             const data = await res.json();
-            console.log('Respuesta del API:', data?.answer || data);
 
+            // 3️⃣ Manejar caso de límite excedido (backend retorna 429 o data.error)
+            if (res.status === 429 || data?.error?.includes('límite')) {
+                const resetTime = data?.resetAt ? new Date(data.resetAt) : null;
+                if (resetTime) {
+                    setResetAt(data.resetAt);
+                    setRemaining(0);
+                    startCountdown(data.resetAt);
+
+                    const diffMs = resetTime - new Date();
+                    const mins = Math.floor(diffMs / 60000);
+                    const secs = Math.floor((diffMs % 60000) / 1000);
+
+                    pushAssistantNotice(
+                        `Has alcanzado tu límite. Podrás volver a escribir en ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.`
+                    );
+                } else {
+                    pushAssistantNotice('Has alcanzado tu límite de mensajes.');
+                }
+                return;
+            }
+
+            // 4️⃣ Procesar respuesta del modelo
             const assistantContent = data?.answer || 'Lo siento, no pude obtener una respuesta.';
             const savedAssistantMessage = await ConversationsService.createMessage({
                 userId: user.id,
@@ -324,17 +381,52 @@ const Chat = () => {
                 id: savedAssistantMessage.id,
                 role: 'assistant',
                 text: assistantContent,
-                babyId: selectedBaby?.id || null
+                babyId: selectedBaby?.id || null,
             });
+
+
+            // 5️⃣ Actualizar contador si backend lo devuelve
+            if (typeof data.remaining === 'number') {
+                setRemaining(data.remaining);
+                setResetAt(data.resetAt);
+                if (data.remaining === 0) startCountdown(data.resetAt);
+            }
 
             setTimeout(scrollToBottom, 100);
         } catch (error) {
             console.error('Error al enviar el mensaje:', error);
             pushAssistantNotice('Error al conectar con el servidor.');
         } finally {
+            await ConversationsService.limitMessagesPerDay(user.id);
+            await fetchLimitStatus();
             setIsLoading(false);
         }
     };
+
+
+    const startCountdown = (resetTime) => {
+        if (!resetTime) return;
+
+        const target = new Date(resetTime);
+        clearInterval(global._messageCountdownTimer); // 🧹 limpiar cualquier timer previo
+
+        global._messageCountdownTimer = setInterval(() => {
+            const diff = target - new Date();
+            if (diff <= 0) {
+                clearInterval(global._messageCountdownTimer);
+                setCountdown("");
+                setRemaining(5); // reinicia límite diario
+                setResetAt(null);
+                return;
+            }
+
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            setCountdown(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
+        }, 1000);
+    };
+
 
     const handleMenuPress = () => {
         setIsMenuVisible(true);
@@ -492,7 +584,7 @@ const Chat = () => {
                     <View className="flex-row items-center w-full">
                         <TextInput
                             style={{ flex: 1, marginRight: 8, padding: 8, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ccc' }}
-                            placeholder= {t("chat.inputPlaceholder")}
+                            placeholder={t("chat.inputPlaceholder")}
                             value={searchText}
                             onChangeText={setSearchText}
                         />
@@ -599,35 +691,54 @@ const Chat = () => {
 
                 {/* Input mejorado */}
                 <View className="border-t border-gray-200 bg-white px-4 py-3">
+                    {/* 🔢 Mostrar contador solo para usuarios free */}
+                    {tier === "free" && (
+                        <>
+                            {remaining > 0 ? (
+                                <Text className="text-gray-500 text-xs mb-1 text-center">
+                                    Te quedan {remaining}/{dailyLimit} mensajes hoy
+                                </Text>
+                            ) : remaining === 0 && countdown ? (
+                                <Text className="text-red-500 text-xs mb-1 text-center">
+                                    Límite alcanzado. Disponible en {countdown}
+                                </Text>
+                            ) : null}
+                        </>
+                    )}
                     <View className="flex-row items-end bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden">
                         <TextInput
                             className="flex-1 px-4 py-3 text-base text-gray-800 min-h-[48px] max-h-[120px]"
-                            placeholder={t("chat.inputPlaceholder")}
+                            placeholder={
+                                remaining === 0
+                                    ? `Límite alcanzado. Espera el reinicio...${resetAt ? ` (${new Date(resetAt).toLocaleTimeString()})` : ""
+                                    }`
+                                    : t("chat.inputPlaceholder")
+                            }
                             placeholderTextColor="#9CA3AF"
                             value={message}
                             onChangeText={setMessage}
                             multiline
+                            editable={remaining !== 0}
                             style={{
-                                textAlignVertical: 'center',
+                                textAlignVertical: "center",
+                                opacity: remaining === 0 ? 0.5 : 1,
                             }}
                         />
+
                         <TouchableOpacity
                             testID="send-button"
                             accessibilityRole="button"
                             accessibilityLabel="Enviar mensaje"
-                            className={`m-2 w-10 h-10 rounded-full items-center justify-center ${isSendDisabled ? 'bg-gray-300' : 'bg-blue-500'
+                            className={`m-2 w-10 h-10 rounded-full items-center justify-center ${remaining === 0 || isLoading ? "bg-gray-300" : "bg-blue-500"
                                 }`}
                             onPress={handleOnSendMessage}
-                            disabled={isSendDisabled}
+                            disabled={remaining === 0 || isLoading}
                         >
-                            <Entypo
-                                name="paper-plane"
-                                size={20}
-                                color="white"
-                            />
+                            <Entypo name="paper-plane" size={20} color="white" />
                         </TouchableOpacity>
                     </View>
                 </View>
+
             </KeyboardAvoidingView>
 
             <SideMenu
