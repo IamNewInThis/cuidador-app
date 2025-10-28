@@ -294,7 +294,7 @@ const Chat = () => {
                 babyId: selectedBaby?.id || null
             });
 
-            const API_URL = process.env.LOCAL || LOCAL;
+            const API_URL = process.env.EXPO_PUBLIC_API_URL;
             console.log('Usando API_URL:', API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
@@ -419,7 +419,7 @@ const Chat = () => {
 
     const handleNavigateToBabyProfile = () => {
         if (selectedBaby) {
-            navigation.navigate('BabyDetail', { baby: selectedBaby });
+            navigation.navigate('BabyProfile', { babyId: selectedBaby.id });
         } else {
             // Si no hay bebé seleccionado, ir a la lista de bebés
             navigation.navigate('Babies');

@@ -20,6 +20,7 @@ import FavoritesView from '../views/FavoritesView';
 import CategoryDetailView from '../views/CategoryDetailView';
 import SubscriptionView from '../views/SubscriptionView';
 import SettingsView from '../views/SettingsView';
+import BabyProfile from '../views/BabyProfile';
 
 const Stack = createStackNavigator();
 
@@ -57,6 +58,7 @@ const AppStack = () => (
         <Stack.Screen name="CategoryDetail" component={CategoryDetailView} />
         <Stack.Screen name="SettingsView" component={SettingsView} />
         <Stack.Screen name="SubscriptionView" component={SubscriptionView} />
+        <Stack.Screen name="BabyProfile" component={BabyProfile} />
     </Stack.Navigator>
 );
 

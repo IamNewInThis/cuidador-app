@@ -225,7 +225,7 @@ const FavoritesView = ({ navigation }) => {
 
     const handleNavigateToBabyProfile= () => {
         if (selectedBaby) {
-            navigation.navigate('BabyDetail', { baby: selectedBaby });
+            navigation.navigate('BabyProfile', { baby: selectedBaby });
         } else {
             // Si no hay bebé seleccionado, ir a la lista de bebés
             navigation.navigate('Babies');
