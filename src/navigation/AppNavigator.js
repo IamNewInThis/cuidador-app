@@ -21,6 +21,7 @@ import CategoryDetailView from '../views/CategoryDetailView';
 import SubscriptionView from '../views/SubscriptionView';
 import SettingsView from '../views/SettingsView';
 import BabyProfile from '../views/BabyProfile';
+import HealthProfileView from '../views/HealthProfileView';
 
 const Stack = createStackNavigator();
 
@@ -59,6 +60,7 @@ const AppStack = () => (
         <Stack.Screen name="SettingsView" component={SettingsView} />
         <Stack.Screen name="SubscriptionView" component={SubscriptionView} />
         <Stack.Screen name="BabyProfile" component={BabyProfile} />
+        <Stack.Screen name="HealthProfileView" component={HealthProfileView} />
     </Stack.Navigator>
 );
 
