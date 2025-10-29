@@ -244,7 +244,7 @@ const Chat = () => {
             const result = await ConversationsService.getMessageUsageStatus(user.id); // ✅ solo consulta
 
             if (!result) return;
-            setTier("free");
+            setTier(result.status);
             setRemaining(result.remaining || 0);
             setResetAt(result.resetAt);
             setDailyLimit(result.DAILY_LIMIT || 10);
@@ -332,6 +332,7 @@ const Chat = () => {
 
             // 2️⃣ Llamar a tu API /chat (que ya valida el límite)
             const API_URL = process.env.LOCAL || 'http://192.168.1.61:3000/api/';
+            console.log('🌐 Enviando mensaje a API:', API_URL + 'chat');
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
                 headers: {

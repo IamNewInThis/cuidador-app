@@ -87,7 +87,6 @@ class ConversationsService {
                 .maybeSingle();
 
             if (subErr) throw subErr;
-
             const isActive =
                 sub &&
                 sub.status === "active" &&
@@ -97,8 +96,6 @@ class ConversationsService {
                 console.log("✅ Usuario con suscripción activa, sin límite.");
                 return { allowed: true, tier: "subscriber", remaining: 9999, resetAt: null };
             }
-
-            console.log("🔹 Incrementando uso de mensaje...");
             const { data, error } = await supabase.rpc("increment_message_usage", {
                 p_user_id: userId,
                 p_limit: DAILY_LIMIT,
@@ -130,6 +127,24 @@ class ConversationsService {
         //AQUI TAMBIEN CAMBIA EL LIMITE DIARIO SI LO MODIFICAS, CAMBIALO EN LA FUNCION LIMITMESSAGESPERDAY.
         const DAILY_LIMIT = 10;
         try {
+
+            const { data: sub, error: subErr } = await supabase
+                .from("subscriptions")
+                .select("status, end_date")
+                .eq("user_id", userId)
+                .maybeSingle();
+
+            if (subErr) throw subErr;
+
+            const isActive =
+                sub &&
+                sub.status === "active" &&
+                (sub.end_date === null || new Date(sub.end_date) > new Date());
+
+            if (isActive) {
+                console.log("✅ Usuario con suscripción activa, sin límite.");
+                return { allowed: true, tier: "subscriber", remaining: 9999, resetAt: null };
+            }
             const { data, error } = await supabase.rpc("get_message_usage_status", {
                 p_user_id: userId,
                 p_limit: DAILY_LIMIT,
