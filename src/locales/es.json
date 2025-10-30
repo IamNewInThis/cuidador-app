@@ -154,6 +154,29 @@
             "specializedContent": "Contenido especializado",
             "support247": "Soporte 24/7"
         }
+    },
+    "babyProfileSleep": {
+        "title": "Sueño y descanso",
+        "sleepRhythm": "Ritmo de sueño",
+        "dayNightDifference": "Diferencia día/noche",
+        "sleepLocation": "Lugar donde duerme",
+        "sleepAccompaniment": "Acompañamiento para dormir",
+        "attachmentObject": "Objeto o elemento de apego",
+        "dailyNaps": "Cantidad de siestas diarias",
+        "napDuration": "Duración promedio de siestas",
+        "wakeWindows": "Ventanas de vigilia",
+        "sleepSignals": "Señales de sueño",
+        "sleepAssociation": "Asociación principal para dormirse",
+        "nightWakings": "Número promedio de despertares",
+        "backToSleep": "Forma de volver a dormirse",
+        "sensoryProfile": "Perfil sensorial predominante",
+        "calmingStimulus": "Estímulo que ayuda a calmar",
+        "roomTemperature": "Temperatura del cuarto",
+        "roomHumidity": "Humedad ambiental",
+        "sleepClothing": "Vestimenta habitual para dormir",
+        "sensitivityTemperament": "Sensibilidad o temperamento",
+        "noSleepData": "No hay información de sueño registrada para {babyName}.",
+        "noSleepDataDesc": "Los datos se mostrarán aquí cuando estén disponibles."
     }
 }
  

@@ -16,6 +16,7 @@ const BabyProfile = ({ navigation }) => {
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const route = useRoute();
     const { user } = useAuth();
+    const { t } = useTranslation();
     const { i18n } = useTranslation();
     const [baby, setBaby] = useState(null);
     const [loadingBaby, setLoadingBaby] = useState(true);
@@ -346,109 +347,109 @@ const BabyProfile = ({ navigation }) => {
     const sleepSectionConfig = [
         {
             id: 'sleep-rhythm',
-            label: 'Ritmo de sueño',
+            label: t('babyProfileSleep.sleepRhythm'),
             profileKey: 'sleep_rhythm',
             defaultValue: 'Regular'
         },
         {
             id: 'day-night-difference',
-            label: 'Diferencia día/noche',
+            label: t('babyProfileSleep.dayNightDifference'),
             profileKey: 'day_night_difference',
             defaultValue: 'Bien establecida'
         },
         {
             id: 'sleep-location',
-            label: 'Lugar donde duerme',
+            label: t('babyProfileSleep.sleepLocation'),
             profileKey: 'where_sleep',
             defaultValue: 'En su cuna'
         },
         {
             id: 'sleep-accompaniment',
-            label: 'Acompañamiento para dormir',
+            label: t('babyProfileSleep.sleepAccompaniment'),
             profileKey: 'sleep_accompaniment',
             defaultValue: 'Con presencia de los padres'
         },
         {
             id: 'attachment-object',
-            label: 'Objeto o elemento de apego',
+            label: t('babyProfileSleep.attachmentObject'),
             profileKey: 'attachment_object',
             defaultValue: 'Manta suave'
         },
         {
             id: 'daily-naps',
-            label: 'Cantidad de siestas diarias',
+            label: t('babyProfileSleep.dailyNaps'),
             profileKey: 'daily_naps_count',
             defaultValue: '2-3 siestas'
         },
         {
             id: 'nap-duration',
-            label: 'Duración promedio de siestas',
+            label: t('babyProfileSleep.napDuration'),
             profileKey: 'nap_average_duration',
             defaultValue: '1-2 horas'
         },
         {
             id: 'wake-windows',
-            label: 'Ventanas de vigilia',
+            label: t('babyProfileSleep.wakeWindows'),
             profileKey: 'wake_windows',
             defaultValue: '2-3 horas'
         },
         {
             id: 'sleep-signals',
-            label: 'Señales de sueño',
+            label: t('babyProfileSleep.sleepSignals'),
             profileKey: 'sleep_signals',
             defaultValue: 'Se frota los ojos, bosteza'
         },
         {
             id: 'sleep-association',
-            label: 'Asociación principal para dormirse',
+            label: t('babyProfileSleep.sleepAssociation'),
             profileKey: 'sleep_association',
             defaultValue: 'Lactancia o chupete'
         },
         {
             id: 'night-wakings',
-            label: 'Número promedio de despertares',
+            label: t('babyProfileSleep.nightWakings'),
             profileKey: 'night_wakings_count',
             defaultValue: '1-2 por noche'
         },
         {
             id: 'back-to-sleep',
-            label: 'Forma de volver a dormirse',
+            label: t('babyProfileSleep.backToSleep'),
             profileKey: 'back_to_sleep_method',
             defaultValue: 'Con ayuda de los padres'
         },
         {
             id: 'sensory-profile',
-            label: 'Perfil sensorial predominante',
+            label: t('babyProfileSleep.sensoryProfile'),
             profileKey: 'sensory_profile',
             defaultValue: 'Sensible a ruidos'
         },
         {
             id: 'calming-stimulus',
-            label: 'Estímulo que ayuda a calmar',
+            label: t('babyProfileSleep.calmingStimulus'),
             profileKey: 'calming_stimulus',
             defaultValue: 'Música suave y caricias'
         },
         {
             id: 'room-temperature',
-            label: 'Temperatura del cuarto',
+            label: t('babyProfileSleep.roomTemperature'),
             profileKey: 'room_temperature',
             defaultValue: '20-22°C'
         },
         {
             id: 'room-humidity',
-            label: 'Humedad ambiental',
+            label: t('babyProfileSleep.roomHumidity'),
             profileKey: 'room_humidity',
             defaultValue: '40-60%'
         },
         {
             id: 'sleep-clothing',
-            label: 'Vestimenta habitual para dormir',
+            label: t('babyProfileSleep.sleepClothing'),
             profileKey: 'sleep_clothing',
             defaultValue: 'Pijama de algodón'
         },
         {
             id: 'sensitivity-temperament',
-            label: 'Sensibilidad o temperamento',
+            label: t('babyProfileSleep.sensitivityTemperament'),
             profileKey: 'sensitivity_temperament',
             defaultValue: 'Tranquila y adaptable'
         }
@@ -470,9 +471,6 @@ const BabyProfile = ({ navigation }) => {
 
     // Filtrar elementos de sueño que tienen valores reales en la BD
     const sleepItemsWithValues = sleepSectionConfig.filter(item => hasProfileValue(item.profileKey));
-
-    // Debug: mostrar cuántos elementos tienen valores
-    console.log('Sleep items with values:', sleepItemsWithValues.length, 'out of', sleepSectionConfig.length);
 
     if (loadingBaby) {
         return (
@@ -643,7 +641,7 @@ const BabyProfile = ({ navigation }) => {
                                         )}
                                     </View>
                                 )}
-                                <Text className="text-xl font-bold text-gray-800">Sueño y descanso</Text>
+                                <Text className="text-xl font-bold text-gray-800">{t('babyProfileSleep.title')}</Text>
                             </View>
                         </View>
                         
@@ -683,8 +681,8 @@ const BabyProfile = ({ navigation }) => {
                                 <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
                                     <Feather name="info" size={16} color="#6B7280" />
                                     <Text className="text-gray-500 text-sm flex-1 ml-2">
-                                        No hay información de sueño registrada para {baby?.name || 'este bebé'}. 
-                                        Los datos se mostrarán aquí cuando estén disponibles.
+                                        {t('babyProfileSleep.noSleepData', { babyName: baby?.name || 'este bebé' })} 
+                                        {t('babyProfileSleep.noSleepDataDesc')}
                                     </Text>
                                 </View>
                             )}

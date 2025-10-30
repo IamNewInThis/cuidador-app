@@ -100,6 +100,28 @@
         "termsSubtitle": "Read our terms and conditions",
         "privacyPolicy": "Privacy Policy",
         "privacySubtitle": "Learn how we protect your data"
+    },
+    "babyProfileSleep": {
+        "title": "Sleep and Rest",
+        "sleepRhythm": "Sleep Rhythm",
+        "dayNightDifference": "Difference between day and night",
+        "sleepLocation": "Sleep Location",
+        "sleepAccompaniment": "Sleep Accompaniment",
+        "attachmentObject": "Attachment Object or Element",
+        "dailyNaps": "Number of Daily Naps",
+        "napDuration": "Average Nap Duration",
+        "wakeWindows": "Wake Windows",
+        "sleepSignals": "Sleep Signals",
+        "sleepAssociation": "Primary Sleep Association",
+        "nightWakings": "Average Number of Night Wakings",
+        "backToSleep": "Way to Go Back to Sleep",
+        "sensoryProfile": "Predominant Sensory Profile",
+        "calmingStimulus": "Calming Stimulus",
+        "roomTemperature": "Room Temperature",
+        "roomHumidity": "Room Humidity",
+        "sleepClothing": "Usual Sleep Clothing",
+        "sensitivityTemperament": "Sensitivity or Temperament",
+        "noSleepData": "No sleep information recorded for {babyName}.",
+        "noSleepDataDesc": "Data will be displayed here when available."
     }
-    
 }
