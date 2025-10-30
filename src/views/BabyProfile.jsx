@@ -198,8 +198,8 @@ const BabyProfile = ({ navigation }) => {
             // Seleccionar todo automáticamente
             setIsSelectionMode(true);
             
-            // Obtener todos los IDs dinámicamente
-            const allSleepItems = sleepSectionConfig.map(item => item.id);
+            // Obtener todos los IDs dinámicamente (solo elementos con valores)
+            const allSleepItems = sleepItemsWithValues.map(item => item.id);
             const allEmotionItems = ['emotions-1', 'emotions-2', 'emotions-3', 'emotions-4'];
             const allCareItems = ['care-1', 'care-2', 'care-3', 'care-4', 'care-5'];
             const allDevelopmentItems = ['development-1', 'development-2', 'development-3'];
@@ -243,7 +243,7 @@ const BabyProfile = ({ navigation }) => {
         const getSectionItems = (section) => {
             switch(section) {
                 case 'sleep':
-                    return sleepSectionConfig.map(item => item.id);
+                    return sleepItemsWithValues.map(item => item.id);
                 case 'emotions':
                     return ['emotions-1', 'emotions-2', 'emotions-3', 'emotions-4'];
                 case 'care':
@@ -289,7 +289,7 @@ const BabyProfile = ({ navigation }) => {
         const getSectionItems = (section) => {
             switch(section) {
                 case 'sleep':
-                    return sleepSectionConfig.map(item => item.id);
+                    return sleepItemsWithValues.map(item => item.id);
                 case 'emotions':
                     return ['emotions-1', 'emotions-2', 'emotions-3', 'emotions-4'];
                 case 'care':
@@ -460,6 +460,19 @@ const BabyProfile = ({ navigation }) => {
         const found = profileEntries.find(e => e.key === key);
         return found?.value ?? defaultValue;
     };
+
+    // Helper para verificar si un campo tiene valor real en la base de datos
+    const hasProfileValue = (key) => {
+        if (!profileEntries || profileEntries.length === 0) return false;
+        const found = profileEntries.find(e => e.key === key);
+        return found && found.value && found.value.trim() !== '';
+    };
+
+    // Filtrar elementos de sueño que tienen valores reales en la BD
+    const sleepItemsWithValues = sleepSectionConfig.filter(item => hasProfileValue(item.profileKey));
+
+    // Debug: mostrar cuántos elementos tienen valores
+    console.log('Sleep items with values:', sleepItemsWithValues.length, 'out of', sleepSectionConfig.length);
 
     if (loadingBaby) {
         return (
@@ -635,36 +648,46 @@ const BabyProfile = ({ navigation }) => {
                         </View>
                         
                         <View className="space-y-3">
-                            {sleepSectionConfig.map((item, index) => (
-                                <TouchableOpacity 
-                                    key={item.id}
-                                    onPress={() => handleSelectItem(item.id)}
-                                    activeOpacity={0.7}
-                                >
-                                    <View className={`flex-row items-start p-2 rounded-lg ${
-                                        selectedItems.has(item.id) ? 'bg-blue-100' : ''
-                                    }`}>
-                                        {isSelectionMode && (
-                                            <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                                selectedItems.has(item.id) 
-                                                    ? 'bg-blue-500 border-blue-500' 
-                                                    : 'border-gray-300'
-                                            }`}>
-                                                {selectedItems.has(item.id) && (
-                                                    <Feather name="check" size={12} color="white" />
-                                                )}
+                            {sleepItemsWithValues.length > 0 ? (
+                                sleepItemsWithValues.map((item, index) => (
+                                    <TouchableOpacity 
+                                        key={item.id}
+                                        onPress={() => handleSelectItem(item.id)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View className={`flex-row items-start p-2 rounded-lg ${
+                                            selectedItems.has(item.id) ? 'bg-blue-100' : ''
+                                        }`}>
+                                            {isSelectionMode && (
+                                                <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
+                                                    selectedItems.has(item.id) 
+                                                        ? 'bg-blue-500 border-blue-500' 
+                                                        : 'border-gray-300'
+                                                }`}>
+                                                    {selectedItems.has(item.id) && (
+                                                        <Feather name="check" size={12} color="white" />
+                                                    )}
+                                                </View>
+                                            )}
+                                            <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
+                                            <View className="flex-1">
+                                                <Text className="text-gray-700 font-medium">{item.label}:</Text>
+                                                <Text className="text-gray-600 mt-1">
+                                                    {getProfileValue(item.profileKey)}
+                                                </Text>
                                             </View>
-                                        )}
-                                        <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
-                                        <View className="flex-1">
-                                            <Text className="text-gray-700 font-medium">{item.label}:</Text>
-                                            <Text className="text-gray-600 mt-1">
-                                                {getProfileValue(item.profileKey, item.defaultValue)}
-                                            </Text>
                                         </View>
-                                    </View>
-                                </TouchableOpacity>
-                            ))}
+                                    </TouchableOpacity>
+                                ))
+                            ) : (
+                                <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
+                                    <Feather name="info" size={16} color="#6B7280" />
+                                    <Text className="text-gray-500 text-sm flex-1 ml-2">
+                                        No hay información de sueño registrada para {baby?.name || 'este bebé'}. 
+                                        Los datos se mostrarán aquí cuando estén disponibles.
+                                    </Text>
+                                </View>
+                            )}
                         </View>
                     </View>
                 </TouchableOpacity>
