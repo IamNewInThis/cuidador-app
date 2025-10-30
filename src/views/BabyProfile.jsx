@@ -1,17 +1,190 @@
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRoute } from '@react-navigation/native';
+import { useAuth } from '../contexts/AuthContext';
+import { getBabies } from '../services/BabiesService';
+import { getProfileBaby } from '../services/BabyProfileServices';
+import { ActivityIndicator } from 'react-native';
 
 const BabyProfile = ({ navigation }) => {
     const [selectedSections, setSelectedSections] = useState(new Set());
     const [selectedItems, setSelectedItems] = useState(new Set());
     const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const route = useRoute();
+    const { user } = useAuth();
+    const [baby, setBaby] = useState(null);
+    const [loadingBaby, setLoadingBaby] = useState(true);
+    const [profileEntries, setProfileEntries] = useState([]);
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [profileByCategory, setProfileByCategory] = useState({});
 
     const handleGoBack = () => {
         // Volver a Chat con el parámetro para abrir el SideMenu
         navigation.navigate('Chat', { openSideMenu: true });
     };
+
+    const formatBabyAge = (birthdate) => {
+        if (!birthdate) return '';
+
+        const parsedDate = new Date(birthdate);
+        if (Number.isNaN(parsedDate.getTime())) {
+            return '';
+        }
+
+        const now = new Date();
+        let years = now.getFullYear() - parsedDate.getFullYear();
+        let months = now.getMonth() - parsedDate.getMonth();
+
+        if (now.getDate() < parsedDate.getDate()) {
+            months -= 1;
+        }
+
+        if (months < 0) {
+            years -= 1;
+            months += 12;
+        }
+
+        years = Math.max(years, 0);
+        months = Math.max(months, 0);
+
+        if (years > 0 && months > 0) {
+            return `${years} año${years !== 1 ? 's' : ''} ${months} mes${months !== 1 ? 'es' : ''}`;
+        } else if (years > 0) {
+            return `${years} año${years !== 1 ? 's' : ''}`;
+        } else if (months > 0) {
+            return `${months} mes${months !== 1 ? 'es' : ''}`;
+        } else {
+            return 'Recién nacido';
+        }
+    };
+
+    // Cargar bebé seleccionado: prioriza params -> AsyncStorage -> buscar por ID
+    useEffect(() => {
+        let mounted = true;
+
+        const loadBaby = async () => {
+            try {
+                setLoadingBaby(true);
+
+                // 1) Si viene el objeto baby por params
+                const paramBaby = route.params?.baby;
+                const paramBabyId = route.params?.babyId;
+
+                if (paramBaby) {
+                    if (mounted) setBaby(paramBaby);
+                    // guardar en AsyncStorage para próxima vez
+                    await AsyncStorage.setItem('selectedBaby', JSON.stringify(paramBaby));
+                    if (user?.id) await AsyncStorage.setItem(`selectedBaby_${user.id}`, paramBaby.id);
+                    return;
+                }
+
+                // 2) Si viene solo babyId, buscar en supabase
+                if (paramBabyId && user?.id) {
+                    try {
+                        const { data } = await getBabies(user.id);
+                        const found = data.find(b => b.id === paramBabyId);
+                        if (found) {
+                            if (mounted) setBaby(found);
+                            await AsyncStorage.setItem('selectedBaby', JSON.stringify(found));
+                            await AsyncStorage.setItem(`selectedBaby_${user.id}`, found.id);
+                            return;
+                        }
+                    } catch (err) {
+                        console.error('Error fetching babies by user to resolve babyId:', err);
+                    }
+                }
+
+                // 3) Intentar cargar desde AsyncStorage (user-specific key primero)
+                if (user?.id) {
+                    const storedId = await AsyncStorage.getItem(`selectedBaby_${user.id}`);
+                    if (storedId) {
+                        // storedId puede ser id; intentar buscar completo
+                        try {
+                            const { data } = await getBabies(user.id);
+                            const found = data.find(b => b.id === storedId || JSON.stringify(b) === storedId);
+                            if (found) {
+                                if (mounted) setBaby(found);
+                                await AsyncStorage.setItem('selectedBaby', JSON.stringify(found));
+                                return;
+                            }
+                        } catch (err) {
+                            console.error('Error fetching babies for stored id:', err);
+                        }
+                    }
+                }
+
+                const stored = await AsyncStorage.getItem('selectedBaby');
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored);
+                        if (mounted) setBaby(parsed);
+                    } catch (err) {
+                        // si stored es solo id string
+                        if (user?.id) {
+                            try {
+                                const { data } = await getBabies(user.id);
+                                const found = data.find(b => b.id === stored);
+                                if (found && mounted) setBaby(found);
+                            } catch (err2) {
+                                console.error('Error resolving stored baby id:', err2);
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading selected baby in BabyProfile:', err);
+            } finally {
+                if (mounted) setLoadingBaby(false);
+            }
+        };
+
+        loadBaby();
+
+        return () => { mounted = false };
+    }, [route.params, user?.id]);
+
+    // Cargar entradas de baby_profile cuando tengamos el baby
+    useEffect(() => {
+        let mounted = true;
+        const loadProfile = async () => {
+            if (!baby?.id) return;
+            setProfileLoading(true);
+            try {
+                const { data, error } = await getProfileBaby(baby.id, { locale: 'es' });
+                if (error) {
+                    console.error('Error loading baby_profile:', error);
+                    setProfileEntries([]);
+                    setProfileByCategory({});
+                    return;
+                }
+
+                if (!mounted) return;
+                setProfileEntries(data || []);
+
+                // agrupar por category_id
+                const grouped = (data || []).reduce((acc, item) => {
+                    const cat = item.category_id || 'general';
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push(item);
+                    return acc;
+                }, {});
+
+                setProfileByCategory(grouped);
+            } catch (err) {
+                console.error('Unexpected error loading baby_profile:', err);
+                setProfileEntries([]);
+                setProfileByCategory({});
+            } finally {
+                if (mounted) setProfileLoading(false);
+            }
+        };
+
+        loadProfile();
+        return () => { mounted = false };
+    }, [baby?.id]);
 
     const handleExport = () => {
         if (selectedSections.size > 0 || selectedItems.size > 0) {
@@ -134,6 +307,23 @@ const BabyProfile = ({ navigation }) => {
         setSelectedSections(newSelectedSections);
     };
 
+    // Helper para obtener el valor del baby_profile por key
+    const getProfileValue = (key) => {
+        if (!profileEntries || profileEntries.length === 0) return '';
+        const found = profileEntries.find(e => e.key === key);
+        return found?.value ?? '';
+    };
+
+    if (loadingBaby) {
+        return (
+            <SafeAreaView className="flex-1 bg-gray-50">
+                <View className="flex-1 justify-center items-center">
+                    <Text className="text-gray-500">Cargando información del bebé...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView className="flex-1 bg-gray-50">
             {/* Header */}
@@ -180,7 +370,7 @@ const BabyProfile = ({ navigation }) => {
                                 <Feather name="menu" size={24} color="#374151" />
                             </TouchableOpacity>
                             <Text className="text-xl font-semibold text-black">
-                                Perfil de Jacinta
+                                Perfil de {baby?.name || 'Sin nombre'}
                             </Text>
                             <TouchableOpacity
                                 onPress={handleExport}
@@ -199,9 +389,38 @@ const BabyProfile = ({ navigation }) => {
                     <View className="w-20 h-20 rounded-full bg-blue-100 items-center justify-center mb-3">
                         <Text className="text-3xl">👶</Text>
                     </View>
-                    <Text className="text-2xl font-bold text-gray-800 mb-1">Jacinta</Text>
-                    <Text className="text-lg text-gray-600">5 Meses</Text>
+                    <Text className="text-2xl font-bold text-gray-800 mb-1">{baby?.name || 'Sin nombre'}</Text>
+                    <Text className="text-lg text-gray-600">{baby?.birthdate ? formatBabyAge(baby.birthdate) : ''}</Text>
                 </View>
+                                {/* Sección: Perfil del bebé (datos personalizados) */}
+                                <View className="mb-6">
+                                    <Text className="text-lg font-bold text-gray-800 mb-3">Perfil</Text>
+                                    <View className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-100">
+                                        {profileLoading ? (
+                                            <View className="flex-row items-center justify-center py-6">
+                                                <ActivityIndicator size="small" color="#3B82F6" />
+                                                <Text className="ml-3 text-gray-600">Cargando perfil...</Text>
+                                            </View>
+                                        ) : (
+                                            Object.keys(profileByCategory).length === 0 ? (
+                                                <Text className="text-gray-600">No hay datos de perfil para este bebé.</Text>
+                                            ) : (
+                                                                Object.entries(profileByCategory).map(([categoryId, items]) => (
+                                                                    <View key={categoryId} className="mb-4">
+                                                                        <Text className="text-sm text-gray-500 mb-2">Categoría: {items[0]?.category_name || categoryId}</Text>
+                                                                        {items.map(item => (
+                                                                            <View key={item.id} className="mb-2">
+                                                                                <Text className="text-gray-700 font-medium">{item.key}</Text>
+                                                                                <Text className="text-gray-600 text-sm">{item.value}</Text>
+                                                                            </View>
+                                                                        ))}
+                                                                    </View>
+                                                                ))
+                                            )
+                                        )}
+                                    </View>
+                                </View>
+
                                 {/* Sección: Salud y bienestar */}
                 <TouchableOpacity 
                     onPress={() => navigation.navigate('HealthProfileView')}
@@ -292,7 +511,7 @@ const BabyProfile = ({ navigation }) => {
                                         )}
                                     </View>
                                 )}
-                                <Text className="text-xl font-bold text-gray-800">Sueño y descanso</Text>
+                                <Text className="text-xl font-bold text-gray-800">Sueño sssy descanso</Text>
                             </View>
                         </View>
                         
@@ -318,7 +537,7 @@ const BabyProfile = ({ navigation }) => {
                                     <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
                                     <View className="flex-1">
                                         <Text className="text-gray-700 font-medium">Rutina nocturna:</Text>
-                                        <Text className="text-gray-600 mt-1">Baño 20:00 + última toma de leche durante la noche acompañada</Text>
+                                        <Text className="text-gray-600 mt-1">{getProfileValue('where_sleep')}</Text>
                                     </View>
                                 </View>
                             </TouchableOpacity>
@@ -344,7 +563,7 @@ const BabyProfile = ({ navigation }) => {
                                     <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
                                     <View className="flex-1">
                                         <Text className="text-gray-700 font-medium">Horario de siestas:</Text>
-                                        <Text className="text-gray-600 mt-1">2</Text>
+                                        <Text className="text-gray-600 mt-1">{getProfileValue('sleep-2')}</Text>
                                     </View>
                                 </View>
                             </TouchableOpacity>
@@ -370,7 +589,7 @@ const BabyProfile = ({ navigation }) => {
                                     <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
                                     <View className="flex-1">
                                         <Text className="text-gray-700 font-medium">Hora de siestas:</Text>
-                                        <Text className="text-gray-600 mt-1">12:00 - 13:00 y 16:00 - 17:00</Text>
+                                        <Text className="text-gray-600 mt-1">{getProfileValue('sleep-3')}</Text>
                                     </View>
                                 </View>
                             </TouchableOpacity>
@@ -396,7 +615,7 @@ const BabyProfile = ({ navigation }) => {
                                     <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
                                     <View className="flex-1">
                                         <Text className="text-gray-700 font-medium">Despertares nocturnos:</Text>
-                                        <Text className="text-gray-600 mt-1">Ocasionales 1 por semana</Text>
+                                        <Text className="text-gray-600 mt-1">{getProfileValue('sleep-4')}</Text>
                                     </View>
                                 </View>
                             </TouchableOpacity>
@@ -422,7 +641,7 @@ const BabyProfile = ({ navigation }) => {
                                     <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
                                     <View className="flex-1">
                                         <Text className="text-gray-700 font-medium">Objeto de apego:</Text>
-                                        <Text className="text-gray-600 mt-1">Manta</Text>
+                                        <Text className="text-gray-600 mt-1">{getProfileValue('sleep-5') || 'Manta'}</Text>
                                     </View>
                                 </View>
                             </TouchableOpacity>
