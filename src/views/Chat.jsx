@@ -238,12 +238,17 @@ const Chat = () => {
         }
     }, [user?.id]);
 
+    // 📊 Cargar estado inicial al montar el componente
     const fetchLimitStatus = async () => {
         if (!user?.id) return;
+        
         try {
-            const result = await ConversationsService.getMessageUsageStatus(user.id); // ✅ solo consulta
-
+            const result = await ConversationsService.getMessageUsageStatus(user.id);
+            
+            console.log('📊 Estado inicial de límite:', result);
+            
             if (!result) return;
+            
             setTier(result.status);
             setRemaining(result.remaining || 0);
             setResetAt(result.resetAt);
@@ -260,6 +265,13 @@ const Chat = () => {
     useEffect(() => {
         fetchLimitStatus();
     }, [user?.id]);
+
+    // Recargar cuando vuelve el foco a la pantalla
+    useFocusEffect(
+        useCallback(() => {
+            fetchLimitStatus();
+        }, [user?.id])
+    );
 
     // Efecto para cargar conversaciones cuando cambia el bebé seleccionado
     useEffect(() => {
@@ -298,13 +310,6 @@ const Chat = () => {
     const handleOnSendMessage = async () => {
         if (message.trim() === '' || isLoading) return;
 
-        // 🚫 Si no tiene mensajes restantes, no permitir enviar
-        if (tier !== "subscriber" && remaining !== null && remaining <= 0) {
-            pushAssistantNotice("Has alcanzado tu límite diario de mensajes. Espera el reinicio para continuar.");
-            return;
-        }
-
-
         if (!session?.access_token) {
             pushAssistantNotice('Error: Debes iniciar sesión para usar el chat.');
             return;
@@ -315,7 +320,48 @@ const Chat = () => {
         setIsLoading(true);
 
         try {
-            // 1️⃣ Guardar mensaje localmente y en BD
+            // 1️⃣ PRIMERO: Verificar y consumir el límite
+            const limitResult = await ConversationsService.limitMessagesPerDay(user.id);
+            
+            console.log('📊 Resultado de verificación de límite:', limitResult);
+
+            // 2️⃣ Si no se permite, detener inmediatamente
+            if (!limitResult.allowed) {
+                setTier(limitResult.tier);
+                setRemaining(limitResult.remaining || 0);
+                setResetAt(limitResult.resetAt);
+                setDailyLimit(limitResult.DAILY_LIMIT || 10);
+
+                if (limitResult.resetAt) {
+                    startCountdown(limitResult.resetAt);
+                    const resetTime = new Date(limitResult.resetAt);
+                    const diffMs = resetTime - new Date();
+                    const hours = Math.floor(diffMs / 3600000);
+                    const mins = Math.floor((diffMs % 3600000) / 60000);
+                    const secs = Math.floor((diffMs % 60000) / 1000);
+
+                    pushAssistantNotice(
+                        `Has alcanzado tu límite diario. Podrás volver a escribir en ${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.`
+                    );
+                } else {
+                    pushAssistantNotice('Has alcanzado tu límite de mensajes.');
+                }
+
+                setIsLoading(false);
+                return; // 🛑 Detener aquí
+            }
+
+            // 3️⃣ Actualizar contador en UI inmediatamente
+            setTier(limitResult.tier);
+            setRemaining(limitResult.remaining || 0);
+            setResetAt(limitResult.resetAt);
+            setDailyLimit(limitResult.DAILY_LIMIT || 10);
+
+            if (limitResult.remaining === 0 && limitResult.resetAt) {
+                startCountdown(limitResult.resetAt);
+            }
+
+            // 4️⃣ Guardar mensaje del usuario en BD
             const savedUserMessage = await ConversationsService.createMessage({
                 userId: user.id,
                 babyId: selectedBaby?.id || null,
@@ -330,9 +376,9 @@ const Chat = () => {
                 babyId: selectedBaby?.id || null,
             });
 
-            // 2️⃣ Llamar a tu API /chat (que ya valida el límite)
+            // 5️⃣ Llamar a la API /chat
             const API_URL = process.env.LOCAL || 'http://192.168.1.61:3000/api/';
-            console.log('🌐 Enviando mensaje a API:', API_URL + 'chat');
+            
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
                 headers: {
@@ -348,29 +394,9 @@ const Chat = () => {
 
             const data = await res.json();
 
-            // 3️⃣ Manejar caso de límite excedido (backend retorna 429 o data.error)
-            if (res.status === 429 || data?.error?.includes('límite')) {
-                const resetTime = data?.resetAt ? new Date(data.resetAt) : null;
-                if (resetTime) {
-                    setResetAt(data.resetAt);
-                    setRemaining(0);
-                    startCountdown(data.resetAt);
-
-                    const diffMs = resetTime - new Date();
-                    const mins = Math.floor(diffMs / 60000);
-                    const secs = Math.floor((diffMs % 60000) / 1000);
-
-                    pushAssistantNotice(
-                        `Has alcanzado tu límite. Podrás volver a escribir en ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.`
-                    );
-                } else {
-                    pushAssistantNotice('Has alcanzado tu límite de mensajes.');
-                }
-                return;
-            }
-
-            // 4️⃣ Procesar respuesta del modelo
+            // 6️⃣ Procesar respuesta del modelo
             const assistantContent = data?.answer || 'Lo siento, no pude obtener una respuesta.';
+            
             const savedAssistantMessage = await ConversationsService.createMessage({
                 userId: user.id,
                 babyId: selectedBaby?.id || null,
@@ -385,38 +411,30 @@ const Chat = () => {
                 babyId: selectedBaby?.id || null,
             });
 
-
-            // 5️⃣ Actualizar contador si backend lo devuelve
-            if (typeof data.remaining === 'number') {
-                setRemaining(data.remaining);
-                setResetAt(data.resetAt);
-                if (data.remaining === 0) startCountdown(data.resetAt);
-            }
-
             setTimeout(scrollToBottom, 100);
+
         } catch (error) {
             console.error('Error al enviar el mensaje:', error);
             pushAssistantNotice('Error al conectar con el servidor.');
         } finally {
-            await ConversationsService.limitMessagesPerDay(user.id);
-            await fetchLimitStatus();
             setIsLoading(false);
         }
     };
 
 
+    // ⏱️ Función de cuenta regresiva
     const startCountdown = (resetTime) => {
         if (!resetTime) return;
 
         const target = new Date(resetTime);
-        clearInterval(global._messageCountdownTimer); // 🧹 limpiar cualquier timer previo
+        clearInterval(global._messageCountdownTimer);
 
         global._messageCountdownTimer = setInterval(() => {
             const diff = target - new Date();
             if (diff <= 0) {
                 clearInterval(global._messageCountdownTimer);
                 setCountdown("");
-                setRemaining(5); // reinicia límite diario
+                setRemaining(dailyLimit);
                 setResetAt(null);
                 return;
             }
@@ -427,6 +445,7 @@ const Chat = () => {
             setCountdown(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
         }, 1000);
     };
+
 
 
     const handleMenuPress = () => {
