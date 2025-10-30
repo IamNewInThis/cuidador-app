@@ -75,32 +75,53 @@ class ConversationsService {
         }
     }
 
+    /**
+ * 🔼 INCREMENTA el contador de mensajes (consume 1 mensaje)
+ * Úsala ANTES de enviar un mensaje al chat
+ */
     async limitMessagesPerDay(userId) {
         const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        //SI CAMBIAS EL LIMITE DIARIO, CAMBIALO EN LA FUNCION GETMESSAGEUSAGESTATUS
-        const DAILY_LIMIT = 10;
+        const DAILY_LIMIT = 10; // ⚙️ Configuración centralizada
+
         try {
-            const { data: sub, error: subErr } = await supabase
+            // 1️⃣ Verificar si tiene suscripción activa
+            const { data: subscriptions, error: subErr } = await supabase
                 .from("subscriptions")
                 .select("status, end_date")
                 .eq("user_id", userId)
-                .maybeSingle();
+                .order("start_date", { ascending: false })
+                .limit(1);
 
             if (subErr) throw subErr;
-            const isActive =
-                sub &&
+
+            const sub = subscriptions && subscriptions.length > 0 ? subscriptions[0] : null;
+
+            // Validación estricta de suscripción activa
+            const isActive = sub &&
                 sub.status === "active" &&
-                (sub.end_date === null || new Date(sub.end_date) > new Date());
+                sub.end_date !== null &&
+                new Date(sub.end_date) > new Date();
 
             if (isActive) {
                 console.log("✅ Usuario con suscripción activa, sin límite.");
-                return { allowed: true, tier: "subscriber", remaining: 9999, resetAt: null };
+                return {
+                    allowed: true,
+                    tier: "subscriber",
+                    remaining: 9999,
+                    resetAt: null,
+                    DAILY_LIMIT: DAILY_LIMIT
+                };
             }
+
+            // 2️⃣ Usuario free: incrementar contador (consume 1 mensaje)
+            console.log('📞 Llamando a increment_message_usage');
+
             const { data, error } = await supabase.rpc("increment_message_usage", {
                 p_user_id: userId,
                 p_limit: DAILY_LIMIT,
                 p_tz: userTimeZone,
             });
+
             if (error) throw error;
 
             const row = Array.isArray(data) ? data[0] : data;
@@ -116,40 +137,63 @@ class ConversationsService {
                 resetAt: row.reset_at,
                 DAILY_LIMIT: DAILY_LIMIT,
             };
+
         } catch (error) {
             console.error("❌ Error en limitMessagesPerDay:", error);
-            return { allowed: false, error: error.message ?? "unknown_error" };
+            return {
+                allowed: false,
+                tier: "error",
+                remaining: 0,
+                error: error.message ?? "unknown_error"
+            };
         }
     }
 
+    /**
+     * 👁️ CONSULTA el estado actual (NO consume mensajes)
+     * Úsala para mostrar el contador en la UI
+     */
     async getMessageUsageStatus(userId) {
-        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        //AQUI TAMBIEN CAMBIA EL LIMITE DIARIO SI LO MODIFICAS, CAMBIALO EN LA FUNCION LIMITMESSAGESPERDAY.
-        const DAILY_LIMIT = 10;
-        try {
+        const DAILY_LIMIT = 10; // ⚙️ Configuración centralizada
 
-            const { data: sub, error: subErr } = await supabase
+        try {
+            // 1️⃣ Verificar si tiene suscripción activa
+            const { data: subscriptions, error: subErr } = await supabase
                 .from("subscriptions")
                 .select("status, end_date")
                 .eq("user_id", userId)
-                .maybeSingle();
+                .order("start_date", { ascending: false })
+                .limit(1);
 
             if (subErr) throw subErr;
 
-            const isActive =
-                sub &&
+            const sub = subscriptions && subscriptions.length > 0 ? subscriptions[0] : null;
+
+            // Validación estricta de suscripción activa
+            const isActive = sub &&
                 sub.status === "active" &&
-                (sub.end_date === null || new Date(sub.end_date) > new Date());
+                sub.end_date !== null &&
+                new Date(sub.end_date) > new Date();
 
             if (isActive) {
-                console.log("✅ Usuario con suscripción activa, sin límite.");
-                return { allowed: true, tier: "subscriber", remaining: 9999, resetAt: null };
+                console.log("✅ Usuario con suscripción activa (GET)");
+                return {
+                    status: "subscriber",
+                    used: 0,
+                    remaining: 9999,
+                    resetAt: null,
+                    DAILY_LIMIT: DAILY_LIMIT
+                };
             }
+
+            // 2️⃣ Usuario free: consultar estado (SIN incrementar)
+            console.log('🔍 Consultando estado de uso de mensajes (GET)');
+
             const { data, error } = await supabase.rpc("get_message_usage_status", {
                 p_user_id: userId,
-                p_limit: DAILY_LIMIT,
-                p_tz: userTimeZone,
+                p_limit: DAILY_LIMIT
             });
+
             if (error) throw error;
 
             const row = Array.isArray(data) ? data[0] : data;
@@ -158,14 +202,23 @@ class ConversationsService {
             console.log("📊 Estado actual del uso:", row);
 
             return {
+                status: "free",
                 used: row.used,
                 remaining: row.remaining,
                 resetAt: row.reset_at,
                 DAILY_LIMIT: DAILY_LIMIT,
             };
+
         } catch (error) {
             console.error("❌ Error al obtener estado de mensajes:", error);
-            return { used: 0, remaining: DAILY_LIMIT, resetAt: null };
+            return {
+                status: "error",
+                used: 0,
+                remaining: DAILY_LIMIT,
+                resetAt: null,
+                DAILY_LIMIT: DAILY_LIMIT,
+                error: error.message ?? "unknown_error"
+            };
         }
     }
 
