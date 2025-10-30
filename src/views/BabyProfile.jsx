@@ -194,13 +194,21 @@ const BabyProfile = ({ navigation }) => {
         } else {
             // Seleccionar todo automáticamente
             setIsSelectionMode(true);
+            
+            // Obtener todos los IDs dinámicamente
+            const allSleepItems = sleepSectionConfig.map(item => item.id);
+            const allEmotionItems = ['emotions-1', 'emotions-2', 'emotions-3', 'emotions-4'];
+            const allCareItems = ['care-1', 'care-2', 'care-3', 'care-4', 'care-5'];
+            const allDevelopmentItems = ['development-1', 'development-2', 'development-3'];
+            const allHealthItems = ['health-1', 'health-2', 'health-3'];
+            
             setSelectedSections(new Set(['sleep', 'emotions', 'care', 'development', 'health']));
             setSelectedItems(new Set([
-                'sleep-1', 'sleep-2', 'sleep-3', 'sleep-4', 'sleep-5',
-                'emotions-1', 'emotions-2', 'emotions-3', 'emotions-4',
-                'care-1', 'care-2', 'care-3', 'care-4', 'care-5',
-                'development-1', 'development-2', 'development-3',
-                'health-1', 'health-2', 'health-3'
+                ...allSleepItems,
+                ...allEmotionItems,
+                ...allCareItems,
+                ...allDevelopmentItems,
+                ...allHealthItems
             ]));
         }
     };
@@ -228,25 +236,36 @@ const BabyProfile = ({ navigation }) => {
         const newSelectedSections = new Set(selectedSections);
         const newSelectedItems = new Set(selectedItems);
         
-        // Definir los items de cada sección
-        const sectionItems = {
-            'sleep': ['sleep-1', 'sleep-2', 'sleep-3', 'sleep-4', 'sleep-5'],
-            'emotions': ['emotions-1', 'emotions-2', 'emotions-3', 'emotions-4'],
-            'care': ['care-1', 'care-2', 'care-3', 'care-4', 'care-5'],
-            'development': ['development-1', 'development-2', 'development-3'],
-            'health': ['health-1', 'health-2', 'health-3']
+        // Definir los items de cada sección dinámicamente
+        const getSectionItems = (section) => {
+            switch(section) {
+                case 'sleep':
+                    return sleepSectionConfig.map(item => item.id);
+                case 'emotions':
+                    return ['emotions-1', 'emotions-2', 'emotions-3', 'emotions-4'];
+                case 'care':
+                    return ['care-1', 'care-2', 'care-3', 'care-4', 'care-5'];
+                case 'development':
+                    return ['development-1', 'development-2', 'development-3'];
+                case 'health':
+                    return ['health-1', 'health-2', 'health-3'];
+                default:
+                    return [];
+            }
         };
+        
+        const sectionItems = getSectionItems(sectionId);
         
         if (newSelectedSections.has(sectionId)) {
             // Deseleccionar sección y todos sus items
             newSelectedSections.delete(sectionId);
-            sectionItems[sectionId].forEach(itemId => {
+            sectionItems.forEach(itemId => {
                 newSelectedItems.delete(itemId);
             });
         } else {
             // Seleccionar sección y todos sus items
             newSelectedSections.add(sectionId);
-            sectionItems[sectionId].forEach(itemId => {
+            sectionItems.forEach(itemId => {
                 newSelectedItems.add(itemId);
             });
         }
@@ -263,19 +282,31 @@ const BabyProfile = ({ navigation }) => {
         const newSelectedItems = new Set(selectedItems);
         const newSelectedSections = new Set(selectedSections);
         
-        // Definir los items de cada sección
-        const sectionItems = {
-            'sleep': ['sleep-1', 'sleep-2', 'sleep-3', 'sleep-4', 'sleep-5'],
-            'emotions': ['emotions-1', 'emotions-2', 'emotions-3', 'emotions-4'],
-            'care': ['care-1', 'care-2', 'care-3', 'care-4', 'care-5'],
-            'development': ['development-1', 'development-2', 'development-3'],
-            'health': ['health-1', 'health-2', 'health-3']
+        // Función para obtener items de cada sección dinámicamente
+        const getSectionItems = (section) => {
+            switch(section) {
+                case 'sleep':
+                    return sleepSectionConfig.map(item => item.id);
+                case 'emotions':
+                    return ['emotions-1', 'emotions-2', 'emotions-3', 'emotions-4'];
+                case 'care':
+                    return ['care-1', 'care-2', 'care-3', 'care-4', 'care-5'];
+                case 'development':
+                    return ['development-1', 'development-2', 'development-3'];
+                case 'health':
+                    return ['health-1', 'health-2', 'health-3'];
+                default:
+                    return [];
+            }
         };
         
         // Encontrar a qué sección pertenece este item
         let currentSection = null;
-        for (const [section, items] of Object.entries(sectionItems)) {
-            if (items.includes(itemId)) {
+        const sections = ['sleep', 'emotions', 'care', 'development', 'health'];
+        
+        for (const section of sections) {
+            const sectionItems = getSectionItems(section);
+            if (sectionItems.includes(itemId)) {
                 currentSection = section;
                 break;
             }
@@ -294,7 +325,8 @@ const BabyProfile = ({ navigation }) => {
             
             // Verificar si todos los items de la sección están seleccionados
             if (currentSection) {
-                const allItemsSelected = sectionItems[currentSection].every(item => 
+                const sectionItems = getSectionItems(currentSection);
+                const allItemsSelected = sectionItems.every(item => 
                     newSelectedItems.has(item)
                 );
                 if (allItemsSelected) {
@@ -307,11 +339,123 @@ const BabyProfile = ({ navigation }) => {
         setSelectedSections(newSelectedSections);
     };
 
+    // Configuración escalable para la sección de Sueño y Descanso
+    const sleepSectionConfig = [
+        {
+            id: 'sleep-rhythm',
+            label: 'Ritmo de sueño',
+            profileKey: 'sleep_rhythm',
+            defaultValue: 'Regular'
+        },
+        {
+            id: 'day-night-difference',
+            label: 'Diferencia día/noche',
+            profileKey: 'day_night_difference',
+            defaultValue: 'Bien establecida'
+        },
+        {
+            id: 'sleep-location',
+            label: 'Lugar donde duerme',
+            profileKey: 'where_sleep',
+            defaultValue: 'En su cuna'
+        },
+        {
+            id: 'sleep-accompaniment',
+            label: 'Acompañamiento para dormir',
+            profileKey: 'sleep_accompaniment',
+            defaultValue: 'Con presencia de los padres'
+        },
+        {
+            id: 'attachment-object',
+            label: 'Objeto o elemento de apego',
+            profileKey: 'attachment_object',
+            defaultValue: 'Manta suave'
+        },
+        {
+            id: 'daily-naps',
+            label: 'Cantidad de siestas diarias',
+            profileKey: 'daily_naps_count',
+            defaultValue: '2-3 siestas'
+        },
+        {
+            id: 'nap-duration',
+            label: 'Duración promedio de siestas',
+            profileKey: 'nap_average_duration',
+            defaultValue: '1-2 horas'
+        },
+        {
+            id: 'wake-windows',
+            label: 'Ventanas de vigilia',
+            profileKey: 'wake_windows',
+            defaultValue: '2-3 horas'
+        },
+        {
+            id: 'sleep-signals',
+            label: 'Señales de sueño',
+            profileKey: 'sleep_signals',
+            defaultValue: 'Se frota los ojos, bosteza'
+        },
+        {
+            id: 'sleep-association',
+            label: 'Asociación principal para dormirse',
+            profileKey: 'sleep_association',
+            defaultValue: 'Lactancia o chupete'
+        },
+        {
+            id: 'night-wakings',
+            label: 'Número promedio de despertares',
+            profileKey: 'night_wakings_count',
+            defaultValue: '1-2 por noche'
+        },
+        {
+            id: 'back-to-sleep',
+            label: 'Forma de volver a dormirse',
+            profileKey: 'back_to_sleep_method',
+            defaultValue: 'Con ayuda de los padres'
+        },
+        {
+            id: 'sensory-profile',
+            label: 'Perfil sensorial predominante',
+            profileKey: 'sensory_profile',
+            defaultValue: 'Sensible a ruidos'
+        },
+        {
+            id: 'calming-stimulus',
+            label: 'Estímulo que ayuda a calmar',
+            profileKey: 'calming_stimulus',
+            defaultValue: 'Música suave y caricias'
+        },
+        {
+            id: 'room-temperature',
+            label: 'Temperatura del cuarto',
+            profileKey: 'room_temperature',
+            defaultValue: '20-22°C'
+        },
+        {
+            id: 'room-humidity',
+            label: 'Humedad ambiental',
+            profileKey: 'room_humidity',
+            defaultValue: '40-60%'
+        },
+        {
+            id: 'sleep-clothing',
+            label: 'Vestimenta habitual para dormir',
+            profileKey: 'sleep_clothing',
+            defaultValue: 'Pijama de algodón'
+        },
+        {
+            id: 'sensitivity-temperament',
+            label: 'Sensibilidad o temperamento',
+            profileKey: 'sensitivity_temperament',
+            defaultValue: 'Tranquila y adaptable'
+        }
+    ];
+
     // Helper para obtener el valor del baby_profile por key
-    const getProfileValue = (key) => {
-        if (!profileEntries || profileEntries.length === 0) return '';
+    const getProfileValue = (key, defaultValue = '') => {
+        if (!profileEntries || profileEntries.length === 0) return defaultValue;
         const found = profileEntries.find(e => e.key === key);
-        return found?.value ?? '';
+        return found?.value ?? defaultValue;
     };
 
     if (loadingBaby) {
@@ -392,37 +536,9 @@ const BabyProfile = ({ navigation }) => {
                     <Text className="text-2xl font-bold text-gray-800 mb-1">{baby?.name || 'Sin nombre'}</Text>
                     <Text className="text-lg text-gray-600">{baby?.birthdate ? formatBabyAge(baby.birthdate) : ''}</Text>
                 </View>
-                                {/* Sección: Perfil del bebé (datos personalizados) */}
-                                <View className="mb-6">
-                                    <Text className="text-lg font-bold text-gray-800 mb-3">Perfil</Text>
-                                    <View className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-100">
-                                        {profileLoading ? (
-                                            <View className="flex-row items-center justify-center py-6">
-                                                <ActivityIndicator size="small" color="#3B82F6" />
-                                                <Text className="ml-3 text-gray-600">Cargando perfil...</Text>
-                                            </View>
-                                        ) : (
-                                            Object.keys(profileByCategory).length === 0 ? (
-                                                <Text className="text-gray-600">No hay datos de perfil para este bebé.</Text>
-                                            ) : (
-                                                                Object.entries(profileByCategory).map(([categoryId, items]) => (
-                                                                    <View key={categoryId} className="mb-4">
-                                                                        <Text className="text-sm text-gray-500 mb-2">Categoría: {items[0]?.category_name || categoryId}</Text>
-                                                                        {items.map(item => (
-                                                                            <View key={item.id} className="mb-2">
-                                                                                <Text className="text-gray-700 font-medium">{item.key}</Text>
-                                                                                <Text className="text-gray-600 text-sm">{item.value}</Text>
-                                                                            </View>
-                                                                        ))}
-                                                                    </View>
-                                                                ))
-                                            )
-                                        )}
-                                    </View>
-                                </View>
 
-                                {/* Sección: Salud y bienestar */}
-                <TouchableOpacity 
+                {/* Sección: Salud y bienestar */}
+                <TouchableOpacity
                     onPress={() => navigation.navigate('HealthProfileView')}
                     activeOpacity={0.7}
                     className="bg-white rounded-xl p-5 mb-6 shadow-sm border border-gray-100"
@@ -511,140 +627,41 @@ const BabyProfile = ({ navigation }) => {
                                         )}
                                     </View>
                                 )}
-                                <Text className="text-xl font-bold text-gray-800">Sueño sssy descanso</Text>
+                                <Text className="text-xl font-bold text-gray-800">Sueño y descanso</Text>
                             </View>
                         </View>
                         
                         <View className="space-y-3">
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('sleep-1')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('sleep-1') ? 'bg-blue-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('sleep-1') 
-                                                ? 'bg-blue-500 border-blue-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('sleep-1') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
+                            {sleepSectionConfig.map((item, index) => (
+                                <TouchableOpacity 
+                                    key={item.id}
+                                    onPress={() => handleSelectItem(item.id)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View className={`flex-row items-start p-2 rounded-lg ${
+                                        selectedItems.has(item.id) ? 'bg-blue-100' : ''
+                                    }`}>
+                                        {isSelectionMode && (
+                                            <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
+                                                selectedItems.has(item.id) 
+                                                    ? 'bg-blue-500 border-blue-500' 
+                                                    : 'border-gray-300'
+                                            }`}>
+                                                {selectedItems.has(item.id) && (
+                                                    <Feather name="check" size={12} color="white" />
+                                                )}
+                                            </View>
+                                        )}
+                                        <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
+                                        <View className="flex-1">
+                                            <Text className="text-gray-700 font-medium">{item.label}:</Text>
+                                            <Text className="text-gray-600 mt-1">
+                                                {getProfileValue(item.profileKey, item.defaultValue)}
+                                            </Text>
                                         </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Rutina nocturna:</Text>
-                                        <Text className="text-gray-600 mt-1">{getProfileValue('where_sleep')}</Text>
                                     </View>
-                                </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('sleep-2')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('sleep-2') ? 'bg-blue-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('sleep-2') 
-                                                ? 'bg-blue-500 border-blue-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('sleep-2') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Horario de siestas:</Text>
-                                        <Text className="text-gray-600 mt-1">{getProfileValue('sleep-2')}</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('sleep-3')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('sleep-3') ? 'bg-blue-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('sleep-3') 
-                                                ? 'bg-blue-500 border-blue-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('sleep-3') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Hora de siestas:</Text>
-                                        <Text className="text-gray-600 mt-1">{getProfileValue('sleep-3')}</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('sleep-4')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('sleep-4') ? 'bg-blue-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('sleep-4') 
-                                                ? 'bg-blue-500 border-blue-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('sleep-4') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Despertares nocturnos:</Text>
-                                        <Text className="text-gray-600 mt-1">{getProfileValue('sleep-4')}</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('sleep-5')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('sleep-5') ? 'bg-blue-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('sleep-5') 
-                                                ? 'bg-blue-500 border-blue-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('sleep-5') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Objeto de apego:</Text>
-                                        <Text className="text-gray-600 mt-1">{getProfileValue('sleep-5') || 'Manta'}</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
+                                </TouchableOpacity>
+                            ))}
                         </View>
                     </View>
                 </TouchableOpacity>

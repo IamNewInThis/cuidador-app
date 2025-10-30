@@ -5,7 +5,6 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Input from '../components/Input';
 import Button from '../components/Button';
-import PhoneInput from '../components/PhoneInput';
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import { useAuth } from '../contexts/AuthContext';
@@ -18,7 +17,6 @@ const SignUp = () => {
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [phone, setPhone] = useState('');
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showCountryPicker, setShowCountryPicker] = useState(false);
     const [birthdate, setBirthdate] = useState(new Date());
@@ -38,7 +36,7 @@ const SignUp = () => {
 
     const onSubmit = async () => {
         try {
-            await signUp({ email: email.trim(), password, full_name: fullName.trim(), phone: phone.trim(), birthdate: birthdate.toISOString(), country: country });
+            await signUp({ email: email.trim(), password, full_name: fullName.trim(), birthdate: birthdate.toISOString(), country: country });
             // La navegación se manejará automáticamente por el AppNavigator
         } catch (_) { /* authError ya está seteado en el contexto */ }
     };
@@ -67,8 +65,6 @@ const SignUp = () => {
                             autoCapitalize="none"
                             className="mb-4"
                         />
-
-                        <PhoneInput value={phone} onChangeText={setPhone} className="mb-6" />
 
                         {/* Fecha de nacimiento */}
                         <Button
