@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getBabies } from '../services/BabiesService';
 import { getProfileBaby } from '../services/BabyProfileServices';
 import { ActivityIndicator } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 const BabyProfile = ({ navigation }) => {
     const [selectedSections, setSelectedSections] = useState(new Set());
@@ -15,6 +16,7 @@ const BabyProfile = ({ navigation }) => {
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const route = useRoute();
     const { user } = useAuth();
+    const { i18n } = useTranslation();
     const [baby, setBaby] = useState(null);
     const [loadingBaby, setLoadingBaby] = useState(true);
     const [profileEntries, setProfileEntries] = useState([]);
@@ -149,11 +151,12 @@ const BabyProfile = ({ navigation }) => {
     // Cargar entradas de baby_profile cuando tengamos el baby
     useEffect(() => {
         let mounted = true;
-        const loadProfile = async () => {
+    const loadProfile = async () => {
             if (!baby?.id) return;
             setProfileLoading(true);
             try {
-                const { data, error } = await getProfileBaby(baby.id, { locale: 'es' });
+        const locale = i18n?.language || 'es';
+        const { data, error } = await getProfileBaby(baby.id, { locale });
                 if (error) {
                     console.error('Error loading baby_profile:', error);
                     setProfileEntries([]);
@@ -184,7 +187,7 @@ const BabyProfile = ({ navigation }) => {
 
         loadProfile();
         return () => { mounted = false };
-    }, [baby?.id]);
+    }, [baby?.id, i18n?.language]);
 
     const handleExport = () => {
         if (selectedSections.size > 0 || selectedItems.size > 0) {
