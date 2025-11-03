@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { getBabies } from '../services/BabiesService';
-import { getProfileBaby } from '../services/BabyProfileServices';
+import { getProfileBaby, getProfileByCategory } from '../services/BabyProfileServices';
 import { ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -23,6 +23,7 @@ const BabyProfile = ({ navigation }) => {
     const [profileEntries, setProfileEntries] = useState([]);
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileByCategory, setProfileByCategory] = useState({});
+    const [sleepProfileData, setSleepProfileData] = useState([]);
 
     const handleGoBack = () => {
         // Volver a Chat con el parámetro para abrir el SideMenu
@@ -152,31 +153,81 @@ const BabyProfile = ({ navigation }) => {
     // Cargar entradas de baby_profile cuando tengamos el baby
     useEffect(() => {
         let mounted = true;
-    const loadProfile = async () => {
+        const loadProfile = async () => {
             if (!baby?.id) return;
             setProfileLoading(true);
             try {
-        const locale = i18n?.language || 'es';
-        const { data, error } = await getProfileBaby(baby.id, { locale });
-                if (error) {
-                    console.error('Error loading baby_profile:', error);
+                const locale = i18n?.language || 'es';
+                
+                // 1. Obtener todos los datos para encontrar el category_id de Sleep
+                const { data: allData, error: allError } = await getProfileBaby(baby.id, { locale });
+                if (allError) {
+                    console.error('Error loading baby_profile:', allError);
                     setProfileEntries([]);
                     setProfileByCategory({});
+                    setSleepProfileData([]);
                     return;
                 }
 
                 if (!mounted) return;
-                setProfileEntries(data || []);
+                setProfileEntries(allData || []);
 
-                // agrupar por category_id
-                const grouped = (data || []).reduce((acc, item) => {
+                // Agrupar por category_id
+                const grouped = (allData || []).reduce((acc, item) => {
                     const cat = item.category_id || 'general';
                     if (!acc[cat]) acc[cat] = [];
                     acc[cat].push(item);
                     return acc;
                 }, {});
-
                 setProfileByCategory(grouped);
+
+                // 2. Encontrar el category_id de "Sleep and rest"
+                const sleepItem = (allData || []).find(item => {
+                    const categoryName = item.category_name?.toLowerCase() || '';
+                    return categoryName.includes('sleep') || 
+                           categoryName.includes('sueño') || 
+                           categoryName.includes('descanso');
+                });
+
+                if (!sleepItem) {
+                    console.log('⚠️ No se encontró la categoría de sueño');
+                    setSleepProfileData([]);
+                    return;
+                }
+
+                const sleepCategoryId = sleepItem.category_id;
+                console.log('🔍 Category ID de sueño encontrado:', sleepCategoryId);
+                console.log('🔍 Baby ID:', baby.id);
+                console.log('🔍 Locale:', locale);
+
+                // Verificar cuántos items tienen ese category_id en allData
+                const itemsWithSleepCategory = (allData || []).filter(item => 
+                    item.category_id === sleepCategoryId
+                );
+                console.log('📊 Items con category_id de sueño en allData:', itemsWithSleepCategory.length);
+                console.log('📋 Keys encontradas:', itemsWithSleepCategory.map(i => i.key));
+
+                // 3. Hacer consulta específica con babyId + categoryId
+                const { data: sleepData, error: sleepError } = await getProfileByCategory(
+                    baby.id, 
+                    sleepCategoryId, 
+                    { locale }
+                );
+
+                console.log('📥 Respuesta de getProfileByCategory:');
+                console.log('   - sleepData:', sleepData);
+                console.log('   - sleepError:', sleepError);
+
+                if (sleepError) {
+                    console.error('Error loading sleep profile:', sleepError);
+                    setSleepProfileData([]);
+                    return;
+                }
+
+                if (!mounted) return;
+                setSleepProfileData(sleepData || []);
+                console.log('📊 Datos de sueño cargados:', sleepData?.length || 0, 'entradas');
+                console.log('📋 Detalle:', sleepData?.map(d => ({ key: d.key, value: d.value })));
             } catch (err) {
                 console.error('Unexpected error loading baby_profile:', err);
                 setProfileEntries([]);
@@ -470,7 +521,22 @@ const BabyProfile = ({ navigation }) => {
     };
 
     // Filtrar elementos de sueño que tienen valores reales en la BD
-    const sleepItemsWithValues = sleepSectionConfig.filter(item => hasProfileValue(item.profileKey));
+    // Ahora usa directamente sleepProfileData en lugar de buscar por keys individuales
+    const sleepItemsWithValues = sleepProfileData.map((item, index) => ({
+        id: `sleep-${index + 1}`,
+        label: item.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), // Formatear key como label
+        profileKey: item.key,
+        value: item.value,
+        categoryName: item.category_name
+    }));
+
+    // Debug: mostrar datos de sueño cuando cambien
+    useEffect(() => {
+        if (sleepItemsWithValues.length > 0) {
+            console.log('🛏️ sleepItemsWithValues actualizado:', sleepItemsWithValues.length, 'items');
+            console.log('📋 Items:', sleepItemsWithValues.map(i => `${i.label}: ${i.value}`));
+        }
+    }, [sleepProfileData.length]);
 
     if (loadingBaby) {
         return (
@@ -671,7 +737,7 @@ const BabyProfile = ({ navigation }) => {
                                             <View className="flex-1">
                                                 <Text className="text-gray-700 font-medium">{item.label}:</Text>
                                                 <Text className="text-gray-600 mt-1">
-                                                    {getProfileValue(item.profileKey)}
+                                                    {item.value}
                                                 </Text>
                                             </View>
                                         </View>
