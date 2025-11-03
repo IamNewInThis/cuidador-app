@@ -376,7 +376,7 @@ const Chat = () => {
                 babyId: selectedBaby?.id || null,
             });
 
-            const API_URL = process.env.LOCAL;
+            const API_URL = process.env.EXPO_PUBLIC_API_URL;
             console.log('Usando API_URL:', API_URL);
             const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
