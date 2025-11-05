@@ -55,8 +55,6 @@ const Babies = () => {
     const [name, setName] = useState("");
     const [birthdate, setBirthdate] = useState(new Date());
     const [gender, setGender] = useState("");
-    const [weight, setWeight] = useState("");
-    const [height, setHeight] = useState("");
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showGenderPicker, setShowGenderPicker] = useState(false);
     const [showRelationPicker, setShowRelationPicker] = useState(false);
@@ -182,8 +180,6 @@ const Babies = () => {
             name,
             birthdate,
             gender: gender || null,
-            weight: weight ? parseInt(weight) : null,
-            height: height ? parseInt(height) : null
         };
         
         const { data, error } = await createBaby(user.id, babyData);
@@ -301,22 +297,6 @@ const Babies = () => {
                         </Picker>
                     </View>
                 )}
-
-                <Input
-                    placeholder="Peso (Kilos)"
-                    value={weight}
-                    onChangeText={setWeight}
-                    keyboardType="numeric"
-                    className="mb-4"
-                />
-
-                <Input
-                    placeholder="Altura (centímetros)"
-                    value={height}
-                    onChangeText={setHeight}
-                    keyboardType="numeric"
-                    className="mb-4"
-                />
 
                 {/* DateTimePicker para iOS como modal */}
                 {Platform.OS === "ios" && showDatePicker && (

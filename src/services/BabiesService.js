@@ -29,8 +29,6 @@ export async function createBaby(userId, baby) {
                 name: baby.name,
                 birthdate: baby.birthdate || null,
                 gender: baby.gender || null,
-                weight: baby.weight || null,
-                height: baby.height || null,
             },
         ])
         .select();  // Agregar .select() para obtener los datos creados
