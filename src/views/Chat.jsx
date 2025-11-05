@@ -86,7 +86,6 @@ const Chat = () => {
     const [dailyLimit, setDailyLimit] = useState(10); // nuevo estado para el límite diario
 
 
-
     const appendMessage = useCallback((newMessage) => {
         setMessages((prevMessages) => [...prevMessages, newMessage]);
     }, []);
@@ -241,14 +240,14 @@ const Chat = () => {
     // 📊 Cargar estado inicial al montar el componente
     const fetchLimitStatus = async () => {
         if (!user?.id) return;
-        
+
         try {
             const result = await ConversationsService.getMessageUsageStatus(user.id);
-            
+
             console.log('📊 Estado inicial de límite:', result);
-            
+
             if (!result) return;
-            
+
             setTier(result.status);
             setRemaining(result.remaining || 0);
             setResetAt(result.resetAt);
@@ -307,6 +306,69 @@ const Chat = () => {
         }, [loadBabies, route.params?.openSideMenu])
     );
 
+    const handleConfirmProfileKeywords = async (messageId, profileKeywords) => {
+        if (!session?.access_token) {
+            console.error('No hay sesión activa');
+            pushAssistantNotice('❌ Error: No hay sesión activa');
+            return;
+        }
+
+        if (!profileKeywords?.baby_id || !profileKeywords?.keywords) {
+            console.error('Datos de keywords incompletos:', profileKeywords);
+            pushAssistantNotice('❌ Error: Datos incompletos');
+            return;
+        }
+
+        try {
+            const API_URL = process.env.EXPO_PUBLIC_API_URL;
+            console.log('📝 Confirmando keywords del perfil:', {
+                baby_id: profileKeywords.baby_id,
+                keywords: profileKeywords.keywords
+            });
+
+            const res = await fetch(`${API_URL}chat/confirm-profile-keywords`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({
+                    baby_id: profileKeywords.baby_id,  // ✅ Enviado desde el backend
+                    keywords: profileKeywords.keywords  // ✅ Array completo de keywords
+                }),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || `Error HTTP: ${res.status}`);
+            }
+
+            const data = await res.json();
+            console.log('✅ Respuesta del backend:', data);
+
+            if (data.success) {
+                // Actualizar el mensaje para marcar las keywords como guardadas
+                setMessages((prevMessages) =>
+                    prevMessages.map((msg) =>
+                        msg.id === messageId
+                            ? { ...msg, profileKeywords: null, keywordsSaved: true }
+                            : msg
+                    )
+                );
+
+                // Mostrar mensaje de confirmación
+                const count = profileKeywords.keywords.length;
+                pushAssistantNotice(`✅ ${count} característica${count !== 1 ? 's' : ''} guardada${count !== 1 ? 's' : ''} en el perfil`);
+            } else {
+                throw new Error(data.message || 'Error al guardar');
+            }
+
+        } catch (error) {
+            console.error('❌ Error al confirmar keywords:', error);
+            pushAssistantNotice('❌ Error al guardar las características. Intenta nuevamente.');
+        }
+    };
+
     const handleOnSendMessage = async () => {
         if (message.trim() === '' || isLoading) return;
 
@@ -322,7 +384,7 @@ const Chat = () => {
         try {
             // 1️⃣ PRIMERO: Verificar y consumir el límite
             const limitResult = await ConversationsService.limitMessagesPerDay(user.id);
-            
+
             console.log('📊 Resultado de verificación de límite:', limitResult);
 
             // 2️⃣ Si no se permite, detener inmediatamente
@@ -392,10 +454,23 @@ const Chat = () => {
             });
 
             const data = await res.json();
-
+            console.log('Respuesta del fetch:', data);
+            console.log('Profile keywords completo:', JSON.stringify(data?.profile_keywords, null, 2));
+            
             // 6️⃣ Procesar respuesta del modelo
             const assistantContent = data?.answer || 'Lo siento, no pude obtener una respuesta.';
             
+            // Guardar el objeto completo de profile_keywords para enviarlo al backend
+            let profileKeywordsData = null;
+            if (data?.profile_keywords?.keywords && Array.isArray(data.profile_keywords.keywords) && data.profile_keywords.keywords.length > 0) {
+                // Guardar el objeto completo con baby_id y keywords
+                profileKeywordsData = {
+                    baby_id: data.profile_keywords.baby_id,
+                    keywords: data.profile_keywords.keywords
+                };
+                console.log('Profile keywords data:', profileKeywordsData);
+            }
+
             const savedAssistantMessage = await ConversationsService.createMessage({
                 userId: user.id,
                 babyId: selectedBaby?.id || null,
@@ -408,6 +483,8 @@ const Chat = () => {
                 role: 'assistant',
                 text: assistantContent,
                 babyId: selectedBaby?.id || null,
+                profileKeywords: profileKeywordsData, // ✅ Incluir objeto completo con baby_id y keywords
+                keywordsSaved: false, // ✅ Inicialmente no guardadas
             });
 
             setTimeout(scrollToBottom, 100);
@@ -697,6 +774,9 @@ const Chat = () => {
                                             isFocused={highlightedMessageIds[currentHighlightIndex] === msg.id}
                                             feedback={feedbacks[msg.id]}
                                             onFeedback={handleFeedback}
+                                            profileKeywords={msg.profileKeywords}
+                                            keywordsSaved={msg.keywordsSaved}
+                                            onConfirmKeywords={handleConfirmProfileKeywords}
                                         />
                                     )}
                                 </View>
