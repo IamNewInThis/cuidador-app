@@ -12,7 +12,17 @@ import MarkdownText, { splitTextAndTable } from './MarkdownText';
 import FavoritesService from '../../services/FavoritesService';
 import SelectCategoryModal from '../favorites/SelectCategoryModal';
 
-const AssistantMessage = ({ text, messageId, onFeedback, feedback, isHighlighted, highlightText }) => {
+const AssistantMessage = ({ 
+    text, 
+    messageId, 
+    onFeedback, 
+    feedback, 
+    isHighlighted, 
+    highlightText,
+    profileKeywords,
+    keywordsSaved,
+    onConfirmKeywords
+}) => {
     const [showComment, setShowComment] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [showOptionsModal, setShowOptionsModal] = useState(false);
@@ -168,8 +178,27 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback, isHighlighted
                         renderHighlightedText(text, highlightText)
                     )}
 
+                    {/* 💬 Pregunta cuando se detectan keywords */}
+                    {profileKeywords && !keywordsSaved && (
+                        <View className="mt-3 mb-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                            <Text className="text-blue-800 text-sm">
+                                Hemos detectado {profileKeywords.keywords?.length || 0} característica{(profileKeywords.keywords?.length || 0) !== 1 ? 's' : ''} para el perfil de tu bebé. ¿Deseas guardarla{(profileKeywords.keywords?.length || 0) !== 1 ? 's' : ''}?
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* ✅ Mensaje de confirmación cuando ya se guardaron */}
+                    {keywordsSaved && (
+                        <View className="mt-3 mb-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 flex-row items-center">
+                            <AntDesign name="checkcircle" size={16} color="#16A34A" />
+                            <Text className="text-green-700 ml-2 text-sm">
+                                Características guardadas en el perfil
+                            </Text>
+                        </View>
+                    )}
+
                     <View className="flex-row items-center justify-between mt-3">
-                        {/* Lado izquierdo: Feedback y Copiar */}
+                        {/* Lado izquierdo: Feedback, Copiar y Guardar Keywords */}
                         <View className="flex-row items-center space-x-3">
                             {feedback ? (
                                 <View className="p-1 mr-4">
@@ -202,11 +231,30 @@ const AssistantMessage = ({ text, messageId, onFeedback, feedback, isHighlighted
 
                             <TouchableOpacity
                                 onPress={handleCopyMessage}
-                                className="p-1"
+                                className="p-1 mr-4"
                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             >
                                 <FontAwesome name="copy" size={18} color="#6B7280" />
                             </TouchableOpacity>
+
+                            {/* 💾 Ícono para guardar keywords */}
+                            {profileKeywords && !keywordsSaved && (
+                                <TouchableOpacity
+                                    testID="save-keywords-button"
+                                    onPress={() => onConfirmKeywords(messageId, profileKeywords)}
+                                    className="p-1 mr-4"
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <AntDesign name="save" size={18} color="#3B82F6" />
+                                </TouchableOpacity>
+                            )}
+
+                            {/* ✅ Ícono cuando ya se guardaron */}
+                            {keywordsSaved && (
+                                <View className="p-1 mr-4">
+                                    <AntDesign name="checkcircle" size={18} color="#16A34A" />
+                                </View>
+                            )}
                         </View>
 
                         {/* Lado derecho: Dots */}
