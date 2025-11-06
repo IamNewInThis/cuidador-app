@@ -358,7 +358,6 @@ const Chat = () => {
 
                 // Mostrar mensaje de confirmación
                 const count = profileKeywords.keywords.length;
-                pushAssistantNotice(`✅ ${count} característica${count !== 1 ? 's' : ''} guardada${count !== 1 ? 's' : ''} en el perfil`);
             } else {
                 throw new Error(data.message || 'Error al guardar');
             }
@@ -440,7 +439,7 @@ const Chat = () => {
 
             const API_URL = process.env.EXPO_PUBLIC_API_URL;
             console.log('Usando API_URL:', API_URL);
-            const res = await fetch(`${API_URL}chat`, {
+            const res = await fetch(`http://10.174.88.78:3000/api/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -454,8 +453,12 @@ const Chat = () => {
             });
 
             const data = await res.json();
-            console.log('Respuesta del fetch:', data);
-            console.log('Profile keywords completo:', JSON.stringify(data?.profile_keywords, null, 2));
+            console.log('🔍 Respuesta completa del backend:', JSON.stringify(data, null, 2));
+            console.log('� Keys de data:', Object.keys(data));
+            console.log('�📝 data.profile_keywords:', data.profile_keywords);
+            console.log('📝 Tipo de profile_keywords:', typeof data.profile_keywords);
+            console.log('📝 Es undefined?', data.profile_keywords === undefined);
+            console.log('📝 Es null?', data.profile_keywords === null);
             
             // 6️⃣ Procesar respuesta del modelo
             const assistantContent = data?.answer || 'Lo siento, no pude obtener una respuesta.';
@@ -468,7 +471,12 @@ const Chat = () => {
                     baby_id: data.profile_keywords.baby_id,
                     keywords: data.profile_keywords.keywords
                 };
-                console.log('Profile keywords data:', profileKeywordsData);
+                console.log('✅ Profile keywords detectados:', profileKeywordsData);
+                console.log('📊 Total keywords:', data.profile_keywords.keywords.length);
+                console.log('👶 Baby:', data.profile_keywords.baby_name);
+                console.log('📋 Keywords completas:', JSON.stringify(data.profile_keywords.keywords, null, 2));
+            } else {
+                console.log('⚠️ No se detectaron keywords en este mensaje');
             }
 
             const savedAssistantMessage = await ConversationsService.createMessage({
