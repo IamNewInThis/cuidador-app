@@ -26,7 +26,8 @@ const BabyProfile = ({ navigation }) => {
     const [sleepProfileData, setSleepProfileData] = useState([]);
     const [emotionsProfileData, setEmotionsProfileData] = useState([]);
     const [careProfileData, setCareProfileData] = useState([]);
-    const [developmentProfileData, setDevelopmentProfileData] = useState([]);
+    const [familyProfileData, setFamilyProfileData] = useState([]);
+    const [autonomyProfileData, setAutonomyProfileData] = useState([]);
 
     const handleGoBack = () => {
         // Volver a Chat con el parámetro para abrir el SideMenu
@@ -184,118 +185,77 @@ const BabyProfile = ({ navigation }) => {
                 }, {});
                 setProfileByCategory(grouped);
 
-                // 2. Encontrar el category_id de "Sleep and rest"
-                const sleepItem = (allData || []).find(item => {
-                    const categoryName = item.category_name?.toLowerCase() || '';
-                    return categoryName.includes('sleep') || 
-                           categoryName.includes('sueño') || 
-                           categoryName.includes('descanso');
-                });
+                // Definir las categorías y sus criterios de búsqueda
+                const categories = [
+                    {
+                        name: 'sleep',
+                        keywords: ['sleep', 'sueño', 'descanso'],
+                        setter: setSleepProfileData,
+                        emoji: '💤'
+                    },
+                    {
+                        name: 'emotions',
+                        keywords: ['emotion', 'emocion', 'crianza', 'parenting'],
+                        setter: setEmotionsProfileData,
+                        emoji: '😊'
+                    },
+                    {
+                        name: 'care',
+                        keywords: ['care', 'cuidado', 'daily', 'diario'],
+                        setter: setCareProfileData,
+                        emoji: '🍼'
+                    },
+                    {
+                        name: 'autonomy',
+                        keywords: ['development', 'desarrollo', 'motor', 'milestone', 'autonomy', 'autonomia'],
+                        setter: setAutonomyProfileData,
+                        emoji: '🎯'
+                    },
+                    {
+                        name: 'family',
+                        keywords: ['family', 'familia', 'environment', 'ambiente', 'context', 'contexto'],
+                        setter: setFamilyProfileData,
+                        emoji: '👨‍👩‍👧‍👦'
+                    }
+                ];
 
-                if (!sleepItem) {
-                    console.log('⚠️ No se encontró la categoría de sueño');
-                    setSleepProfileData([]);
-                    return;
-                }
+                // Función auxiliar para cargar datos de una categoría
+                const loadCategoryData = async (category, categoryItem) => {
+                    if (!categoryItem || !mounted) return;
 
-                const sleepCategoryId = sleepItem.category_id;
-                console.log('🔍 Category ID de sueño encontrado:', sleepCategoryId);
-                console.log('🔍 Baby ID:', baby.id);
-                console.log('🔍 Locale:', locale);
-
-                // Verificar cuántos items tienen ese category_id en allData
-                const itemsWithSleepCategory = (allData || []).filter(item => 
-                    item.category_id === sleepCategoryId
-                );
-                console.log('📊 Items con category_id de sueño en allData:', itemsWithSleepCategory.length);
-                console.log('📋 Keys encontradas:', itemsWithSleepCategory.map(i => i.key));
-
-                // 3. Hacer consulta específica con babyId + categoryId
-                const { data: sleepData, error: sleepError } = await getProfileByCategory(
-                    baby.id, 
-                    sleepCategoryId, 
-                    { locale }
-                );
-
-                console.log('📥 Respuesta de getProfileByCategory:');
-                console.log('   - sleepData:', sleepData);
-                console.log('   - sleepError:', sleepError);
-
-                if (sleepError) {
-                    console.error('Error loading sleep profile:', sleepError);
-                    setSleepProfileData([]);
-                    return;
-                }
-
-                if (!mounted) return;
-                setSleepProfileData(sleepData || []);
-                console.log('📊 Datos de sueño cargados:', sleepData?.length || 0, 'entradas');
-                console.log('📋 Detalle:', sleepData?.map(d => ({ key: d.key, value: d.value })));
-
-                // 4. Cargar datos de Emociones y crianza
-                const emotionsItem = (allData || []).find(item => {
-                    const categoryName = item.category_name?.toLowerCase() || '';
-                    return categoryName.includes('emotion') || 
-                           categoryName.includes('emocion') || 
-                           categoryName.includes('crianza') ||
-                           categoryName.includes('parenting');
-                });
-
-                if (emotionsItem) {
-                    const emotionsCategoryId = emotionsItem.category_id;
-                    const { data: emotionsData, error: emotionsError } = await getProfileByCategory(
-                        baby.id, 
-                        emotionsCategoryId, 
+                    const categoryId = categoryItem.category_id;
+                    const { data, error } = await getProfileByCategory(
+                        baby.id,
+                        categoryId,
                         { locale }
                     );
-                    if (!emotionsError && mounted) {
-                        setEmotionsProfileData(emotionsData || []);
-                        console.log('😊 Datos de emociones cargados:', emotionsData?.length || 0, 'entradas');
+
+                    if (!error && mounted) {
+                        category.setter(data || []);
+                        console.log(`${category.emoji} Datos de ${category.name} cargados:`, data?.length || 0, 'entradas');
+                        if (data?.length > 0) {
+                            console.log(`${category.emoji} Detalle:`, data.map(d => ({ key: d.key, value: d.value })));
+                        }
+                    } else if (error) {
+                        console.error(`Error loading ${category.name} profile:`, error);
+                        category.setter([]);
                     }
-                }
+                };
 
-                // 5. Cargar datos de Cuidados diarios
-                const careItem = (allData || []).find(item => {
-                    const categoryName = item.category_name?.toLowerCase() || '';
-                    return categoryName.includes('care') || 
-                           categoryName.includes('cuidado') || 
-                           categoryName.includes('daily') ||
-                           categoryName.includes('diario');
-                });
+                // Procesar cada categoría
+                for (const category of categories) {
+                    const categoryItem = (allData || []).find(item => {
+                        const categoryName = item.category_name?.toLowerCase() || '';
+                        return category.keywords.some(keyword => categoryName.includes(keyword));
+                    });
 
-                if (careItem) {
-                    const careCategoryId = careItem.category_id;
-                    const { data: careData, error: careError } = await getProfileByCategory(
-                        baby.id, 
-                        careCategoryId, 
-                        { locale }
-                    );
-                    if (!careError && mounted) {
-                        setCareProfileData(careData || []);
-                        console.log('🍼 Datos de cuidados cargados:', careData?.length || 0, 'entradas');
+                    if (!categoryItem) {
+                        console.log(`⚠️ No se encontró la categoría de ${category.name}`);
+                        category.setter([]);
+                        continue;
                     }
-                }
 
-                // 6. Cargar datos de Desarrollo
-                const developmentItem = (allData || []).find(item => {
-                    const categoryName = item.category_name?.toLowerCase() || '';
-                    return categoryName.includes('development') || 
-                           categoryName.includes('desarrollo') || 
-                           categoryName.includes('motor') ||
-                           categoryName.includes('milestone');
-                });
-
-                if (developmentItem) {
-                    const developmentCategoryId = developmentItem.category_id;
-                    const { data: developmentData, error: developmentError } = await getProfileByCategory(
-                        baby.id, 
-                        developmentCategoryId, 
-                        { locale }
-                    );
-                    if (!developmentError && mounted) {
-                        setDevelopmentProfileData(developmentData || []);
-                        console.log('🎯 Datos de desarrollo cargados:', developmentData?.length || 0, 'entradas');
-                    }
+                    await loadCategoryData(category, categoryItem);
                 }
             } catch (err) {
                 console.error('Unexpected error loading baby_profile:', err);
@@ -323,15 +283,15 @@ const BabyProfile = ({ navigation }) => {
             const allSleepItems = sleepItemsWithValues.map(item => item.id);
             const allEmotionItems = emotionsItemsWithValues.map(item => item.id);
             const allCareItems = careItemsWithValues.map(item => item.id);
-            const allDevelopmentItems = developmentItemsWithValues.map(item => item.id);
+            const allAutonomyItems = autonomyItemsWithValues.map(item => item.id);
             const allHealthItems = ['health-1', 'health-2', 'health-3'];
-            
-            setSelectedSections(new Set(['sleep', 'emotions', 'care', 'development', 'health']));
+
+            setSelectedSections(new Set(['sleep', 'emotions', 'care', 'autonomy', 'health']));
             setSelectedItems(new Set([
                 ...allSleepItems,
                 ...allEmotionItems,
                 ...allCareItems,
-                ...allDevelopmentItems,
+                ...allAutonomyItems,
                 ...allHealthItems
             ]));
         }
@@ -369,8 +329,10 @@ const BabyProfile = ({ navigation }) => {
                     return emotionsItemsWithValues.map(item => item.id);
                 case 'care':
                     return careItemsWithValues.map(item => item.id);
-                case 'development':
-                    return developmentItemsWithValues.map(item => item.id);
+                case 'autonomy':
+                    return autonomyItemsWithValues.map(item => item.id);
+                case 'family':
+                    return familyItemsWithValues.map(item => item.id);
                 case 'health':
                     return ['health-1', 'health-2', 'health-3'];
                 default:
@@ -415,8 +377,8 @@ const BabyProfile = ({ navigation }) => {
                     return emotionsItemsWithValues.map(item => item.id);
                 case 'care':
                     return careItemsWithValues.map(item => item.id);
-                case 'development':
-                    return developmentItemsWithValues.map(item => item.id);
+                case 'autonomy':
+                    return autonomyItemsWithValues.map(item => item.id);
                 case 'health':
                     return ['health-1', 'health-2', 'health-3'];
                 default:
@@ -463,146 +425,11 @@ const BabyProfile = ({ navigation }) => {
         setSelectedSections(newSelectedSections);
     };
 
-    // Configuración escalable para la sección de Sueño y Descanso
-    const sleepSectionConfig = [
-        {
-            id: 'sleep-rhythm',
-            label: t('babyProfileSleep.sleepRhythm'),
-            profileKey: 'sleep_rhythm',
-            defaultValue: 'Regular'
-        },
-        {
-            id: 'day-night-difference',
-            label: t('babyProfileSleep.dayNightDifference'),
-            profileKey: 'day_night_difference',
-            defaultValue: 'Bien establecida'
-        },
-        {
-            id: 'sleep-location',
-            label: t('babyProfileSleep.sleepLocation'),
-            profileKey: 'where_sleep',
-            defaultValue: 'En su cuna'
-        },
-        {
-            id: 'sleep-accompaniment',
-            label: t('babyProfileSleep.sleepAccompaniment'),
-            profileKey: 'sleep_accompaniment',
-            defaultValue: 'Con presencia de los padres'
-        },
-        {
-            id: 'attachment-object',
-            label: t('babyProfileSleep.attachmentObject'),
-            profileKey: 'attachment_object',
-            defaultValue: 'Manta suave'
-        },
-        {
-            id: 'daily-naps',
-            label: t('babyProfileSleep.dailyNaps'),
-            profileKey: 'daily_naps_count',
-            defaultValue: '2-3 siestas'
-        },
-        {
-            id: 'nap-duration',
-            label: t('babyProfileSleep.napDuration'),
-            profileKey: 'nap_average_duration',
-            defaultValue: '1-2 horas'
-        },
-        {
-            id: 'wake-windows',
-            label: t('babyProfileSleep.wakeWindows'),
-            profileKey: 'wake_windows',
-            defaultValue: '2-3 horas'
-        },
-        {
-            id: 'sleep-signals',
-            label: t('babyProfileSleep.sleepSignals'),
-            profileKey: 'sleep_signals',
-            defaultValue: 'Se frota los ojos, bosteza'
-        },
-        {
-            id: 'sleep-association',
-            label: t('babyProfileSleep.sleepAssociation'),
-            profileKey: 'sleep_association',
-            defaultValue: 'Lactancia o chupete'
-        },
-        {
-            id: 'night-wakings',
-            label: t('babyProfileSleep.nightWakings'),
-            profileKey: 'night_wakings_count',
-            defaultValue: '1-2 por noche'
-        },
-        {
-            id: 'back-to-sleep',
-            label: t('babyProfileSleep.backToSleep'),
-            profileKey: 'back_to_sleep_method',
-            defaultValue: 'Con ayuda de los padres'
-        },
-        {
-            id: 'sensory-profile',
-            label: t('babyProfileSleep.sensoryProfile'),
-            profileKey: 'sensory_profile',
-            defaultValue: 'Sensible a ruidos'
-        },
-        {
-            id: 'calming-stimulus',
-            label: t('babyProfileSleep.calmingStimulus'),
-            profileKey: 'calming_stimulus',
-            defaultValue: 'Música suave y caricias'
-        },
-        {
-            id: 'room-temperature',
-            label: t('babyProfileSleep.roomTemperature'),
-            profileKey: 'room_temperature',
-            defaultValue: '20-22°C'
-        },
-        {
-            id: 'room-humidity',
-            label: t('babyProfileSleep.roomHumidity'),
-            profileKey: 'room_humidity',
-            defaultValue: '40-60%'
-        },
-        {
-            id: 'sleep-clothing',
-            label: t('babyProfileSleep.sleepClothing'),
-            profileKey: 'sleep_clothing',
-            defaultValue: 'Pijama de algodón'
-        },
-        {
-            id: 'sensitivity-temperament',
-            label: t('babyProfileSleep.sensitivityTemperament'),
-            profileKey: 'sensitivity_temperament',
-            defaultValue: 'Tranquila y adaptable'
-        }
-    ];
-
-    // Helper para obtener el valor del baby_profile por key
-    const getProfileValue = (key, defaultValue = '') => {
-        if (!profileEntries || profileEntries.length === 0) return defaultValue;
-        const found = profileEntries.find(e => e.key === key);
-        return found?.value ?? defaultValue;
-    };
-
-    // Helper para verificar si un campo tiene valor real en la base de datos
-    const hasProfileValue = (key) => {
-        if (!profileEntries || profileEntries.length === 0) return false;
-        const found = profileEntries.find(e => e.key === key);
-        return found && found.value && found.value.trim() !== '';
-    };
-
     // Filtrar elementos de sueño que tienen valores reales en la BD
     // Ahora usa directamente sleepProfileData en lugar de buscar por keys individuales
     const sleepItemsWithValues = sleepProfileData.map((item, index) => ({
         id: `sleep-${index + 1}`,
         label: item.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), // Formatear key como label
-        profileKey: item.key,
-        value: item.value,
-        categoryName: item.category_name
-    }));
-
-    // Filtrar elementos de emociones que tienen valores reales en la BD
-    const emotionsItemsWithValues = emotionsProfileData.map((item, index) => ({
-        id: `emotions-${index + 1}`,
-        label: item.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
         profileKey: item.key,
         value: item.value,
         categoryName: item.category_name
@@ -617,9 +444,27 @@ const BabyProfile = ({ navigation }) => {
         categoryName: item.category_name
     }));
 
-    // Filtrar elementos de desarrollo que tienen valores reales en la BD
-    const developmentItemsWithValues = developmentProfileData.map((item, index) => ({
-        id: `development-${index + 1}`,
+    // Filtrar elementos de autonomía que tienen valores reales en la BD
+    const autonomyItemsWithValues = autonomyProfileData.map((item, index) => ({
+        id: `autonomy-${index + 1}`,
+        label: item.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        profileKey: item.key,
+        value: item.value,
+        categoryName: item.category_name
+    }));
+
+    // Filtrar elementos de emociones que tienen valores reales en la BD
+    const emotionsItemsWithValues = emotionsProfileData.map((item, index) => ({
+        id: `emotions-${index + 1}`,
+        label: item.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        profileKey: item.key,
+        value: item.value,
+        categoryName: item.category_name
+    }));
+
+    // Filtrar elementos de familia que tienen valores reales en la BD
+    const familyItemsWithValues = familyProfileData.map((item, index) => ({
+        id: `family-${index + 1}`,
         label: item.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
         profileKey: item.key,
         value: item.value,
@@ -703,6 +548,7 @@ const BabyProfile = ({ navigation }) => {
                     )}
                 </View>
             </View>
+            
             <ScrollView className="flex-1 px-5 py-6" showsVerticalScrollIndicator={false}>
                 {/* Avatar y nombre del bebé */}
                 <View className="items-center mb-8">
@@ -766,13 +612,12 @@ const BabyProfile = ({ navigation }) => {
                         </View>
 
                         {/* Estado general */}
-                        {/* <View className="flex-row items-start">
+                        <View className="flex-row items-start">
                             <View className="w-2 h-2 rounded-full bg-red-500 mt-2 mr-3" />
                             <View className="flex-1">
-                                <Text className="text-gray-700 font-medium">Estado general:</Text>
-                                <Text className="text-gray-600 mt-1">Saludable - Última revisión: 15 Oct 2025</Text>
+                                <Text className="text-gray-600 mt-1">Última revisión: 15 Oct 2025</Text>
                             </View>
-                        </View> */}
+                        </View>
 
                         {/* Indicador de navegación */}
                         <View className="mt-3 pt-3 border-t border-gray-100">
@@ -852,77 +697,6 @@ const BabyProfile = ({ navigation }) => {
                     </View>
                 </TouchableOpacity>
 
-                {/* Sección: Emociones y crianza */}
-                <TouchableOpacity 
-                    onPress={() => handleSelectSection('emotions')}
-                    activeOpacity={0.7}
-                >
-                    <View className={`bg-white rounded-xl p-5 mb-6 shadow-sm border ${
-                        selectedSections.has('emotions') ? 'border-green-500 bg-green-50' : 'border-gray-100'
-                    }`}>
-                        <View className="flex-row items-center justify-between mb-4">
-                            <View className="flex-row items-center">
-                                {isSelectionMode && (
-                                    <View className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${
-                                        selectedSections.has('emotions') 
-                                            ? 'bg-green-500 border-green-500' 
-                                            : 'border-gray-300'
-                                    }`}>
-                                        {selectedSections.has('emotions') && (
-                                            <Feather name="check" size={14} color="white" />
-                                        )}
-                                    </View>
-                                )}
-                                <Text className="text-xl font-bold text-gray-800">Emociones y crianza</Text>
-                            </View>
-                        </View>
-                        
-                        <View className="space-y-3">
-                            {emotionsItemsWithValues.length > 0 ? (
-                                emotionsItemsWithValues.map((item, index) => (
-                                    <TouchableOpacity 
-                                        key={item.id}
-                                        onPress={() => handleSelectItem(item.id)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <View className={`flex-row items-start p-2 rounded-lg ${
-                                            selectedItems.has(item.id) ? 'bg-green-100' : ''
-                                        }`}>
-                                            {isSelectionMode && (
-                                                <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                                    selectedItems.has(item.id) 
-                                                        ? 'bg-green-500 border-green-500' 
-                                                        : 'border-gray-300'
-                                                }`}>
-                                                    {selectedItems.has(item.id) && (
-                                                        <Feather name="check" size={12} color="white" />
-                                                    )}
-                                                </View>
-                                            )}
-                                            <View className="w-2 h-2 rounded-full bg-green-500 mt-2 mr-3" />
-                                            <View className="flex-1">
-                                                <Text className="text-gray-700 font-medium">{item.label}:</Text>
-                                                <Text className="text-gray-600 mt-1">
-                                                    {item.value}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    </TouchableOpacity>
-                                ))
-                            ) : (
-                                <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
-                                    <Feather name="info" size={16} color="#6B7280" />
-                                    <Text className="text-gray-500 text-sm flex-1 ml-2">
-                                        No hay datos de emociones y crianza para {baby?.name || 'este bebé'}. 
-                                        {' '}Los datos se agregarán automáticamente cuando hables con Lumi sobre el temperamento, 
-                                        actividades favoritas y señales de tu bebé.
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-                </TouchableOpacity>
-
                 {/* Sección: Cuidados diarios */}
                 <TouchableOpacity 
                     onPress={() => handleSelectSection('care')}
@@ -994,34 +768,176 @@ const BabyProfile = ({ navigation }) => {
                     </View>
                 </TouchableOpacity>
 
-                {/* Sección: Desarrollo */}
+                {/* Sección: Autonomía y desarrollo integral */}
                 <TouchableOpacity 
-                    onPress={() => handleSelectSection('development')}
+                    onPress={() => handleSelectSection('autonomy')}
                     activeOpacity={0.7}
                 >
                     <View className={`bg-white rounded-xl p-5 mb-6 shadow-sm border ${
-                        selectedSections.has('development') ? 'border-orange-500 bg-orange-50' : 'border-gray-100'
+                        selectedSections.has('autonomy') ? 'border-blue-500 bg-blue-50' : 'border-gray-100'
                     }`}>
                         <View className="flex-row items-center justify-between mb-4">
                             <View className="flex-row items-center">
                                 {isSelectionMode && (
                                     <View className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${
-                                        selectedSections.has('development') 
-                                            ? 'bg-orange-500 border-orange-500' 
+                                        selectedSections.has('autonomy') 
+                                            ? 'bg-blue-500 border-blue-500' 
                                             : 'border-gray-300'
                                     }`}>
-                                        {selectedSections.has('development') && (
+                                        {selectedSections.has('autonomy') && (
                                             <Feather name="check" size={14} color="white" />
                                         )}
                                     </View>
                                 )}
-                                <Text className="text-xl font-bold text-gray-800">Desarrollo</Text>
+                                <Text className="text-xl font-bold text-gray-800">Autonomía y desarrollo integral</Text>
                             </View>
                         </View>
                         
                         <View className="space-y-3">
-                            {developmentItemsWithValues.length > 0 ? (
-                                developmentItemsWithValues.map((item, index) => (
+                            {autonomyItemsWithValues.length > 0 ? (
+                                autonomyItemsWithValues.map((item, index) => (
+                                    <TouchableOpacity 
+                                        key={item.id}
+                                        onPress={() => handleSelectItem(item.id)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View className={`flex-row items-start p-2 rounded-lg ${
+                                            selectedItems.has(item.id) ? 'bg-blue-100' : ''
+                                        }`}>
+                                            {isSelectionMode && (
+                                                <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
+                                                    selectedItems.has(item.id) 
+                                                        ? 'bg-blue-500 border-blue-500' 
+                                                        : 'border-gray-300'
+                                                }`}>
+                                                    {selectedItems.has(item.id) && (
+                                                        <Feather name="check" size={12} color="white" />
+                                                    )}
+                                                </View>
+                                            )}
+                                            <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
+                                            <View className="flex-1">
+                                                <Text className="text-gray-700 font-medium">{item.label}:</Text>
+                                                <Text className="text-gray-600 mt-1">
+                                                    {item.value}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))
+                            ) : (
+                                <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
+                                    <Feather name="info" size={16} color="#6B7280" />
+                                    <Text className="text-gray-500 text-sm flex-1 ml-2">
+                                        No hay datos de autonomía para {baby?.name || 'este bebé'}. 
+                                        {' '}Los datos se agregarán automáticamente cuando hables con Lumi sobre el desarrollo 
+                                        y la autonomía de tu bebé.
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    </View>
+                </TouchableOpacity>
+
+                {/* Sección: Emociones y crianza */}
+                <TouchableOpacity 
+                    onPress={() => handleSelectSection('emotions')}
+                    activeOpacity={0.7}
+                >
+                    <View className={`bg-white rounded-xl p-5 mb-6 shadow-sm border ${
+                        selectedSections.has('emotions') ? 'border-green-500 bg-green-50' : 'border-gray-100'
+                    }`}>
+                        <View className="flex-row items-center justify-between mb-4">
+                            <View className="flex-row items-center">
+                                {isSelectionMode && (
+                                    <View className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${
+                                        selectedSections.has('emotions') 
+                                            ? 'bg-green-500 border-green-500' 
+                                            : 'border-gray-300'
+                                    }`}>
+                                        {selectedSections.has('emotions') && (
+                                            <Feather name="check" size={14} color="white" />
+                                        )}
+                                    </View>
+                                )}
+                                <Text className="text-xl font-bold text-gray-800">Emociones y crianza</Text>
+                            </View>
+                        </View>
+                        
+                        <View className="space-y-3">
+                            {emotionsItemsWithValues.length > 0 ? (
+                                emotionsItemsWithValues.map((item, index) => (
+                                    <TouchableOpacity 
+                                        key={item.id}
+                                        onPress={() => handleSelectItem(item.id)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View className={`flex-row items-start p-2 rounded-lg ${
+                                            selectedItems.has(item.id) ? 'bg-green-100' : ''
+                                        }`}>
+                                            {isSelectionMode && (
+                                                <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
+                                                    selectedItems.has(item.id) 
+                                                        ? 'bg-green-500 border-green-500' 
+                                                        : 'border-gray-300'
+                                                }`}>
+                                                    {selectedItems.has(item.id) && (
+                                                        <Feather name="check" size={12} color="white" />
+                                                    )}
+                                                </View>
+                                            )}
+                                            <View className="w-2 h-2 rounded-full bg-green-500 mt-2 mr-3" />
+                                            <View className="flex-1">
+                                                <Text className="text-gray-700 font-medium">{item.label}:</Text>
+                                                <Text className="text-gray-600 mt-1">
+                                                    {item.value}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))
+                            ) : (
+                                <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
+                                    <Feather name="info" size={16} color="#6B7280" />
+                                    <Text className="text-gray-500 text-sm flex-1 ml-2">
+                                        No hay datos de emociones y crianza para {baby?.name || 'este bebé'}. 
+                                        {' '}Los datos se agregarán automáticamente cuando hables con Lumi sobre el temperamento, 
+                                        actividades favoritas y señales de tu bebé.
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    </View>
+                </TouchableOpacity>
+
+                {/* Sección: Familia */}
+                <TouchableOpacity 
+                    onPress={() => handleSelectSection('family')}
+                    activeOpacity={0.7}
+                >
+                    <View className={`bg-white rounded-xl p-5 mb-6 shadow-sm border ${
+                        selectedSections.has('family') ? 'border-orange-500 bg-orange-50' : 'border-gray-100'
+                    }`}>
+                        <View className="flex-row items-center justify-between mb-4">
+                            <View className="flex-row items-center">
+                                {isSelectionMode && (
+                                    <View className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${
+                                        selectedSections.has('family') 
+                                            ? 'bg-orange-500 border-orange-500' 
+                                            : 'border-gray-300'
+                                    }`}>
+                                        {selectedSections.has('family') && (
+                                            <Feather name="check" size={14} color="white" />
+                                        )}
+                                    </View>
+                                )}
+                                <Text className="text-xl font-bold text-gray-800">Familia</Text>
+                            </View>
+                        </View>
+                        
+                        <View className="space-y-3">
+                            {familyItemsWithValues.length > 0 ? (
+                                familyItemsWithValues.map((item, index) => (
                                     <TouchableOpacity 
                                         key={item.id}
                                         onPress={() => handleSelectItem(item.id)}
@@ -1055,9 +971,9 @@ const BabyProfile = ({ navigation }) => {
                                 <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
                                     <Feather name="info" size={16} color="#6B7280" />
                                     <Text className="text-gray-500 text-sm flex-1 ml-2">
-                                        No hay datos de desarrollo para {baby?.name || 'este bebé'}. 
-                                        {' '}Los datos se agregarán automáticamente cuando hables con Lumi sobre los hitos 
-                                        y desarrollo de tu bebé.
+                                        No hay datos de familia para {baby?.name || 'este bebé'}. 
+                                        {' '}Los datos se agregarán automáticamente cuando hables con Lumi sobre la 
+                                        familia y relaciones del bebé.
                                     </Text>
                                 </View>
                             )}

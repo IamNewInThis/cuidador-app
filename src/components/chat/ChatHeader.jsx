@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Entypo from '@expo/vector-icons/Entypo';
 
-const ChatHeader = ({ babyName = "Martín", onMenuPress, onSearchPress, onBabyPress }) => {
+const ChatHeader = ({ babyName = "", onMenuPress, onSearchPress, onBabyPress }) => {
     return (
         <View className="bg-white border-b border-gray-200 px-4 py-3">
             <View className="flex-row items-center justify-between">
