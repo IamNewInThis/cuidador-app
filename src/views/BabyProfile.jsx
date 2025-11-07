@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
+import { View, ScrollView, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect } from 'react'
 import { Feather } from '@expo/vector-icons';
@@ -7,8 +7,15 @@ import { useRoute } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { getBabies } from '../services/BabiesService';
 import { getProfileBaby, getProfileByCategory } from '../services/BabyProfileServices';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import {
+    ProfileHeader,
+    BabyAvatar,
+    ProfileSection,
+    ProfileItem,
+    HealthSection
+} from '../components/baby_profile';
 
 const BabyProfile = ({ navigation }) => {
     const [selectedSections, setSelectedSections] = useState(new Set());
@@ -491,495 +498,138 @@ const BabyProfile = ({ navigation }) => {
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50">
-            {/* Header */}
-            <View className="bg-white border-b border-gray-200">
-                <View className="flex-row items-center justify-between px-5 py-4">
-                    {isSelectionMode ? (
-                        <>
-                            {/* Modo selección */}
-                            <TouchableOpacity
-                                onPress={handleCancelSelection}
-                                className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Feather name="x" size={20} color="#374151" />
-                            </TouchableOpacity>
-                            <Text className="text-lg font-semibold text-black">
-                                {getTotalSelectedCount()} elemento{getTotalSelectedCount() !== 1 ? 's' : ''}
-                            </Text>
-                            <View className="flex-row items-center space-x-3">
-                                <TouchableOpacity
-                                    onPress={handleEdit}
-                                    className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
-                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                >
-                                    <Feather name="edit-3" size={18} color="#6B7280" />
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleExport}
-                                    className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center"
-                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                >
-                                    <Feather name="download" size={18} color="#3B82F6" />
-                                </TouchableOpacity>
-                            </View>
-                        </>
-                    ) : (
-                        <>
-                            {/* Modo normal */}
-                            <TouchableOpacity
-                                onPress={handleGoBack}
-                                className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Feather name="menu" size={24} color="#374151" />
-                            </TouchableOpacity>
-                            <Text className="text-xl font-semibold text-black">
-                                Perfil de {baby?.name || 'Sin nombre'}
-                            </Text>
-                            <TouchableOpacity
-                                onPress={handleExport}
-                                className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center"
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Feather name="check-square" size={20} color="#6B7280" />
-                            </TouchableOpacity>
-                        </>
-                    )}
-                </View>
-            </View>
+            <ProfileHeader
+                isSelectionMode={isSelectionMode}
+                selectedCount={getTotalSelectedCount()}
+                babyName={baby?.name}
+                onGoBack={handleGoBack}
+                onCancelSelection={handleCancelSelection}
+                onEdit={handleEdit}
+                onExport={handleExport}
+            />
             
             <ScrollView className="flex-1 px-5 py-6" showsVerticalScrollIndicator={false}>
-                {/* Avatar y nombre del bebé */}
-                <View className="items-center mb-8">
-                    <View className="w-20 h-20 rounded-full bg-blue-100 items-center justify-center mb-3">
-                        <Text className="text-3xl">👶</Text>
-                    </View>
-                    <Text className="text-2xl font-bold text-gray-800 mb-1">{baby?.name || 'Sin nombre'}</Text>
-                    <Text className="text-lg text-gray-600">{baby?.birthdate ? formatBabyAge(baby.birthdate) : ''}</Text>
-                </View>
+                <BabyAvatar 
+                    name={baby?.name}
+                    age={baby?.birthdate ? formatBabyAge(baby.birthdate) : ''}
+                />
 
-                {/* Sección: Salud y bienestar */}
-                <TouchableOpacity
-                    onPress={() => navigation.navigate('HealthProfileView')}
-                    activeOpacity={0.7}
-                    className="bg-white rounded-xl p-5 mb-6 shadow-sm border border-gray-100"
-                >
-                    <View className="flex-row items-center justify-between mb-4">
-                        <View className="flex-row items-center">
-                            <View className="w-8 h-8 rounded-full bg-red-100 items-center justify-center mr-3">
-                                <Feather name="heart" size={16} color="#EF4444" />
-                            </View>
-                            <Text className="text-xl font-bold text-gray-800">Salud y bienestar</Text>
-                        </View>
-                        <Feather name="chevron-right" size={20} color="#9CA3AF" />
-                    </View>
-                    
-                    <View className="space-y-3">
-                        {/* Alergias */}
-                        <View className="flex-row items-start">
-                            <View className="w-2 h-2 rounded-full bg-red-500 mt-2 mr-3" />
-                            <View className="flex-1">
-                                <Text className="text-gray-700 font-medium">Alergias:</Text>
-                                <View className="flex-row flex-wrap mt-1">
-                                    <View className="bg-red-50 border border-red-200 rounded-full px-2 py-0.5 mr-1 mb-1">
-                                        <Text className="text-red-700 text-xs">Huevo</Text>
-                                    </View>
-                                    <View className="bg-red-50 border border-red-200 rounded-full px-2 py-0.5 mr-1 mb-1">
-                                        <Text className="text-red-700 text-xs">Polen</Text>
-                                    </View>
-                                    <View className="bg-gray-100 rounded-full px-2 py-0.5">
-                                        <Text className="text-gray-600 text-xs">+2 más</Text>
-                                    </View>
-                                </View>
-                            </View>
-                        </View>
-
-                        {/* Condiciones médicas */}
-                        <View className="flex-row items-start">
-                            <View className="w-2 h-2 rounded-full bg-red-500 mt-2 mr-3" />
-                            <View className="flex-1">
-                                <Text className="text-gray-700 font-medium">Condiciones médicas:</Text>
-                                <View className="flex-row flex-wrap mt-1">
-                                    <View className="bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5 mr-1 mb-1">
-                                        <Text className="text-orange-700 text-xs">Asma leve</Text>
-                                    </View>
-                                    <View className="bg-gray-100 rounded-full px-2 py-0.5">
-                                        <Text className="text-gray-600 text-xs">+1 más</Text>
-                                    </View>
-                                </View>
-                            </View>
-                        </View>
-
-                        {/* Estado general */}
-                        <View className="flex-row items-start">
-                            <View className="w-2 h-2 rounded-full bg-red-500 mt-2 mr-3" />
-                            <View className="flex-1">
-                                <Text className="text-gray-600 mt-1">Última revisión: 15 Oct 2025</Text>
-                            </View>
-                        </View>
-
-                        {/* Indicador de navegación */}
-                        <View className="mt-3 pt-3 border-t border-gray-100">
-                            <Text className="text-blue-600 text-sm font-medium">Toca para ver detalles completos</Text>
-                        </View>
-                    </View>
-                </TouchableOpacity>
-
+                <HealthSection navigation={navigation} />
 
                 {/* Sección: Sueño y descanso */}
-                <TouchableOpacity 
+                <ProfileSection
+                    title={t('babyProfileSleep.title')}
+                    color="blue"
+                    isSelected={selectedSections.has('sleep')}
+                    isSelectionMode={isSelectionMode}
                     onPress={() => handleSelectSection('sleep')}
-                    activeOpacity={0.7}
+                    noDataMessage={`${t('babyProfileSleep.noSleepData', { babyName: baby?.name || 'este bebé' })} ${t('babyProfileSleep.noSleepDataDesc')}`}
                 >
-                    <View className={`bg-white rounded-xl p-5 mb-6 shadow-sm border ${
-                        selectedSections.has('sleep') ? 'border-blue-500 bg-blue-50' : 'border-gray-100'
-                    }`}>
-                        <View className="flex-row items-center justify-between mb-4">
-                            <View className="flex-row items-center">
-                                {isSelectionMode && (
-                                    <View className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${
-                                        selectedSections.has('sleep') 
-                                            ? 'bg-blue-500 border-blue-500' 
-                                            : 'border-gray-300'
-                                    }`}>
-                                        {selectedSections.has('sleep') && (
-                                            <Feather name="check" size={14} color="white" />
-                                        )}
-                                    </View>
-                                )}
-                                <Text className="text-xl font-bold text-gray-800">{t('babyProfileSleep.title')}</Text>
-                            </View>
-                        </View>
-                        
-                        <View className="space-y-3">
-                            {sleepItemsWithValues.length > 0 ? (
-                                sleepItemsWithValues.map((item, index) => (
-                                    <TouchableOpacity 
-                                        key={item.id}
-                                        onPress={() => handleSelectItem(item.id)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <View className={`flex-row items-start p-2 rounded-lg ${
-                                            selectedItems.has(item.id) ? 'bg-blue-100' : ''
-                                        }`}>
-                                            {isSelectionMode && (
-                                                <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                                    selectedItems.has(item.id) 
-                                                        ? 'bg-blue-500 border-blue-500' 
-                                                        : 'border-gray-300'
-                                                }`}>
-                                                    {selectedItems.has(item.id) && (
-                                                        <Feather name="check" size={12} color="white" />
-                                                    )}
-                                                </View>
-                                            )}
-                                            <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
-                                            <View className="flex-1">
-                                                <Text className="text-gray-700 font-medium">{item.label}:</Text>
-                                                <Text className="text-gray-600 mt-1">
-                                                    {item.value}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    </TouchableOpacity>
-                                ))
-                            ) : (
-                                <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
-                                    <Feather name="info" size={16} color="#6B7280" />
-                                    <Text className="text-gray-500 text-sm flex-1 ml-2">
-                                        {t('babyProfileSleep.noSleepData', { babyName: baby?.name || 'este bebé' })} 
-                                        {t('babyProfileSleep.noSleepDataDesc')}
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-                </TouchableOpacity>
+                    {sleepItemsWithValues.length > 0 && sleepItemsWithValues.map((item) => (
+                        <ProfileItem
+                            key={item.id}
+                            id={item.id}
+                            label={item.label}
+                            value={item.value}
+                            color="blue"
+                            isSelected={selectedItems.has(item.id)}
+                            isSelectionMode={isSelectionMode}
+                            onPress={() => handleSelectItem(item.id)}
+                        />
+                    ))}
+                </ProfileSection>
 
                 {/* Sección: Cuidados diarios */}
-                <TouchableOpacity 
+                <ProfileSection
+                    title="Cuidados diarios"
+                    color="purple"
+                    isSelected={selectedSections.has('care')}
+                    isSelectionMode={isSelectionMode}
                     onPress={() => handleSelectSection('care')}
-                    activeOpacity={0.7}
+                    noDataMessage={`No hay datos de cuidados diarios para ${baby?.name || 'este bebé'}. Los datos se agregarán automáticamente cuando hables con Lumi sobre alimentación, rutinas y cuidados de tu bebé.`}
                 >
-                    <View className={`bg-white rounded-xl p-5 mb-6 shadow-sm border ${
-                        selectedSections.has('care') ? 'border-purple-500 bg-purple-50' : 'border-gray-100'
-                    }`}>
-                        <View className="flex-row items-center justify-between mb-4">
-                            <View className="flex-row items-center">
-                                {isSelectionMode && (
-                                    <View className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${
-                                        selectedSections.has('care') 
-                                            ? 'bg-purple-500 border-purple-500' 
-                                            : 'border-gray-300'
-                                    }`}>
-                                        {selectedSections.has('care') && (
-                                            <Feather name="check" size={14} color="white" />
-                                        )}
-                                    </View>
-                                )}
-                                <Text className="text-xl font-bold text-gray-800">Cuidados diarios</Text>
-                            </View>
-                        </View>
-                        
-                        <View className="space-y-3">
-                            {careItemsWithValues.length > 0 ? (
-                                careItemsWithValues.map((item, index) => (
-                                    <TouchableOpacity 
-                                        key={item.id}
-                                        onPress={() => handleSelectItem(item.id)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <View className={`flex-row items-start p-2 rounded-lg ${
-                                            selectedItems.has(item.id) ? 'bg-purple-100' : ''
-                                        }`}>
-                                            {isSelectionMode && (
-                                                <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                                    selectedItems.has(item.id) 
-                                                        ? 'bg-purple-500 border-purple-500' 
-                                                        : 'border-gray-300'
-                                                }`}>
-                                                    {selectedItems.has(item.id) && (
-                                                        <Feather name="check" size={12} color="white" />
-                                                    )}
-                                                </View>
-                                            )}
-                                            <View className="w-2 h-2 rounded-full bg-purple-500 mt-2 mr-3" />
-                                            <View className="flex-1">
-                                                <Text className="text-gray-700 font-medium">{item.label}:</Text>
-                                                <Text className="text-gray-600 mt-1">
-                                                    {item.value}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    </TouchableOpacity>
-                                ))
-                            ) : (
-                                <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
-                                    <Feather name="info" size={16} color="#6B7280" />
-                                    <Text className="text-gray-500 text-sm flex-1 ml-2">
-                                        No hay datos de cuidados diarios para {baby?.name || 'este bebé'}. 
-                                        {' '}Los datos se agregarán automáticamente cuando hables con Lumi sobre alimentación, 
-                                        rutinas y cuidados de tu bebé.
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-                </TouchableOpacity>
+                    {careItemsWithValues.length > 0 && careItemsWithValues.map((item) => (
+                        <ProfileItem
+                            key={item.id}
+                            id={item.id}
+                            label={item.label}
+                            value={item.value}
+                            color="purple"
+                            isSelected={selectedItems.has(item.id)}
+                            isSelectionMode={isSelectionMode}
+                            onPress={() => handleSelectItem(item.id)}
+                        />
+                    ))}
+                </ProfileSection>
 
                 {/* Sección: Autonomía y desarrollo integral */}
-                <TouchableOpacity 
+                <ProfileSection
+                    title="Autonomía y desarrollo integral"
+                    color="blue"
+                    isSelected={selectedSections.has('autonomy')}
+                    isSelectionMode={isSelectionMode}
                     onPress={() => handleSelectSection('autonomy')}
-                    activeOpacity={0.7}
+                    noDataMessage={`No hay datos de autonomía para ${baby?.name || 'este bebé'}. Los datos se agregarán automáticamente cuando hables con Lumi sobre el desarrollo y la autonomía de tu bebé.`}
                 >
-                    <View className={`bg-white rounded-xl p-5 mb-6 shadow-sm border ${
-                        selectedSections.has('autonomy') ? 'border-blue-500 bg-blue-50' : 'border-gray-100'
-                    }`}>
-                        <View className="flex-row items-center justify-between mb-4">
-                            <View className="flex-row items-center">
-                                {isSelectionMode && (
-                                    <View className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${
-                                        selectedSections.has('autonomy') 
-                                            ? 'bg-blue-500 border-blue-500' 
-                                            : 'border-gray-300'
-                                    }`}>
-                                        {selectedSections.has('autonomy') && (
-                                            <Feather name="check" size={14} color="white" />
-                                        )}
-                                    </View>
-                                )}
-                                <Text className="text-xl font-bold text-gray-800">Autonomía y desarrollo integral</Text>
-                            </View>
-                        </View>
-                        
-                        <View className="space-y-3">
-                            {autonomyItemsWithValues.length > 0 ? (
-                                autonomyItemsWithValues.map((item, index) => (
-                                    <TouchableOpacity 
-                                        key={item.id}
-                                        onPress={() => handleSelectItem(item.id)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <View className={`flex-row items-start p-2 rounded-lg ${
-                                            selectedItems.has(item.id) ? 'bg-blue-100' : ''
-                                        }`}>
-                                            {isSelectionMode && (
-                                                <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                                    selectedItems.has(item.id) 
-                                                        ? 'bg-blue-500 border-blue-500' 
-                                                        : 'border-gray-300'
-                                                }`}>
-                                                    {selectedItems.has(item.id) && (
-                                                        <Feather name="check" size={12} color="white" />
-                                                    )}
-                                                </View>
-                                            )}
-                                            <View className="w-2 h-2 rounded-full bg-blue-500 mt-2 mr-3" />
-                                            <View className="flex-1">
-                                                <Text className="text-gray-700 font-medium">{item.label}:</Text>
-                                                <Text className="text-gray-600 mt-1">
-                                                    {item.value}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    </TouchableOpacity>
-                                ))
-                            ) : (
-                                <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
-                                    <Feather name="info" size={16} color="#6B7280" />
-                                    <Text className="text-gray-500 text-sm flex-1 ml-2">
-                                        No hay datos de autonomía para {baby?.name || 'este bebé'}. 
-                                        {' '}Los datos se agregarán automáticamente cuando hables con Lumi sobre el desarrollo 
-                                        y la autonomía de tu bebé.
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-                </TouchableOpacity>
+                    {autonomyItemsWithValues.length > 0 && autonomyItemsWithValues.map((item) => (
+                        <ProfileItem
+                            key={item.id}
+                            id={item.id}
+                            label={item.label}
+                            value={item.value}
+                            color="blue"
+                            isSelected={selectedItems.has(item.id)}
+                            isSelectionMode={isSelectionMode}
+                            onPress={() => handleSelectItem(item.id)}
+                        />
+                    ))}
+                </ProfileSection>
 
                 {/* Sección: Emociones y crianza */}
-                <TouchableOpacity 
+                <ProfileSection
+                    title="Emociones y crianza"
+                    color="green"
+                    isSelected={selectedSections.has('emotions')}
+                    isSelectionMode={isSelectionMode}
                     onPress={() => handleSelectSection('emotions')}
-                    activeOpacity={0.7}
+                    noDataMessage={`No hay datos de emociones y crianza para ${baby?.name || 'este bebé'}. Los datos se agregarán automáticamente cuando hables con Lumi sobre el temperamento, actividades favoritas y señales de tu bebé.`}
                 >
-                    <View className={`bg-white rounded-xl p-5 mb-6 shadow-sm border ${
-                        selectedSections.has('emotions') ? 'border-green-500 bg-green-50' : 'border-gray-100'
-                    }`}>
-                        <View className="flex-row items-center justify-between mb-4">
-                            <View className="flex-row items-center">
-                                {isSelectionMode && (
-                                    <View className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${
-                                        selectedSections.has('emotions') 
-                                            ? 'bg-green-500 border-green-500' 
-                                            : 'border-gray-300'
-                                    }`}>
-                                        {selectedSections.has('emotions') && (
-                                            <Feather name="check" size={14} color="white" />
-                                        )}
-                                    </View>
-                                )}
-                                <Text className="text-xl font-bold text-gray-800">Emociones y crianza</Text>
-                            </View>
-                        </View>
-                        
-                        <View className="space-y-3">
-                            {emotionsItemsWithValues.length > 0 ? (
-                                emotionsItemsWithValues.map((item, index) => (
-                                    <TouchableOpacity 
-                                        key={item.id}
-                                        onPress={() => handleSelectItem(item.id)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <View className={`flex-row items-start p-2 rounded-lg ${
-                                            selectedItems.has(item.id) ? 'bg-green-100' : ''
-                                        }`}>
-                                            {isSelectionMode && (
-                                                <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                                    selectedItems.has(item.id) 
-                                                        ? 'bg-green-500 border-green-500' 
-                                                        : 'border-gray-300'
-                                                }`}>
-                                                    {selectedItems.has(item.id) && (
-                                                        <Feather name="check" size={12} color="white" />
-                                                    )}
-                                                </View>
-                                            )}
-                                            <View className="w-2 h-2 rounded-full bg-green-500 mt-2 mr-3" />
-                                            <View className="flex-1">
-                                                <Text className="text-gray-700 font-medium">{item.label}:</Text>
-                                                <Text className="text-gray-600 mt-1">
-                                                    {item.value}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    </TouchableOpacity>
-                                ))
-                            ) : (
-                                <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
-                                    <Feather name="info" size={16} color="#6B7280" />
-                                    <Text className="text-gray-500 text-sm flex-1 ml-2">
-                                        No hay datos de emociones y crianza para {baby?.name || 'este bebé'}. 
-                                        {' '}Los datos se agregarán automáticamente cuando hables con Lumi sobre el temperamento, 
-                                        actividades favoritas y señales de tu bebé.
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-                </TouchableOpacity>
+                    {emotionsItemsWithValues.length > 0 && emotionsItemsWithValues.map((item) => (
+                        <ProfileItem
+                            key={item.id}
+                            id={item.id}
+                            label={item.label}
+                            value={item.value}
+                            color="green"
+                            isSelected={selectedItems.has(item.id)}
+                            isSelectionMode={isSelectionMode}
+                            onPress={() => handleSelectItem(item.id)}
+                        />
+                    ))}
+                </ProfileSection>
 
                 {/* Sección: Familia */}
-                <TouchableOpacity 
+                <ProfileSection
+                    title="Familia"
+                    color="orange"
+                    isSelected={selectedSections.has('family')}
+                    isSelectionMode={isSelectionMode}
                     onPress={() => handleSelectSection('family')}
-                    activeOpacity={0.7}
+                    noDataMessage={`No hay datos de familia para ${baby?.name || 'este bebé'}. Los datos se agregarán automáticamente cuando hables con Lumi sobre la familia y relaciones del bebé.`}
                 >
-                    <View className={`bg-white rounded-xl p-5 mb-6 shadow-sm border ${
-                        selectedSections.has('family') ? 'border-orange-500 bg-orange-50' : 'border-gray-100'
-                    }`}>
-                        <View className="flex-row items-center justify-between mb-4">
-                            <View className="flex-row items-center">
-                                {isSelectionMode && (
-                                    <View className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${
-                                        selectedSections.has('family') 
-                                            ? 'bg-orange-500 border-orange-500' 
-                                            : 'border-gray-300'
-                                    }`}>
-                                        {selectedSections.has('family') && (
-                                            <Feather name="check" size={14} color="white" />
-                                        )}
-                                    </View>
-                                )}
-                                <Text className="text-xl font-bold text-gray-800">Familia</Text>
-                            </View>
-                        </View>
-                        
-                        <View className="space-y-3">
-                            {familyItemsWithValues.length > 0 ? (
-                                familyItemsWithValues.map((item, index) => (
-                                    <TouchableOpacity 
-                                        key={item.id}
-                                        onPress={() => handleSelectItem(item.id)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <View className={`flex-row items-start p-2 rounded-lg ${
-                                            selectedItems.has(item.id) ? 'bg-orange-100' : ''
-                                        }`}>
-                                            {isSelectionMode && (
-                                                <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                                    selectedItems.has(item.id) 
-                                                        ? 'bg-orange-500 border-orange-500' 
-                                                        : 'border-gray-300'
-                                                }`}>
-                                                    {selectedItems.has(item.id) && (
-                                                        <Feather name="check" size={12} color="white" />
-                                                    )}
-                                                </View>
-                                            )}
-                                            <View className="w-2 h-2 rounded-full bg-orange-500 mt-2 mr-3" />
-                                            <View className="flex-1">
-                                                <Text className="text-gray-700 font-medium">{item.label}:</Text>
-                                                <Text className="text-gray-600 mt-1">
-                                                    {item.value}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    </TouchableOpacity>
-                                ))
-                            ) : (
-                                <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
-                                    <Feather name="info" size={16} color="#6B7280" />
-                                    <Text className="text-gray-500 text-sm flex-1 ml-2">
-                                        No hay datos de familia para {baby?.name || 'este bebé'}. 
-                                        {' '}Los datos se agregarán automáticamente cuando hables con Lumi sobre la 
-                                        familia y relaciones del bebé.
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-                </TouchableOpacity>
+                    {familyItemsWithValues.length > 0 && familyItemsWithValues.map((item) => (
+                        <ProfileItem
+                            key={item.id}
+                            id={item.id}
+                            label={item.label}
+                            value={item.value}
+                            color="orange"
+                            isSelected={selectedItems.has(item.id)}
+                            isSelectionMode={isSelectionMode}
+                            onPress={() => handleSelectItem(item.id)}
+                        />
+                    ))}
+                </ProfileSection>
             </ScrollView>
         </SafeAreaView>
     )
