@@ -24,6 +24,9 @@ const BabyProfile = ({ navigation }) => {
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileByCategory, setProfileByCategory] = useState({});
     const [sleepProfileData, setSleepProfileData] = useState([]);
+    const [emotionsProfileData, setEmotionsProfileData] = useState([]);
+    const [careProfileData, setCareProfileData] = useState([]);
+    const [developmentProfileData, setDevelopmentProfileData] = useState([]);
 
     const handleGoBack = () => {
         // Volver a Chat con el parámetro para abrir el SideMenu
@@ -228,6 +231,72 @@ const BabyProfile = ({ navigation }) => {
                 setSleepProfileData(sleepData || []);
                 console.log('📊 Datos de sueño cargados:', sleepData?.length || 0, 'entradas');
                 console.log('📋 Detalle:', sleepData?.map(d => ({ key: d.key, value: d.value })));
+
+                // 4. Cargar datos de Emociones y crianza
+                const emotionsItem = (allData || []).find(item => {
+                    const categoryName = item.category_name?.toLowerCase() || '';
+                    return categoryName.includes('emotion') || 
+                           categoryName.includes('emocion') || 
+                           categoryName.includes('crianza') ||
+                           categoryName.includes('parenting');
+                });
+
+                if (emotionsItem) {
+                    const emotionsCategoryId = emotionsItem.category_id;
+                    const { data: emotionsData, error: emotionsError } = await getProfileByCategory(
+                        baby.id, 
+                        emotionsCategoryId, 
+                        { locale }
+                    );
+                    if (!emotionsError && mounted) {
+                        setEmotionsProfileData(emotionsData || []);
+                        console.log('😊 Datos de emociones cargados:', emotionsData?.length || 0, 'entradas');
+                    }
+                }
+
+                // 5. Cargar datos de Cuidados diarios
+                const careItem = (allData || []).find(item => {
+                    const categoryName = item.category_name?.toLowerCase() || '';
+                    return categoryName.includes('care') || 
+                           categoryName.includes('cuidado') || 
+                           categoryName.includes('daily') ||
+                           categoryName.includes('diario');
+                });
+
+                if (careItem) {
+                    const careCategoryId = careItem.category_id;
+                    const { data: careData, error: careError } = await getProfileByCategory(
+                        baby.id, 
+                        careCategoryId, 
+                        { locale }
+                    );
+                    if (!careError && mounted) {
+                        setCareProfileData(careData || []);
+                        console.log('🍼 Datos de cuidados cargados:', careData?.length || 0, 'entradas');
+                    }
+                }
+
+                // 6. Cargar datos de Desarrollo
+                const developmentItem = (allData || []).find(item => {
+                    const categoryName = item.category_name?.toLowerCase() || '';
+                    return categoryName.includes('development') || 
+                           categoryName.includes('desarrollo') || 
+                           categoryName.includes('motor') ||
+                           categoryName.includes('milestone');
+                });
+
+                if (developmentItem) {
+                    const developmentCategoryId = developmentItem.category_id;
+                    const { data: developmentData, error: developmentError } = await getProfileByCategory(
+                        baby.id, 
+                        developmentCategoryId, 
+                        { locale }
+                    );
+                    if (!developmentError && mounted) {
+                        setDevelopmentProfileData(developmentData || []);
+                        console.log('🎯 Datos de desarrollo cargados:', developmentData?.length || 0, 'entradas');
+                    }
+                }
             } catch (err) {
                 console.error('Unexpected error loading baby_profile:', err);
                 setProfileEntries([]);
@@ -252,9 +321,9 @@ const BabyProfile = ({ navigation }) => {
             
             // Obtener todos los IDs dinámicamente (solo elementos con valores)
             const allSleepItems = sleepItemsWithValues.map(item => item.id);
-            const allEmotionItems = ['emotions-1', 'emotions-2', 'emotions-3', 'emotions-4'];
-            const allCareItems = ['care-1', 'care-2', 'care-3', 'care-4', 'care-5'];
-            const allDevelopmentItems = ['development-1', 'development-2', 'development-3'];
+            const allEmotionItems = emotionsItemsWithValues.map(item => item.id);
+            const allCareItems = careItemsWithValues.map(item => item.id);
+            const allDevelopmentItems = developmentItemsWithValues.map(item => item.id);
             const allHealthItems = ['health-1', 'health-2', 'health-3'];
             
             setSelectedSections(new Set(['sleep', 'emotions', 'care', 'development', 'health']));
@@ -297,11 +366,11 @@ const BabyProfile = ({ navigation }) => {
                 case 'sleep':
                     return sleepItemsWithValues.map(item => item.id);
                 case 'emotions':
-                    return ['emotions-1', 'emotions-2', 'emotions-3', 'emotions-4'];
+                    return emotionsItemsWithValues.map(item => item.id);
                 case 'care':
-                    return ['care-1', 'care-2', 'care-3', 'care-4', 'care-5'];
+                    return careItemsWithValues.map(item => item.id);
                 case 'development':
-                    return ['development-1', 'development-2', 'development-3'];
+                    return developmentItemsWithValues.map(item => item.id);
                 case 'health':
                     return ['health-1', 'health-2', 'health-3'];
                 default:
@@ -343,11 +412,11 @@ const BabyProfile = ({ navigation }) => {
                 case 'sleep':
                     return sleepItemsWithValues.map(item => item.id);
                 case 'emotions':
-                    return ['emotions-1', 'emotions-2', 'emotions-3', 'emotions-4'];
+                    return emotionsItemsWithValues.map(item => item.id);
                 case 'care':
-                    return ['care-1', 'care-2', 'care-3', 'care-4', 'care-5'];
+                    return careItemsWithValues.map(item => item.id);
                 case 'development':
-                    return ['development-1', 'development-2', 'development-3'];
+                    return developmentItemsWithValues.map(item => item.id);
                 case 'health':
                     return ['health-1', 'health-2', 'health-3'];
                 default:
@@ -525,6 +594,33 @@ const BabyProfile = ({ navigation }) => {
     const sleepItemsWithValues = sleepProfileData.map((item, index) => ({
         id: `sleep-${index + 1}`,
         label: item.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), // Formatear key como label
+        profileKey: item.key,
+        value: item.value,
+        categoryName: item.category_name
+    }));
+
+    // Filtrar elementos de emociones que tienen valores reales en la BD
+    const emotionsItemsWithValues = emotionsProfileData.map((item, index) => ({
+        id: `emotions-${index + 1}`,
+        label: item.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        profileKey: item.key,
+        value: item.value,
+        categoryName: item.category_name
+    }));
+
+    // Filtrar elementos de cuidados que tienen valores reales en la BD
+    const careItemsWithValues = careProfileData.map((item, index) => ({
+        id: `care-${index + 1}`,
+        label: item.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        profileKey: item.key,
+        value: item.value,
+        categoryName: item.category_name
+    }));
+
+    // Filtrar elementos de desarrollo que tienen valores reales en la BD
+    const developmentItemsWithValues = developmentProfileData.map((item, index) => ({
+        id: `development-${index + 1}`,
+        label: item.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
         profileKey: item.key,
         value: item.value,
         categoryName: item.category_name
@@ -782,109 +878,47 @@ const BabyProfile = ({ navigation }) => {
                         </View>
                         
                         <View className="space-y-3">
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('emotions-1')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('emotions-1') ? 'bg-green-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('emotions-1') 
-                                                ? 'bg-green-500 border-green-500' 
-                                                : 'border-gray-300'
+                            {emotionsItemsWithValues.length > 0 ? (
+                                emotionsItemsWithValues.map((item, index) => (
+                                    <TouchableOpacity 
+                                        key={item.id}
+                                        onPress={() => handleSelectItem(item.id)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View className={`flex-row items-start p-2 rounded-lg ${
+                                            selectedItems.has(item.id) ? 'bg-green-100' : ''
                                         }`}>
-                                            {selectedItems.has('emotions-1') && (
-                                                <Feather name="check" size={12} color="white" />
+                                            {isSelectionMode && (
+                                                <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
+                                                    selectedItems.has(item.id) 
+                                                        ? 'bg-green-500 border-green-500' 
+                                                        : 'border-gray-300'
+                                                }`}>
+                                                    {selectedItems.has(item.id) && (
+                                                        <Feather name="check" size={12} color="white" />
+                                                    )}
+                                                </View>
                                             )}
+                                            <View className="w-2 h-2 rounded-full bg-green-500 mt-2 mr-3" />
+                                            <View className="flex-1">
+                                                <Text className="text-gray-700 font-medium">{item.label}:</Text>
+                                                <Text className="text-gray-600 mt-1">
+                                                    {item.value}
+                                                </Text>
+                                            </View>
                                         </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-green-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Temperamento:</Text>
-                                        <Text className="text-gray-600 mt-1">Tranquila y curiosa</Text>
-                                    </View>
+                                    </TouchableOpacity>
+                                ))
+                            ) : (
+                                <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
+                                    <Feather name="info" size={16} color="#6B7280" />
+                                    <Text className="text-gray-500 text-sm flex-1 ml-2">
+                                        No hay datos de emociones y crianza para {baby?.name || 'este bebé'}. 
+                                        {' '}Los datos se agregarán automáticamente cuando hables con Lumi sobre el temperamento, 
+                                        actividades favoritas y señales de tu bebé.
+                                    </Text>
                                 </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('emotions-2')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('emotions-2') ? 'bg-green-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('emotions-2') 
-                                                ? 'bg-green-500 border-green-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('emotions-2') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-green-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Actividades favoritas:</Text>
-                                        <Text className="text-gray-600 mt-1">Jugar con sonajeros, escuchar música</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('emotions-3')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('emotions-3') ? 'bg-green-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('emotions-3') 
-                                                ? 'bg-green-500 border-green-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('emotions-3') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-green-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Señales de cansancio:</Text>
-                                        <Text className="text-gray-600 mt-1">Se frota los ojos, bosteza</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('emotions-4')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('emotions-4') ? 'bg-green-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('emotions-4') 
-                                                ? 'bg-green-500 border-green-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('emotions-4') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-green-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Cómo se calma:</Text>
-                                        <Text className="text-gray-600 mt-1">Con música suave y caricias</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
+                            )}
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -915,135 +949,47 @@ const BabyProfile = ({ navigation }) => {
                         </View>
                         
                         <View className="space-y-3">
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('care-1')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('care-1') ? 'bg-purple-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('care-1') 
-                                                ? 'bg-purple-500 border-purple-500' 
-                                                : 'border-gray-300'
+                            {careItemsWithValues.length > 0 ? (
+                                careItemsWithValues.map((item, index) => (
+                                    <TouchableOpacity 
+                                        key={item.id}
+                                        onPress={() => handleSelectItem(item.id)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View className={`flex-row items-start p-2 rounded-lg ${
+                                            selectedItems.has(item.id) ? 'bg-purple-100' : ''
                                         }`}>
-                                            {selectedItems.has('care-1') && (
-                                                <Feather name="check" size={12} color="white" />
+                                            {isSelectionMode && (
+                                                <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
+                                                    selectedItems.has(item.id) 
+                                                        ? 'bg-purple-500 border-purple-500' 
+                                                        : 'border-gray-300'
+                                                }`}>
+                                                    {selectedItems.has(item.id) && (
+                                                        <Feather name="check" size={12} color="white" />
+                                                    )}
+                                                </View>
                                             )}
+                                            <View className="w-2 h-2 rounded-full bg-purple-500 mt-2 mr-3" />
+                                            <View className="flex-1">
+                                                <Text className="text-gray-700 font-medium">{item.label}:</Text>
+                                                <Text className="text-gray-600 mt-1">
+                                                    {item.value}
+                                                </Text>
+                                            </View>
                                         </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-purple-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Alimentación:</Text>
-                                        <Text className="text-gray-600 mt-1">Lactancia materna cada 3 horas</Text>
-                                    </View>
+                                    </TouchableOpacity>
+                                ))
+                            ) : (
+                                <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
+                                    <Feather name="info" size={16} color="#6B7280" />
+                                    <Text className="text-gray-500 text-sm flex-1 ml-2">
+                                        No hay datos de cuidados diarios para {baby?.name || 'este bebé'}. 
+                                        {' '}Los datos se agregarán automáticamente cuando hables con Lumi sobre alimentación, 
+                                        rutinas y cuidados de tu bebé.
+                                    </Text>
                                 </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('care-2')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('care-2') ? 'bg-purple-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('care-2') 
-                                                ? 'bg-purple-500 border-purple-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('care-2') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-purple-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Cambio de pañal:</Text>
-                                        <Text className="text-gray-600 mt-1">Cada 2-3 horas o cuando sea necesario</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('care-3')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('care-3') ? 'bg-purple-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('care-3') 
-                                                ? 'bg-purple-500 border-purple-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('care-3') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-purple-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Baño:</Text>
-                                        <Text className="text-gray-600 mt-1">Diario a las 20:00</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('care-4')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('care-4') ? 'bg-purple-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('care-4') 
-                                                ? 'bg-purple-500 border-purple-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('care-4') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-purple-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Medicamentos:</Text>
-                                        <Text className="text-gray-600 mt-1">Vitamina D diaria (2 gotas)</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('care-5')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('care-5') ? 'bg-purple-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('care-5') 
-                                                ? 'bg-purple-500 border-purple-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('care-5') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-purple-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Estimulación:</Text>
-                                        <Text className="text-gray-600 mt-1">Tiempo boca abajo 15 min, 3 veces al día</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
+                            )}
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -1074,83 +1020,47 @@ const BabyProfile = ({ navigation }) => {
                         </View>
                         
                         <View className="space-y-3">
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('development-1')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('development-1') ? 'bg-orange-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('development-1') 
-                                                ? 'bg-orange-500 border-orange-500' 
-                                                : 'border-gray-300'
+                            {developmentItemsWithValues.length > 0 ? (
+                                developmentItemsWithValues.map((item, index) => (
+                                    <TouchableOpacity 
+                                        key={item.id}
+                                        onPress={() => handleSelectItem(item.id)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View className={`flex-row items-start p-2 rounded-lg ${
+                                            selectedItems.has(item.id) ? 'bg-orange-100' : ''
                                         }`}>
-                                            {selectedItems.has('development-1') && (
-                                                <Feather name="check" size={12} color="white" />
+                                            {isSelectionMode && (
+                                                <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
+                                                    selectedItems.has(item.id) 
+                                                        ? 'bg-orange-500 border-orange-500' 
+                                                        : 'border-gray-300'
+                                                }`}>
+                                                    {selectedItems.has(item.id) && (
+                                                        <Feather name="check" size={12} color="white" />
+                                                    )}
+                                                </View>
                                             )}
+                                            <View className="w-2 h-2 rounded-full bg-orange-500 mt-2 mr-3" />
+                                            <View className="flex-1">
+                                                <Text className="text-gray-700 font-medium">{item.label}:</Text>
+                                                <Text className="text-gray-600 mt-1">
+                                                    {item.value}
+                                                </Text>
+                                            </View>
                                         </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-orange-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Habilidades motoras:</Text>
-                                        <Text className="text-gray-600 mt-1">Sostiene la cabeza, rueda de boca arriba a lado</Text>
-                                    </View>
+                                    </TouchableOpacity>
+                                ))
+                            ) : (
+                                <View className="flex-row items-center p-4 bg-gray-50 rounded-lg">
+                                    <Feather name="info" size={16} color="#6B7280" />
+                                    <Text className="text-gray-500 text-sm flex-1 ml-2">
+                                        No hay datos de desarrollo para {baby?.name || 'este bebé'}. 
+                                        {' '}Los datos se agregarán automáticamente cuando hables con Lumi sobre los hitos 
+                                        y desarrollo de tu bebé.
+                                    </Text>
                                 </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('development-2')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('development-2') ? 'bg-orange-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('development-2') 
-                                                ? 'bg-orange-500 border-orange-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('development-2') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-orange-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Comunicación:</Text>
-                                        <Text className="text-gray-600 mt-1">Balbucea, sonríe socialmente</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                onPress={() => handleSelectItem('development-3')}
-                                activeOpacity={0.7}
-                            >
-                                <View className={`flex-row items-start p-2 rounded-lg ${
-                                    selectedItems.has('development-3') ? 'bg-orange-100' : ''
-                                }`}>
-                                    {isSelectionMode && (
-                                        <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-2 ${
-                                            selectedItems.has('development-3') 
-                                                ? 'bg-orange-500 border-orange-500' 
-                                                : 'border-gray-300'
-                                        }`}>
-                                            {selectedItems.has('development-3') && (
-                                                <Feather name="check" size={12} color="white" />
-                                            )}
-                                        </View>
-                                    )}
-                                    <View className="w-2 h-2 rounded-full bg-orange-500 mt-2 mr-3" />
-                                    <View className="flex-1">
-                                        <Text className="text-gray-700 font-medium">Juguetes favoritos:</Text>
-                                        <Text className="text-gray-600 mt-1">Sonajeros coloridos, móvil musical</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
+                            )}
                         </View>
                     </View>
                 </TouchableOpacity>
