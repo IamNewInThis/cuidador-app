@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { getBabies } from '../services/BabiesService';
-import { getProfileBaby, getProfileByCategory } from '../services/BabyProfileServices';
+import { getProfileBaby, getProfileByCategory, updateBabyProfileValues } from '../services/BabyProfileServices';
 import { ActivityIndicator, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
@@ -14,7 +14,8 @@ import {
     BabyAvatar,
     ProfileSection,
     ProfileItem,
-    HealthSection
+    HealthSection,
+    EditModal
 } from '../components/baby_profile';
 
 const BabyProfile = ({ navigation }) => {
@@ -35,6 +36,7 @@ const BabyProfile = ({ navigation }) => {
     const [careProfileData, setCareProfileData] = useState([]);
     const [familyProfileData, setFamilyProfileData] = useState([]);
     const [autonomyProfileData, setAutonomyProfileData] = useState([]);
+    const [editModalVisible, setEditModalVisible] = useState(false);
 
     const handleGoBack = () => {
         // Volver a Chat con el parámetro para abrir el SideMenu
@@ -161,120 +163,112 @@ const BabyProfile = ({ navigation }) => {
         return () => { mounted = false };
     }, [route.params, user?.id]);
 
-    // Cargar entradas de baby_profile cuando tengamos el baby
-    useEffect(() => {
-        let mounted = true;
-        const loadProfile = async () => {
-            if (!baby?.id) return;
-            setProfileLoading(true);
-            try {
-                const locale = i18n?.language || 'es';
-                
-                // 1. Obtener todos los datos para encontrar el category_id de Sleep
-                const { data: allData, error: allError } = await getProfileBaby(baby.id, { locale });
-                if (allError) {
-                    console.error('Error loading baby_profile:', allError);
-                    setProfileEntries([]);
-                    setProfileByCategory({});
-                    setSleepProfileData([]);
-                    return;
-                }
-
-                if (!mounted) return;
-                setProfileEntries(allData || []);
-
-                // Agrupar por category_id
-                const grouped = (allData || []).reduce((acc, item) => {
-                    const cat = item.category_id || 'general';
-                    if (!acc[cat]) acc[cat] = [];
-                    acc[cat].push(item);
-                    return acc;
-                }, {});
-                setProfileByCategory(grouped);
-
-                // Definir las categorías y sus criterios de búsqueda
-                const categories = [
-                    {
-                        name: 'sleep',
-                        keywords: ['sleep', 'sueño', 'descanso'],
-                        setter: setSleepProfileData,
-                        emoji: '💤'
-                    },
-                    {
-                        name: 'emotions',
-                        keywords: ['emotion', 'emocion', 'crianza', 'parenting'],
-                        setter: setEmotionsProfileData,
-                        emoji: '😊'
-                    },
-                    {
-                        name: 'care',
-                        keywords: ['care', 'cuidado', 'daily', 'diario'],
-                        setter: setCareProfileData,
-                        emoji: '🍼'
-                    },
-                    {
-                        name: 'autonomy',
-                        keywords: ['development', 'desarrollo', 'motor', 'milestone', 'autonomy', 'autonomia'],
-                        setter: setAutonomyProfileData,
-                        emoji: '🎯'
-                    },
-                    {
-                        name: 'family',
-                        keywords: ['family', 'familia', 'environment', 'ambiente', 'context', 'contexto'],
-                        setter: setFamilyProfileData,
-                        emoji: '👨‍👩‍👧‍👦'
-                    }
-                ];
-
-                // Función auxiliar para cargar datos de una categoría
-                const loadCategoryData = async (category, categoryItem) => {
-                    if (!categoryItem || !mounted) return;
-
-                    const categoryId = categoryItem.category_id;
-                    const { data, error } = await getProfileByCategory(
-                        baby.id,
-                        categoryId,
-                        { locale }
-                    );
-
-                    if (!error && mounted) {
-                        category.setter(data || []);
-                        console.log(`${category.emoji} Datos de ${category.name} cargados:`, data?.length || 0, 'entradas');
-                        if (data?.length > 0) {
-                            console.log(`${category.emoji} Detalle:`, data.map(d => ({ key: d.key, value: d.value })));
-                        }
-                    } else if (error) {
-                        console.error(`Error loading ${category.name} profile:`, error);
-                        category.setter([]);
-                    }
-                };
-
-                // Procesar cada categoría
-                for (const category of categories) {
-                    const categoryItem = (allData || []).find(item => {
-                        const categoryName = item.category_name?.toLowerCase() || '';
-                        return category.keywords.some(keyword => categoryName.includes(keyword));
-                    });
-
-                    if (!categoryItem) {
-                        console.log(`⚠️ No se encontró la categoría de ${category.name}`);
-                        category.setter([]);
-                        continue;
-                    }
-
-                    await loadCategoryData(category, categoryItem);
-                }
-            } catch (err) {
-                console.error('Unexpected error loading baby_profile:', err);
+    // Función para cargar datos del perfil del bebé
+    const loadProfile = async () => {
+        if (!baby?.id) return;
+        setProfileLoading(true);
+        
+        try {
+            const locale = i18n?.language || 'es';
+            
+            // 1. Obtener todos los datos para encontrar el category_id de Sleep
+            const { data: allData, error: allError } = await getProfileBaby(baby.id, { locale });
+            if (allError) {
+                console.error('Error loading baby_profile:', allError);
                 setProfileEntries([]);
                 setProfileByCategory({});
-            } finally {
-                if (mounted) setProfileLoading(false);
+                setSleepProfileData([]);
+                return;
             }
-        };
 
+            setProfileEntries(allData || []);
+
+            // Agrupar por category_id
+            const grouped = (allData || []).reduce((acc, item) => {
+                const cat = item.category_id || 'general';
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(item);
+                return acc;
+            }, {});
+            setProfileByCategory(grouped);
+
+            // Definir las categorías y sus criterios de búsqueda
+            const categories = [
+                {
+                    name: 'sleep',
+                    keywords: ['sleep', 'sueño', 'descanso'],
+                    setter: setSleepProfileData,
+                },
+                {
+                    name: 'emotions',
+                    keywords: ['emotion', 'emocion', 'crianza', 'parenting'],
+                    setter: setEmotionsProfileData,
+                },
+                {
+                    name: 'care',
+                    keywords: ['care', 'cuidado', 'daily', 'diario'],
+                    setter: setCareProfileData,
+                },
+                {
+                    name: 'autonomy',
+                    keywords: ['development', 'desarrollo', 'motor', 'milestone', 'autonomy', 'autonomia'],
+                    setter: setAutonomyProfileData,
+                },
+                {
+                    name: 'family',
+                    keywords: ['family', 'familia', 'environment', 'ambiente', 'context', 'contexto'],
+                    setter: setFamilyProfileData,
+                }
+            ];
+
+            // Función auxiliar para cargar datos de una categoría
+            const loadCategoryData = async (category, categoryItem) => {
+                if (!categoryItem) return;
+
+                const categoryId = categoryItem.category_id;
+                const { data, error } = await getProfileByCategory(
+                    baby.id,
+                    categoryId,
+                    { locale }
+                );
+
+                if (!error) {
+                    category.setter(data || []);
+                    // console.log(`${category.emoji} Datos de ${category.name} recargados:`, data?.length || 0, 'entradas');
+                } else {
+                    console.error(`Error loading ${category.name} profile:`, error);
+                    category.setter([]);
+                }
+            };
+
+            // Procesar cada categoría
+            for (const category of categories) {
+                const categoryItem = (allData || []).find(item => {
+                    const categoryName = item.category_name?.toLowerCase() || '';
+                    return category.keywords.some(keyword => categoryName.includes(keyword));
+                });
+
+                if (!categoryItem) {
+                    console.log(`⚠️ No se encontró la categoría de ${category.name}`);
+                    category.setter([]);
+                    continue;
+                }
+
+                await loadCategoryData(category, categoryItem);
+            }
+        } catch (err) {
+            console.error('Unexpected error loading baby_profile:', err);
+            setProfileEntries([]);
+            setProfileByCategory({});
+        } finally {
+            setProfileLoading(false);
+        }
+    };
+
+    // Cargar entradas de baby_profile cuando tengamos el baby
+    useEffect(() => {
+        if (!baby?.id) return;
         loadProfile();
-        return () => { mounted = false };
     }, [baby?.id, i18n?.language]);
 
     const handleExport = () => {
@@ -305,8 +299,120 @@ const BabyProfile = ({ navigation }) => {
     };
 
     const handleEdit = () => {
-        // Aquí irá la lógica de edición
-        console.log('Editar selecciones:', { selectedSections, selectedItems });
+        if (selectedItems.size === 0) {
+            // Si no hay elementos seleccionados, mostrar alerta
+            alert('Selecciona al menos un elemento para editar');
+            return;
+        }
+        setEditModalVisible(true);
+    };
+
+    const handleCloseEditModal = () => {
+        setEditModalVisible(false);
+    };
+
+    const handleSuccessfulSave = () => {
+        // Cerrar modal
+        setEditModalVisible(false);
+        
+        // Limpiar selecciones
+        setSelectedSections(new Set());
+        setSelectedItems(new Set());
+        setIsSelectionMode(false);        
+    };
+
+    const handleSaveEdits = async (editedValues) => {
+        try {
+            console.log('🔄 Iniciando guardado de ediciones...');
+            console.log('📝 Valores editados:', editedValues);
+            console.log('👶 Baby ID:', baby?.id);
+            console.log('📋 Elementos seleccionados:', Array.from(selectedItems));
+            
+            if (!baby?.id) {
+                throw new Error('ID del bebé no disponible');
+            }
+
+            // Guardar cambios usando la nueva función
+            const result = await updateBabyProfileValues(baby.id, editedValues);
+            
+            if (result.error && result.error.length > 0) {
+                console.warn('⚠️ Algunos campos tuvieron errores:', result.error);
+                // Si hay errores pero también actualizaciones exitosas, mostrar ambos
+                if (result.data && result.data.length > 0) {
+                    console.log('✅ Campos guardados exitosamente:', result.data);
+                }
+            } else {
+                console.log('✅ Todos los campos se guardaron exitosamente:', result.data);
+            }
+
+            console.log('📊 Resumen:', result.summary);
+            
+            // Recargar los datos del perfil para mostrar los cambios
+            console.log('🔄 Recargando datos del perfil...');
+            await loadProfile();
+            console.log('✅ Datos del perfil actualizados');
+            
+            // Si todo salió bien y no hay errores críticos, cerrar modal automáticamente
+            if (!result.error || result.data.length > 0) {
+                console.log('🎉 Guardado exitoso, preparando para cerrar modal...');
+                // Delay pequeño para que el usuario vea el mensaje de éxito
+                setTimeout(() => {
+                    handleSuccessfulSave();
+                }, 1500);
+            }
+            
+            return Promise.resolve(result);
+        } catch (error) {
+            console.error('❌ Error guardando ediciones:', error);
+            return Promise.reject(error);
+        }
+    };
+
+    // Función auxiliar para obtener todos los datos de perfil en un array unificado
+    const getAllProfileData = () => {
+        const allData = [];
+        
+        sleepItemsWithValues.forEach((item, index) => {
+            allData.push({
+                ...item,
+                categoryName: 'sleep',
+                id: index + 1
+            });
+        });
+        
+        careItemsWithValues.forEach((item, index) => {
+            allData.push({
+                ...item,
+                categoryName: 'care',
+                id: index + 1
+            });
+        });
+        
+        autonomyItemsWithValues.forEach((item, index) => {
+            allData.push({
+                ...item,
+                categoryName: 'autonomy',
+                id: index + 1
+            });
+        });
+        
+        emotionsItemsWithValues.forEach((item, index) => {
+            allData.push({
+                ...item,
+                categoryName: 'emotions',
+                id: index + 1
+            });
+        });
+        
+        familyItemsWithValues.forEach((item, index) => {
+            allData.push({
+                ...item,
+                categoryName: 'family',
+                id: index + 1
+            });
+        });
+        
+        return allData;
     };
 
     const handleCancelSelection = () => {
@@ -478,14 +584,6 @@ const BabyProfile = ({ navigation }) => {
         categoryName: item.category_name
     }));
 
-    // Debug: mostrar datos de sueño cuando cambien
-    useEffect(() => {
-        if (sleepItemsWithValues.length > 0) {
-            console.log('🛏️ sleepItemsWithValues actualizado:', sleepItemsWithValues.length, 'items');
-            console.log('📋 Items:', sleepItemsWithValues.map(i => `${i.label}: ${i.value}`));
-        }
-    }, [sleepProfileData.length]);
-
     if (loadingBaby) {
         return (
             <SafeAreaView className="flex-1 bg-gray-50">
@@ -631,6 +729,14 @@ const BabyProfile = ({ navigation }) => {
                     ))}
                 </ProfileSection>
             </ScrollView>
+
+            <EditModal
+                visible={editModalVisible}
+                onClose={handleCloseEditModal}
+                selectedItems={selectedItems}
+                profileData={getAllProfileData()}
+                onSave={handleSaveEdits}
+            />
         </SafeAreaView>
     )
 }
