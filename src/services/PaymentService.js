@@ -8,7 +8,7 @@ class PaymentService {
 
         this.baseURL = __DEV__
             ? stripeApiUrl
-            : 'http://192.168.1.61:8001/api/payments';
+            : 'http://10.23.182.78:8001/api/payments';
     }
 
     /**

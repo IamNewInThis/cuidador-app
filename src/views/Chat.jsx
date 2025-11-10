@@ -439,7 +439,7 @@ const Chat = () => {
 
             const API_URL = process.env.EXPO_PUBLIC_API_URL;
             console.log('Usando API_URL:', API_URL);
-            const res = await fetch(`http://10.174.88.78:3000/api/chat`, {
+            const res = await fetch(`http://10.23.182.78:3000/api/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -183,6 +183,10 @@ const BabyProfile = ({ navigation }) => {
 
             setProfileEntries(allData || []);
 
+            // Debug: Mostrar categorías disponibles
+            const availableCategories = [...new Set((allData || []).map(item => item.category_name))];
+            console.log('📋 Categorías disponibles en BD:', availableCategories);
+
             // Agrupar por category_id
             const grouped = (allData || []).reduce((acc, item) => {
                 const cat = item.category_id || 'general';
@@ -196,27 +200,27 @@ const BabyProfile = ({ navigation }) => {
             const categories = [
                 {
                     name: 'sleep',
-                    keywords: ['sleep', 'sueño', 'descanso'],
+                    keywords: ['sleep', 'sueño', 'descanso', 'rest'],
                     setter: setSleepProfileData,
                 },
                 {
                     name: 'emotions',
-                    keywords: ['emotion', 'emocion', 'crianza', 'parenting'],
+                    keywords: ['emotion', 'emocion', 'bond', 'vinculo', 'respectful', 'respetuosa', 'parenting', 'crianza'],
                     setter: setEmotionsProfileData,
                 },
                 {
                     name: 'care',
-                    keywords: ['care', 'cuidado', 'daily', 'diario'],
+                    keywords: ['care', 'cuidado', 'daily', 'diario', 'feeding', 'alimentacion'],
                     setter: setCareProfileData,
                 },
                 {
                     name: 'autonomy',
-                    keywords: ['development', 'desarrollo', 'motor', 'milestone', 'autonomy', 'autonomia'],
+                    keywords: ['development', 'desarrollo', 'motor', 'milestone', 'autonomy', 'autonomia', 'hito'],
                     setter: setAutonomyProfileData,
                 },
                 {
                     name: 'family',
-                    keywords: ['family', 'familia', 'environment', 'ambiente', 'context', 'contexto'],
+                    keywords: ['family', 'familia', 'environment', 'ambiente', 'context', 'contexto', 'entorno'],
                     setter: setFamilyProfileData,
                 }
             ];
@@ -249,11 +253,15 @@ const BabyProfile = ({ navigation }) => {
                 });
 
                 if (!categoryItem) {
-                    console.log(`⚠️ No se encontró la categoría de ${category.name}`);
+                    // Solo mostrar advertencia si es 'sleep' (categoría principal)
+                    if (category.name === 'sleep') {
+                        console.log(`⚠️ No se encontró la categoría de ${category.name}`);
+                    }
                     category.setter([]);
                     continue;
                 }
 
+                console.log(`✅ Categoría "${category.name}" encontrada:`, categoryItem.category_name);
                 await loadCategoryData(category, categoryItem);
             }
         } catch (err) {
