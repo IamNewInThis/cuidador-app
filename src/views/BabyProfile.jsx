@@ -636,6 +636,7 @@ const BabyProfile = ({ navigation }) => {
                             key={item.id}
                             id={item.id}
                             label={item.label}
+                            profileKey={item.profileKey}
                             value={item.value}
                             color="blue"
                             isSelected={selectedItems.has(item.id)}
@@ -659,6 +660,7 @@ const BabyProfile = ({ navigation }) => {
                             key={item.id}
                             id={item.id}
                             label={item.label}
+                            profileKey={item.profileKey}
                             value={item.value}
                             color="purple"
                             isSelected={selectedItems.has(item.id)}
@@ -682,6 +684,7 @@ const BabyProfile = ({ navigation }) => {
                             key={item.id}
                             id={item.id}
                             label={item.label}
+                            profileKey={item.profileKey}
                             value={item.value}
                             color="blue"
                             isSelected={selectedItems.has(item.id)}
@@ -705,6 +708,7 @@ const BabyProfile = ({ navigation }) => {
                             key={item.id}
                             id={item.id}
                             label={item.label}
+                            profileKey={item.profileKey}
                             value={item.value}
                             color="green"
                             isSelected={selectedItems.has(item.id)}
@@ -728,6 +732,7 @@ const BabyProfile = ({ navigation }) => {
                             key={item.id}
                             id={item.id}
                             label={item.label}
+                            profileKey={item.profileKey}
                             value={item.value}
                             color="orange"
                             isSelected={selectedItems.has(item.id)}
@@ -743,6 +748,7 @@ const BabyProfile = ({ navigation }) => {
                 onClose={handleCloseEditModal}
                 selectedItems={selectedItems}
                 profileData={getAllProfileData()}
+                babyData={baby}
                 onSave={handleSaveEdits}
             />
         </SafeAreaView>

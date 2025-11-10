@@ -171,7 +171,7 @@ export async function getProfileValueOptions(key, { locale = 'es' } = {}) {
 			.from('profile_value_option')
 			.select('*')
 			.eq('key', key)
-			.order('value_es', { ascending: true }); // Ordenar por valor en español
+			.order('value_es', { ascending: true }); 
 
 		if (error) throw error;
 
@@ -183,8 +183,8 @@ export async function getProfileValueOptions(key, { locale = 'es' } = {}) {
 			
 			return {
 				id: row.id,
-				value: row.value_en || row.value_es, // value_en como identificador, fallback a value_es
-				label: label || row.value_es, // Etiqueta localizada, fallback a español
+				value: row.value_en || row.value_es, 
+				label: label || row.value_es, 
 				value_es: row.value_es,
 				value_en: row.value_en,
 				value_pt: row.value_pt,
@@ -197,6 +197,115 @@ export async function getProfileValueOptions(key, { locale = 'es' } = {}) {
 		return { data: mapped, error: null };
 	} catch (err) {
 		return { data: null, error: err };
+	}
+}
+
+/**
+ * Obtener opciones disponibles para un campo específico filtradas por edad del bebé
+ * @param {string} key - La clave del campo
+ * @param {string} birthdate - Fecha de nacimiento del bebé en formato YYYY-MM-DD
+ * @param {string} locale - Idioma para los valores ('es', 'en', 'pt')
+ * @returns {Promise<{data: Array, error: any, usedAgeFilter: boolean, ageRange: string}>}
+ */
+export async function getProfileValueOptionsByAge(key, birthdate, { locale = 'es' } = {}) {
+	if (!key) {
+		return { data: null, error: new Error('key is required') };
+	}
+
+	try {
+		// Calcular la edad y el rango de edad
+		const ageInMonths = calculateAgeInMonths(birthdate);
+		const ageRange = getAgeRange(ageInMonths);
+		
+		console.log(`👶 Calculando opciones para ${key}: ${ageInMonths} meses, rango: ${ageRange}`);
+
+		// Primero intentar obtener opciones específicas por edad
+		const { data: ageSpecificData, error: ageError } = await supabase
+			.from('profile_value_option')
+			.select(`
+				*,
+				profile_value_option_age!inner(age_range)
+			`)
+			.eq('key', key)
+			.eq('profile_value_option_age.age_range', ageRange)
+			.order('value_es', { ascending: true });
+
+		if (ageError) {
+			console.warn(`⚠️ Error obteniendo opciones por edad para ${key}:`, ageError);
+		}
+
+		// Si hay opciones específicas por edad, usarlas
+		if (!ageError && ageSpecificData && ageSpecificData.length > 0) {
+			console.log(`✅ Usando ${ageSpecificData.length} opciones específicas por edad para ${key}`);
+			
+			const mapped = ageSpecificData.map(row => {
+				const label = locale === 'en' ? row.value_en : 
+							 locale === 'pt' ? row.value_pt : 
+							 row.value_es;
+				
+				return {
+					id: row.id,
+					value: row.value_en || row.value_es,
+					label: label || row.value_es,
+					value_es: row.value_es,
+					value_en: row.value_en,
+					value_pt: row.value_pt,
+					key: row.key,
+					created_at: row.created_at,
+					updated_at: row.updated_at,
+					age_range: ageRange
+				};
+			});
+
+			return { 
+				data: mapped, 
+				error: null, 
+				usedAgeFilter: true, 
+				ageRange: ageRange,
+				ageInMonths: ageInMonths
+			};
+		}
+
+		// Si no hay opciones específicas por edad, usar las opciones generales
+		console.log(`📋 No hay opciones por edad para ${key}, usando opciones generales`);
+		
+		const { data: generalData, error: generalError } = await supabase
+			.from('profile_value_option')
+			.select('*')
+			.eq('key', key)
+			.order('value_es', { ascending: true });
+
+		if (generalError) throw generalError;
+
+		const mapped = (generalData || []).map(row => {
+			const label = locale === 'en' ? row.value_en : 
+						 locale === 'pt' ? row.value_pt : 
+						 row.value_es;
+			
+			return {
+				id: row.id,
+				value: row.value_en || row.value_es,
+				label: label || row.value_es,
+				value_es: row.value_es,
+				value_en: row.value_en,
+				value_pt: row.value_pt,
+				key: row.key,
+				created_at: row.created_at,
+				updated_at: row.updated_at
+			};
+		});
+
+		return { 
+			data: mapped, 
+			error: null, 
+			usedAgeFilter: false, 
+			ageRange: ageRange,
+			ageInMonths: ageInMonths
+		};
+
+	} catch (err) {
+		console.error(`❌ Error obteniendo opciones para ${key}:`, err);
+		return { data: null, error: err, usedAgeFilter: false };
 	}
 }
 
@@ -253,6 +362,42 @@ export async function checkFieldHasOptions(key) {
 			error: err 
 		};
 	}
+}
+
+/**
+ * Calcular la edad en meses de un bebé basado en su fecha de nacimiento
+ * @param {string} birthdate - Fecha de nacimiento en formato YYYY-MM-DD
+ * @returns {number} - Edad en meses
+ */
+export function calculateAgeInMonths(birthdate) {
+	if (!birthdate) return 0;
+	
+	const birth = new Date(birthdate);
+	const today = new Date();
+	
+	// Calcular diferencia en meses
+	const monthsDiff = (today.getFullYear() - birth.getFullYear()) * 12 + 
+					  (today.getMonth() - birth.getMonth());
+	
+	// Ajustar si el día aún no ha llegado en el mes actual
+	if (today.getDate() < birth.getDate()) {
+		return Math.max(0, monthsDiff - 1);
+	}
+	
+	return Math.max(0, monthsDiff);
+}
+
+/**
+ * Determinar el rango de edad basado en los meses
+ * @param {number} ageInMonths - Edad en meses
+ * @returns {string} - Rango de edad (ej: '0_6', '6_12', etc.)
+ */
+export function getAgeRange(ageInMonths) {
+	if (ageInMonths < 6) return '0_6';
+	if (ageInMonths < 12) return '6_12';
+	if (ageInMonths < 24) return '12_24';
+	if (ageInMonths < 48) return '24_48';
+	return '48_84'; // 4-7 años
 }
 
 /**
