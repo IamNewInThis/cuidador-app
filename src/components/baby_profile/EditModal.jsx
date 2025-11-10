@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { getProfileValueOptions, checkFieldHasOptions } from '../../services/BabyProfileServices';
+import { getProfileValueOptions, getProfileValueOptionsByAge, checkFieldHasOptions } from '../../services/BabyProfileServices';
 
-// Cache global para opciones
+// Cache global para opciones (ahora incluye clave por edad)
 const optionsCache = {};
 
 const EditModal = ({
@@ -21,6 +21,7 @@ const EditModal = ({
     onClose,
     selectedItems,
     profileData,
+    babyData,
     onSave
 }) => {
     const [editedValues, setEditedValues] = useState({});
@@ -77,11 +78,16 @@ const EditModal = ({
         const options = {};
         const fieldsToLoad = [];
         
+        // Crear clave de caché que incluye edad del bebé (si disponible)
+        const babyBirthdate = babyData?.birthdate;
+        const cacheKeyPrefix = babyBirthdate ? `${babyBirthdate}_` : 'general_';
+        
         // Verificar qué campos ya están en caché
         fields.forEach(fieldKey => {
-            if (optionsCache[fieldKey]) {
-                console.log(`� Usando opciones en caché para ${fieldKey}`);
-                options[fieldKey] = optionsCache[fieldKey];
+            const cacheKey = `${cacheKeyPrefix}${fieldKey}`;
+            if (optionsCache[cacheKey]) {
+                console.log(`💾 Usando opciones en caché para ${fieldKey} (${babyBirthdate ? 'por edad' : 'general'})`);
+                options[fieldKey] = optionsCache[cacheKey];
             } else {
                 fieldsToLoad.push(fieldKey);
             }
@@ -89,7 +95,8 @@ const EditModal = ({
         
         try {
             if (fieldsToLoad.length > 0) {
-                console.log(`�🔄 Cargando opciones para ${fieldsToLoad.length} campos nuevos:`, fieldsToLoad);
+                console.log(`🔄 Cargando opciones para ${fieldsToLoad.length} campos nuevos:`, fieldsToLoad);
+                console.log(`👶 Usando birthdate: ${babyBirthdate || 'No disponible'}`);
                 
                 // Cargar opciones para campos que no están en caché
                 const promises = fieldsToLoad.map(async (fieldKey) => {
@@ -97,25 +104,43 @@ const EditModal = ({
                         const { hasOptions } = await checkFieldHasOptions(fieldKey);
                         
                         if (hasOptions) {
-                            const { data, error } = await getProfileValueOptions(fieldKey, { locale: 'es' });
+                            // Usar función por edad si tenemos birthdate, sino usar la general
+                            let result;
+                            if (babyBirthdate) {
+                                result = await getProfileValueOptionsByAge(fieldKey, babyBirthdate, { locale: 'es' });
+                            } else {
+                                result = await getProfileValueOptions(fieldKey, { locale: 'es' });
+                            }
+                            
+                            const { data, error, usedAgeFilter, ageRange, ageInMonths } = result;
+                            
                             if (!error && data) {
                                 options[fieldKey] = data;
-                                optionsCache[fieldKey] = data; // Guardar en caché
-                                console.log(`✅ Opciones cargadas y guardadas en caché para ${fieldKey}:`, data.length);
+                                
+                                // Guardar en caché con la clave apropiada
+                                const cacheKey = `${cacheKeyPrefix}${fieldKey}`;
+                                optionsCache[cacheKey] = data;
+                                
+                                console.log(`✅ Opciones cargadas para ${fieldKey}:`, {
+                                    count: data.length,
+                                    usedAgeFilter,
+                                    ageRange,
+                                    ageInMonths
+                                });
                             } else {
                                 console.warn(`⚠️ No se pudieron cargar opciones para ${fieldKey}:`, error);
                                 options[fieldKey] = [];
-                                optionsCache[fieldKey] = [];
+                                optionsCache[`${cacheKeyPrefix}${fieldKey}`] = [];
                             }
                         } else {
                             console.log(`ℹ️ Campo ${fieldKey} no tiene opciones predefinidas`);
                             options[fieldKey] = [];
-                            optionsCache[fieldKey] = [];
+                            optionsCache[`${cacheKeyPrefix}${fieldKey}`] = [];
                         }
                     } catch (err) {
                         console.error(`❌ Error cargando opciones para ${fieldKey}:`, err);
                         options[fieldKey] = [];
-                        optionsCache[fieldKey] = [];
+                        optionsCache[`${cacheKeyPrefix}${fieldKey}`] = [];
                     }
                 });
                 
@@ -261,7 +286,7 @@ const EditModal = ({
                                 <View className="flex-row items-center">
                                     <Feather name="loader" size={20} color="#3B82F6" />
                                     <Text className="text-gray-600 text-sm ml-2">
-                                        Cargando opciones...
+                                        Cargando opciones{babyData?.birthdate ? ' por edad' : ''}...
                                     </Text>
                                 </View>
                             </View>

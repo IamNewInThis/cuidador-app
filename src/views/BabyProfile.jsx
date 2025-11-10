@@ -735,6 +735,7 @@ const BabyProfile = ({ navigation }) => {
                 onClose={handleCloseEditModal}
                 selectedItems={selectedItems}
                 profileData={getAllProfileData()}
+                babyData={baby}
                 onSave={handleSaveEdits}
             />
         </SafeAreaView>
