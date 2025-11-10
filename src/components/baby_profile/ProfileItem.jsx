@@ -1,16 +1,30 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import { profileKeyLabels } from '../../locales/profileKeys';
 
 const ProfileItem = ({
     id,
     label,
     value,
+    profileKey, // Agregamos profileKey para la traducción
     color = 'blue',
     isSelected,
     isSelectionMode,
     onPress
 }) => {
+    const { i18n } = useTranslation();
+    
+    // Función para obtener la etiqueta traducida
+    const getTranslatedLabel = () => {
+        if (profileKey && profileKeyLabels[profileKey]) {
+            const currentLang = i18n?.language || 'es';
+            return profileKeyLabels[profileKey][currentLang] || profileKeyLabels[profileKey]['es'] || label;
+        }
+        return label;
+    };
+
     const getColorClasses = () => {
         const colors = {
             blue: {
@@ -66,7 +80,7 @@ const ProfileItem = ({
                 )}
                 <View className={`w-2 h-2 rounded-full ${colorClasses.dot} mt-2 mr-3`} />
                 <View className="flex-1">
-                    <Text className="text-gray-700 font-medium">{label}:</Text>
+                    <Text className="text-gray-700 font-medium">{getTranslatedLabel()}:</Text>
                     <Text className="text-gray-600 mt-1">
                         {value}
                     </Text>
