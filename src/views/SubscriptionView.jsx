@@ -51,7 +51,7 @@ const SubscriptionView = () => {
 
                 // 🔹 2. Obtener estado de suscripción
                 const baseURL = process.env.EXPO_PUBLIC_STRIPE_API_URL;
-                const response = await fetch(`http://10.23.182.78:8001/api/payments/subscription/user/${user.id}`);
+                const response = await fetch(`http://10.46.88.78:8001/api/payments/subscription/user/${user.id}`);
                 const dataResponse = await response.json();
 
                 if (!response.ok) {

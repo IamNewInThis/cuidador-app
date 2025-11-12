@@ -84,7 +84,7 @@ class ConversationsService {
         const DAILY_LIMIT = 10; // ⚙️ Configuración centralizada
 
         try {
-            // 1️⃣ Verificar si tiene suscripción activa
+            // 1️⃣ Verificar suscripción activa
             const { data: subscriptions, error: subErr } = await supabase
                 .from("subscriptions")
                 .select("status, end_date")
@@ -94,57 +94,68 @@ class ConversationsService {
 
             if (subErr) throw subErr;
 
-            const sub = subscriptions && subscriptions.length > 0 ? subscriptions[0] : null;
+            const sub = subscriptions?.[0] || null;
 
-            // Validación estricta de suscripción activa
-            const isActive = sub &&
+            const isActive =
+                sub &&
                 sub.status === "active" &&
-                sub.end_date !== null &&
-                new Date(sub.end_date) > new Date();
+                sub.end_date &&
+                new Date(sub.end_date).getTime() > Date.now();
 
             if (isActive) {
-                console.log("✅ Usuario con suscripción activa, sin límite.");
+                console.log("✅ Usuario con suscripción activa (GET)");
                 return {
-                    allowed: true,
-                    tier: "subscriber",
+                    status: "subscriber",
+                    used: 0,
                     remaining: 9999,
                     resetAt: null,
-                    DAILY_LIMIT: DAILY_LIMIT
+                    DAILY_LIMIT,
                 };
             }
 
-            // 2️⃣ Usuario free: incrementar contador (consume 1 mensaje)
-            console.log('📞 Llamando a increment_message_usage');
+            // 2️⃣ Usuario free: consultar uso actual
+            console.log("🔍 Consultando estado de uso de mensajes (GET)");
 
-            const { data, error } = await supabase.rpc("increment_message_usage", {
+            const { data, error } = await supabase.rpc("get_message_usage_status", {
                 p_user_id: userId,
                 p_limit: DAILY_LIMIT,
-                p_tz: userTimeZone,
             });
 
             if (error) throw error;
 
             const row = Array.isArray(data) ? data[0] : data;
-            if (!row) throw new Error("Sin respuesta de RPC");
 
-            console.log("📊 Resultado del RPC increment:", row);
+            // ✅ Si el usuario no existe aún en la tabla
+            if (!row) {
+                console.log("🆕 Usuario nuevo: inicializando contador de mensajes.");
+                return {
+                    status: "free",
+                    used: 0,
+                    remaining: DAILY_LIMIT,
+                    resetAt: null,
+                    DAILY_LIMIT,
+                };
+            }
+
+            // ✅ Usuario existente
+            console.log("📊 Estado actual del uso:", row);
 
             return {
-                allowed: row.allowed,
-                tier: "free",
-                used: row.used,
-                remaining: row.remaining,
-                resetAt: row.reset_at,
-                DAILY_LIMIT: DAILY_LIMIT,
+                status: "free",
+                used: row.used ?? 0,
+                remaining: row.remaining ?? DAILY_LIMIT,
+                resetAt: row.reset_at ?? null,
+                DAILY_LIMIT,
             };
-
         } catch (error) {
-            console.error("❌ Error en limitMessagesPerDay:", error);
+            console.error("❌ Error al obtener estado de mensajes:", error);
             return {
-                allowed: false,
-                tier: "error",
-                remaining: 0,
-                error: error.message ?? "unknown_error"
+                status: "error",
+                used: 0,
+                remaining: DAILY_LIMIT,
+                resetAt: null,
+                DAILY_LIMIT,
+                error: error?.message ?? "unknown_error",
             };
         }
     }
@@ -160,12 +171,11 @@ class ConversationsService {
             // 1️⃣ Verificar si tiene suscripción activa
             const { data: subscriptions, error: subErr } = await supabase
                 .from("subscriptions")
-                .select("status, end_date")
+                .select("status, end_date, start_date")
                 .eq("user_id", userId)
+                .in("status", ["active", "trialing"])
                 .order("start_date", { ascending: false })
                 .limit(1);
-
-            if (subErr) throw subErr;
 
             const sub = subscriptions && subscriptions.length > 0 ? subscriptions[0] : null;
 
