@@ -8,7 +8,7 @@ const ProfileItem = ({
     id,
     label,
     value,
-    profileKey, // Agregamos profileKey para la traducción
+    profileKey, 
     color = 'blue',
     isSelected,
     isSelectionMode,

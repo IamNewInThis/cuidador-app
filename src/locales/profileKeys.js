@@ -11,12 +11,17 @@ export const profileKeyLabels = {
         en: 'Night Routine Established',
         pt: 'Rotina noturna estabelecida'
     },
+    day_night_difference: {
+        es: 'Diferenciación día y noche',
+        en: 'Day and night difference',
+        pt: 'Diferença entre dia e noite'
+    },
     sleep_location: {
-        es: 'Lugar de sueño',
+        es: 'Lugar donde duerme',
         en: 'Sleep location',
         pt: 'Local de sono'
     },
-    object_attachment: {
+    comfort_object: {
         es: 'Objeto de apego',
         en: 'Attachment object',
         pt: 'Objeto de apego'
@@ -26,87 +31,59 @@ export const profileKeyLabels = {
         en: 'Sleep rhythm',
         pt: 'Ritmo do sono'
     },
-    sleep_duration: {
-        es: 'Duración del sueño',
-        en: 'Sleep duration',
-        pt: 'Duração do sono'
+    naps_per_day: {
+        es: 'Cantidad de siestas por día',
+        en: 'Naps per day',
+        pt: 'Sonecas por dia'
     },
-    bedtime_routine: {
-        es: 'Rutina antes de dormir',
-        en: 'Bedtime routine',
-        pt: 'Rotina antes de dormir'
+    nap_duration: {
+        es: 'Duración de las siestas',
+        en: 'Nap duration',
+        pt: 'Duração das sonecas'
     },
-    nap_schedule: {
-        es: 'Horario de siestas',
-        en: 'Nap schedule',
-        pt: 'Horário de sonecas'
+    wake_windows: {
+        es: 'Ventanas de vigilia',
+        en: 'Wake windows',
+        pt: 'Janelas de vigília'
     },
-    
-    // Care & Daily Activities
-    feeding_schedule: {
-        es: 'Horario de alimentación',
-        en: 'Feeding schedule',
-        pt: 'Horário de alimentação'
+    sleep_signals: {
+        es: 'Señales de sueño',
+        en: 'Sleep signals',
+        pt: 'Sinais de sono'
     },
-    diaper_routine: {
-        es: 'Rutina de pañales',
-        en: 'Diaper routine',
-        pt: 'Rotina de fraldas'
+    main_sleep_associations: {
+        es: 'Asociaciones principales para dormir',
+        en: 'Main sleep associations',
+        pt: 'Principais associações de sono'
     },
-    bath_time: {
-        es: 'Hora del baño',
-        en: 'Bath time',
-        pt: 'Hora do banho'
+    average_night_awakenings: {
+        es: 'Despertares nocturnos promedio',
+        en: 'Average night awakenings',
+        pt: 'Despertares noturnos médios'
     },
-    
-    // Emotions & Development
-    temperament: {
-        es: 'Temperamento',
-        en: 'Temperament',
-        pt: 'Temperamento'
+    back_to_sleep_method: {
+        es: 'Forma para volver a dormir',
+        en: 'Back to sleep method',
+        pt: 'Método para voltar a dormir'
     },
-    favorite_activities: {
-        es: 'Actividades favoritas',
-        en: 'Favorite activities',
-        pt: 'Atividades favoritas'
+    sensory_profile: {
+        es: 'Perfil sensorial',
+        en: 'Sensory profile',
+        pt: 'Perfil sensorial'
     },
-    emotional_signals: {
-        es: 'Señales emocionales',
-        en: 'Emotional signals',
-        pt: 'Sinais emocionais'
+    calming_stimulus: {
+        es: 'Estímulo calmante',
+        en: 'Calming stimulus',
+        pt: 'Estímulo calmante'
     },
-    
-    // Autonomy & Development
-    motor_skills: {
-        es: 'Habilidades motoras',
-        en: 'Motor skills',
-        pt: 'Habilidades motoras'
+    sleepwear: {
+        es: 'Ropa para dormir',
+        en: 'Sleepwear',
+        pt: 'Roupa de dormir'
     },
-    cognitive_development: {
-        es: 'Desarrollo cognitivo',
-        en: 'Cognitive development',
-        pt: 'Desenvolvimento cognitivo'
-    },
-    social_development: {
-        es: 'Desarrollo social',
-        en: 'Social development',
-        pt: 'Desenvolvimento social'
-    },
-    
-    // Family & Environment
-    family_structure: {
-        es: 'Estructura familiar',
-        en: 'Family structure',
-        pt: 'Estrutura familiar'
-    },
-    sibling_relationships: {
-        es: 'Relaciones con hermanos',
-        en: 'Sibling relationships',
-        pt: 'Relacionamentos com irmãos'
-    },
-    caregiver_routine: {
-        es: 'Rutina del cuidador',
-        en: 'Caregiver routine',
-        pt: 'Rotina do cuidador'
+    main_sleep_association: {
+        es: 'Asociación principal para dormir',
+        en: 'Main sleep association',
+        pt: 'Principal associação de sono'
     }
 };

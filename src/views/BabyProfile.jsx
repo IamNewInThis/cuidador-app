@@ -7,7 +7,7 @@ import { useRoute } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { getBabies } from '../services/BabiesService';
 import { getProfileBaby, getProfileByCategory, updateBabyProfileValues } from '../services/BabyProfileServices';
-import { ActivityIndicator, Text } from 'react-native';
+import { Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
     ProfileHeader,
@@ -185,7 +185,7 @@ const BabyProfile = ({ navigation }) => {
 
             // Debug: Mostrar categorías disponibles
             const availableCategories = [...new Set((allData || []).map(item => item.category_name))];
-            console.log('📋 Categorías disponibles en BD:', availableCategories);
+            // console.log('📋 Categorías disponibles en BD:', availableCategories);
 
             // Agrupar por category_id
             const grouped = (allData || []).reduce((acc, item) => {

@@ -11,7 +11,6 @@ import FeedbackService from '../services/FeedbackService';
 import { getBabies } from '../services/BabiesService';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
-
 import AssistantMessage from '../components/chat/AssistantMessage';
 import UserMessage from '../components/chat/UserMessage';
 import LoadingMessage from '../components/chat/LoadingMessage';
@@ -439,7 +438,7 @@ const Chat = () => {
 
             const API_URL = process.env.EXPO_PUBLIC_API_URL;
             console.log('Usando API_URL:', API_URL);
-            const res = await fetch(`http://10.23.182.78:3000/api/chat`, {
+            const res = await fetch(`${API_URL}chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -453,13 +452,8 @@ const Chat = () => {
             });
 
             const data = await res.json();
-            console.log('🔍 Respuesta completa del backend:', JSON.stringify(data, null, 2));
-            console.log('� Keys de data:', Object.keys(data));
-            console.log('�📝 data.profile_keywords:', data.profile_keywords);
-            console.log('📝 Tipo de profile_keywords:', typeof data.profile_keywords);
-            console.log('📝 Es undefined?', data.profile_keywords === undefined);
-            console.log('📝 Es null?', data.profile_keywords === null);
-            
+            // console.log('🔍 Respuesta completa del backend:', JSON.stringify(data));
+                        
             // 6️⃣ Procesar respuesta del modelo
             const assistantContent = data?.answer || 'Lo siento, no pude obtener una respuesta.';
             
