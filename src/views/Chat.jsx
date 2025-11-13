@@ -260,10 +260,6 @@ const Chat = () => {
         }
     };
 
-    useEffect(() => {
-        fetchLimitStatus();
-    }, [user?.id]);
-
     // Recargar cuando vuelve el foco a la pantalla
     useFocusEffect(
         useCallback(() => {
