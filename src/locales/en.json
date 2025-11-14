@@ -1,4 +1,6 @@
-{   "common": {
+{   
+    "languageCode": "en",
+    "common": {
         "loading": "Loading...",
         "error": "An error occurred",
         "retry": "Retry",
@@ -123,5 +125,18 @@
         "sensitivityTemperament": "Sensitivity or Temperament",
         "noSleepData": "No sleep information recorded for {babyName}.",
         "noSleepDataDesc": "Data will be displayed here when available."
+    },
+    "healthSection": {
+        "title": "Health and Wellness",
+        "allergies": "Allergies:",
+        "medicalConditions": "Medical conditions:",
+        "noMedicalConditions": "No medical conditions recorded",
+        "noMedicalConditionsDesc": "Add important medical conditions for your baby",
+        "noConditionsRegistered": "No conditions registered",
+        "totalConditions": "Total: {{count}} condition registered",
+        "totalConditions_plural": "Total: {{count}} conditions registered",
+        "moreConditions": "+{{count}} more",
+        "loadingHealth": "Loading health information...",
+        "seeFullDetails": "Tap to see full details"
     }
 }

@@ -1,4 +1,5 @@
 {   
+    "languageCode": "pt",
     "common": {
         "loading": "Carregando...",
         "error": "Ocorreu um erro. Por favor, tente novamente.",
@@ -117,6 +118,19 @@
         "sensitivityTemperament": "Sensibilidade ou Temperamento",
         "noSleepData": "Nenhuma informação de sono registrada para {babyName}.",
         "noSleepDataDesc": "Os dados serão exibidos aqui quando disponíveis."
+    },
+    "healthSection": {
+        "title": "Saúde e Bem-estar",
+        "allergies": "Alergias:",
+        "medicalConditions": "Condições médicas:",
+        "noMedicalConditions": "Sem condições médicas registradas",
+        "noMedicalConditionsDesc": "Adicione condições médicas importantes para seu bebê",
+        "noConditionsRegistered": "Sem condições registradas",
+        "totalConditions": "Total: {{count}} condição registrada",
+        "totalConditions_plural": "Total: {{count}} condições registradas",
+        "moreConditions": "+{{count}} mais",
+        "loadingHealth": "Carregando informações de saúde...",
+        "seeFullDetails": "Toque para ver detalhes completos"
     }
 }
   

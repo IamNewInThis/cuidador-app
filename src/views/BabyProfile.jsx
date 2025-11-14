@@ -620,7 +620,7 @@ const BabyProfile = ({ navigation }) => {
                     age={baby?.birthdate ? formatBabyAge(baby.birthdate) : ''}
                 />
 
-                <HealthSection navigation={navigation} />
+                <HealthSection navigation={navigation} baby={baby} />
 
                 {/* Sección: Sueño y descanso */}
                 <ProfileSection

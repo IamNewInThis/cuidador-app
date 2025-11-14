@@ -1,9 +1,17 @@
-import { View, Text, TouchableOpacity, ScrollView, Modal, FlatList } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, Modal, FlatList, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../contexts/AuthContext';
+import { getBabies } from '../services/BabiesService';
+import MedicalConditionsService from '../services/MedicalConditionsService';
 
 const HealthProfileView = ({ navigation }) => {
+    const { user } = useAuth();
+    const [baby, setBaby] = useState(null);
+    const [loading, setLoading] = useState(false);
+    
     const [selectedAllergies, setSelectedAllergies] = useState({
         alimentarias: [],
         medicamentos: [],
@@ -18,9 +26,103 @@ const HealthProfileView = ({ navigation }) => {
         neurologicas: []
     });
 
+    const [existingConditions, setExistingConditions] = useState([]);
+    const [predefinedConditions, setPredefinedConditions] = useState({});
     const [modalVisible, setModalVisible] = useState(false);
     const [currentCategory, setCurrentCategory] = useState(null);
     const [currentSubcategory, setCurrentSubcategory] = useState(null);
+    const [saving, setSaving] = useState(false);
+
+    // Cargar baby desde AsyncStorage
+    useEffect(() => {
+        loadBaby();
+        loadPredefinedConditions();
+    }, []);
+
+    const loadBaby = async () => {
+        try {
+            // Intentar cargar desde AsyncStorage
+            let babyData = await AsyncStorage.getItem(`selectedBaby_${user?.id}`);
+            
+            if (babyData && user?.id) {
+                try {
+                    const { data: babies } = await getBabies(user.id);
+                    const selectedBabyData = babies.find(baby => baby.id === babyData);
+                    if (selectedBabyData) {
+                        setBaby(selectedBabyData);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error fetching baby by ID:', error);
+                }
+            }
+            
+            // Fallback a la key general
+            babyData = await AsyncStorage.getItem('selectedBaby');
+            if (babyData) {
+                const parsedBaby = JSON.parse(babyData);
+                setBaby(parsedBaby);
+            }
+        } catch (error) {
+            console.error('Error loading baby:', error);
+        }
+    };
+
+    const loadPredefinedConditions = async () => {
+        try {
+            const conditions = await MedicalConditionsService.getAllPredefinedConditions();
+            setPredefinedConditions(conditions);
+        } catch (error) {
+            console.error('Error loading predefined conditions:', error);
+        }
+    };
+
+    const loadExistingConditions = async () => {
+        if (!baby?.id) return;
+        
+        try {
+            const conditions = await MedicalConditionsService.getMedicalConditionsByBaby(baby.id);
+            setExistingConditions(conditions || []);
+            
+            // Mapear las condiciones existentes a selectedConditions
+            const mappedConditions = {
+                digestivas: [],
+                respiratorias: [],
+                dermatologicas: [],
+                neurologicas: []
+            };
+
+            conditions.forEach(condition => {
+                const categoryName = condition.medical_conditions_category?.name?.toLowerCase();
+                
+                switch (categoryName) {
+                    case 'digestive':
+                        mappedConditions.digestivas.push(condition.condition_name);
+                        break;
+                    case 'respiratory':
+                        mappedConditions.respiratorias.push(condition.condition_name);
+                        break;
+                    case 'dermatological':
+                        mappedConditions.dermatologicas.push(condition.condition_name);
+                        break;
+                    case 'neurological':
+                        mappedConditions.neurologicas.push(condition.condition_name);
+                        break;
+                }
+            });
+
+            setSelectedConditions(mappedConditions);
+        } catch (error) {
+            console.error('Error loading existing conditions:', error);
+        }
+    };
+
+    // Cargar condiciones existentes cuando cambie el baby
+    useEffect(() => {
+        if (baby?.id) {
+            loadExistingConditions();
+        }
+    }, [baby?.id]);
 
     // Datos de opciones
     const allergyOptions = {
@@ -30,11 +132,12 @@ const HealthProfileView = ({ navigation }) => {
         dermatologicas: ['Níquel', 'Látex', 'Fragancias', 'Conservantes', 'Colorantes']
     };
 
+    // Mapear condiciones predefinidas desde la base de datos
     const conditionOptions = {
-        digestivas: ['Reflujo gastroesofágico', 'Estreñimiento', 'Diarrea crónica', 'Intolerancia lactosa'],
-        respiratorias: ['Asma', 'Bronquitis', 'Apnea del sueño', 'Rinitis alérgica'],
-        dermatologicas: ['Dermatitis atópica', 'Eczema', 'Psoriasis', 'Urticaria'],
-        neurologicas: ['Epilepsia', 'Migrañas', 'Trastorno del sueño', 'Retraso del desarrollo']
+        digestivas: predefinedConditions[1]?.conditions || [],
+        respiratorias: predefinedConditions[2]?.conditions || [],
+        dermatologicas: predefinedConditions[3]?.conditions || [],
+        neurologicas: predefinedConditions[4]?.conditions || []
     };
 
     const handleGoBack = () => {
@@ -93,6 +196,128 @@ const HealthProfileView = ({ navigation }) => {
                 ...prev,
                 [subcategory]: prev[subcategory].filter(item => item !== option)
             }));
+        }
+    };
+
+    // Función para mapear subcategoría a category_id de base de datos
+    const getCategoryIdForSubcategory = (subcategory) => {
+        switch (subcategory) {
+            case 'digestivas':
+                return 1; // Digestive
+            case 'respiratorias':
+                return 2; // Respiratory
+            case 'dermatologicas':
+                return 3; // Dermatological
+            case 'neurologicas':
+                return 4; // Neurological
+            default:
+                return null;
+        }
+    };
+
+    // Función para guardar condiciones médicas
+    const saveMedicalConditions = async () => {
+        if (!baby?.id) {
+            Alert.alert('Error', 'No hay un bebé seleccionado');
+            return;
+        }
+
+        setSaving(true);
+        try {
+            // Obtener condiciones actuales de la base de datos
+            const currentConditions = await MedicalConditionsService.getMedicalConditionsByBaby(baby.id);
+            
+            // Crear un mapa de condiciones actuales por categoría y nombre
+            const currentConditionsMap = new Map();
+            currentConditions.forEach(condition => {
+                const key = `${condition.medical_category_id}-${condition.condition_name}`;
+                currentConditionsMap.set(key, condition);
+            });
+
+            // Preparar las condiciones que deben existir según la selección actual
+            const desiredConditions = [];
+            
+            Object.entries(selectedConditions).forEach(([subcategory, conditions]) => {
+                const categoryId = getCategoryIdForSubcategory(subcategory);
+                if (categoryId) {
+                    conditions.forEach(conditionName => {
+                        desiredConditions.push({
+                            categoryId,
+                            conditionName
+                        });
+                    });
+                }
+            });
+
+            // Identificar condiciones a agregar
+            const conditionsToAdd = desiredConditions.filter(desired => {
+                const key = `${desired.categoryId}-${desired.conditionName}`;
+                return !currentConditionsMap.has(key);
+            });
+
+            // Identificar condiciones a eliminar
+            const conditionsToDelete = currentConditions.filter(current => {
+                return !desiredConditions.some(desired => 
+                    desired.categoryId === current.medical_category_id && 
+                    desired.conditionName === current.condition_name
+                );
+            });
+
+            // Ejecutar operaciones
+            const results = [];
+
+            // Agregar nuevas condiciones
+            for (const condition of conditionsToAdd) {
+                try {
+                    const result = await MedicalConditionsService.createMedicalCondition(
+                        baby.id,
+                        condition.categoryId,
+                        condition.conditionName
+                    );
+                    results.push({ success: true, action: 'added', condition: condition.conditionName });
+                } catch (error) {
+                    console.error(`Error agregando ${condition.conditionName}:`, error);
+                    results.push({ success: false, action: 'added', condition: condition.conditionName, error });
+                }
+            }
+
+            // Eliminar condiciones no seleccionadas
+            for (const condition of conditionsToDelete) {
+                try {
+                    await MedicalConditionsService.deleteMedicalCondition(condition.id);
+                    results.push({ success: true, action: 'deleted', condition: condition.condition_name });
+                } catch (error) {
+                    console.error(`Error eliminando ${condition.condition_name}:`, error);
+                    results.push({ success: false, action: 'deleted', condition: condition.condition_name, error });
+                }
+            }
+
+            // Mostrar resultado
+            const successful = results.filter(r => r.success).length;
+            const failed = results.filter(r => !r.success).length;
+            
+            if (successful > 0 && failed === 0) {
+                Alert.alert(
+                    'Éxito', 
+                    `Se guardaron correctamente ${successful} cambio${successful > 1 ? 's' : ''} en las condiciones médicas.`,
+                    [{ text: 'OK', onPress: () => navigation.goBack() }]
+                );
+            } else if (successful > 0 && failed > 0) {
+                Alert.alert('Parcialmente completado', `${successful} cambios guardados, ${failed} fallaron.`);
+            } else if (failed > 0) {
+                Alert.alert('Error', 'No se pudieron guardar los cambios. Intenta de nuevo.');
+            } else {
+                Alert.alert('Info', 'No hay cambios que guardar.');
+            }
+
+            // Recargar condiciones existentes
+            await loadExistingConditions();
+            
+        } catch (error) {
+            console.error('Error guardando condiciones médicas:', error);
+            Alert.alert('Error', 'Hubo un problema al guardar las condiciones médicas.');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -159,6 +384,16 @@ const HealthProfileView = ({ navigation }) => {
         return false;
     };
 
+    if (!baby) {
+        return (
+            <SafeAreaView className="flex-1 bg-gray-50">
+                <View className="flex-1 justify-center items-center">
+                    <Text className="text-gray-500">Cargando información del bebé...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView className="flex-1 bg-gray-50">
             {/* Header */}
@@ -171,10 +406,33 @@ const HealthProfileView = ({ navigation }) => {
                     >
                         <Feather name="arrow-left" size={20} color="#374151" />
                     </TouchableOpacity>
-                    <Text className="text-xl font-semibold text-black">
-                        Perfil de Salud
-                    </Text>
-                    <View className="w-8" />
+                    <View className="flex-1 items-center">
+                        <Text className="text-xl font-semibold text-black">
+                            Perfil de Salud
+                        </Text>
+                        {baby?.name && (
+                            <Text className="text-sm text-gray-500">
+                                {baby.name}
+                            </Text>
+                        )}
+                    </View>
+                    <TouchableOpacity
+                        onPress={saveMedicalConditions}
+                        disabled={saving || !baby?.id}
+                        className={`px-4 py-2 rounded-lg ${
+                            saving || !baby?.id 
+                                ? 'bg-gray-100' 
+                                : 'bg-blue-500'
+                        }`}
+                    >
+                        <Text className={`text-sm font-medium ${
+                            saving || !baby?.id 
+                                ? 'text-gray-400' 
+                                : 'text-white'
+                        }`}>
+                            {saving ? 'Guardando...' : 'Guardar'}
+                        </Text>
+                    </TouchableOpacity>
                 </View>
             </View>
 
