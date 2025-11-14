@@ -51,17 +51,31 @@ const SubscriptionView = () => {
 
                 // 🔹 2. Obtener estado de suscripción
                 const baseURL = process.env.EXPO_PUBLIC_STRIPE_API_URL;
-                const response = await fetch(`http://10.46.88.78:8001/api/payments/subscription/user/${user.id}`);
-                const dataResponse = await response.json();
+                const response = await fetch(`${baseURL}/subscription/user/${user.id}`);
+
+                const rawBody = await response.text();
+                let dataResponse = null;
+
+                if (rawBody) {
+                    try {
+                        dataResponse = JSON.parse(rawBody);
+                    } catch (parseError) {
+                        console.warn(
+                            "⚠️ Respuesta no JSON al consultar la suscripción:",
+                            parseError?.message,
+                            rawBody.slice(0, 200)
+                        );
+                    }
+                }
 
                 if (!response.ok) {
                     console.log("❌ Error en el response:", dataResponse);
                     setStatus({
-                        error: dataResponse.message || "Failed to fetch subscription status",
+                        error: dataResponse?.message || dataResponse?.error || "Failed to fetch subscription status",
                     });
                 } else {
 
-                    setStatus(dataResponse);
+                    setStatus(dataResponse || { error: "Invalid subscription response" });
                 }
             } catch (error) {
                 console.error("❌ Error general:", error);

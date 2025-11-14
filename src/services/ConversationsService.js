@@ -80,8 +80,8 @@ class ConversationsService {
  * Úsala ANTES de enviar un mensaje al chat
  */
     async limitMessagesPerDay(userId) {
-        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const DAILY_LIMIT = 10; // ⚙️ Configuración centralizada
+        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
         try {
             // 1️⃣ Verificar suscripción activa
@@ -105,55 +105,51 @@ class ConversationsService {
             if (isActive) {
                 console.log("✅ Usuario con suscripción activa (GET)");
                 return {
+                    tier: "subscriber",
                     status: "subscriber",
                     used: 0,
                     remaining: 9999,
                     resetAt: null,
+                    allowed: true,
                     DAILY_LIMIT,
                 };
             }
 
-            // 2️⃣ Usuario free: consultar uso actual
-            console.log("🔍 Consultando estado de uso de mensajes (GET)");
+            // 2️⃣ Usuario free: consumir mensaje mediante RPC
+            console.log("🔄 Consumiendo mensaje vía increment_message_usage…");
 
-            const { data, error } = await supabase.rpc("get_message_usage_status", {
+            const { data, error } = await supabase.rpc("increment_message_usage", {
                 p_user_id: userId,
                 p_limit: DAILY_LIMIT,
+                p_tz: userTimeZone,
             });
 
             if (error) throw error;
 
             const row = Array.isArray(data) ? data[0] : data;
 
-            // ✅ Si el usuario no existe aún en la tabla
             if (!row) {
-                console.log("🆕 Usuario nuevo: inicializando contador de mensajes.");
-                return {
-                    status: "free",
-                    used: 0,
-                    remaining: DAILY_LIMIT,
-                    resetAt: null,
-                    DAILY_LIMIT,
-                };
+                throw new Error("increment_message_usage sin respuesta");
             }
-
-            // ✅ Usuario existente
-            console.log("📊 Estado actual del uso:", row);
 
             return {
                 status: "free",
+                tier: "free",
                 used: row.used ?? 0,
-                remaining: row.remaining ?? DAILY_LIMIT,
+                remaining: row.remaining ?? Math.max(DAILY_LIMIT - (row.used ?? 0), 0),
                 resetAt: row.reset_at ?? null,
+                allowed: row.allowed ?? false,
                 DAILY_LIMIT,
             };
         } catch (error) {
             console.error("❌ Error al obtener estado de mensajes:", error);
             return {
                 status: "error",
+                tier: "free",
                 used: 0,
                 remaining: DAILY_LIMIT,
                 resetAt: null,
+                allowed: false,
                 DAILY_LIMIT,
                 error: error?.message ?? "unknown_error",
             };
@@ -166,6 +162,7 @@ class ConversationsService {
      */
     async getMessageUsageStatus(userId) {
         const DAILY_LIMIT = 10; // ⚙️ Configuración centralizada
+        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
         try {
             // 1️⃣ Verificar si tiene suscripción activa
@@ -197,25 +194,30 @@ class ConversationsService {
             }
 
             // 2️⃣ Usuario free: consultar estado (SIN incrementar)
-            console.log('🔍 Consultando estado de uso de mensajes (GET)');
+            console.log('🔍 Consultando uso diario vía get_message_usage_status');
 
             const { data, error } = await supabase.rpc("get_message_usage_status", {
                 p_user_id: userId,
-                p_limit: DAILY_LIMIT
+                p_limit: DAILY_LIMIT,
+                p_tz: userTimeZone,
             });
 
             if (error) throw error;
 
             const row = Array.isArray(data) ? data[0] : data;
-            if (!row) throw new Error("Sin respuesta de RPC");
 
-            console.log("📊 Estado actual del uso:", row);
+            if (!row) {
+                throw new Error("get_message_usage_status sin respuesta");
+            }
+
+            const used = row.used ?? 0;
+            const remaining = row.remaining ?? Math.max(DAILY_LIMIT - used, 0);
 
             return {
                 status: "free",
-                used: row.used,
-                remaining: row.remaining,
-                resetAt: row.reset_at,
+                used,
+                remaining,
+                resetAt: row.reset_at ?? null,
                 DAILY_LIMIT: DAILY_LIMIT,
             };
 

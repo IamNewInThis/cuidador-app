@@ -1,14 +1,15 @@
 // cuidador-app/src/services/PaymentService.js
+
+
 class PaymentService {
     constructor() {
         // Get Stripe API URL from environment variables
         // Falls back to localhost if not set
         const stripeApiUrl = process.env.EXPO_PUBLIC_STRIPE_API_URL;
         this.merchantIdentifier = process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER || 'merchant.cuidador-app';
-
         this.baseURL = __DEV__
             ? stripeApiUrl
-            : 'http://192.168.1.8:8001/api/payments';
+            : 'http://10.46.88.78:8001/api/payments';
     }
 
     /**
