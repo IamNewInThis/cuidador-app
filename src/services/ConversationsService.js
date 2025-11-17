@@ -89,6 +89,7 @@ class ConversationsService {
                 .from("subscriptions")
                 .select("status, end_date")
                 .eq("user_id", userId)
+                .in("status", ["active", "trialing"])
                 .order("start_date", { ascending: false })
                 .limit(1);
 
