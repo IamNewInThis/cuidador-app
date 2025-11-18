@@ -9,7 +9,7 @@ class PaymentService {
         this.merchantIdentifier = process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER || 'merchant.cuidador-app';
         this.baseURL = __DEV__
             ? stripeApiUrl
-            : 'http://10.46.88.78:8001/api/payments';
+            : 'http://192.168.1.8:8001/api/payments';
     }
 
     /**

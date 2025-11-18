@@ -9,6 +9,8 @@ import { getBabies } from '../services/BabiesService';
 import { getProfileBaby, getProfileByCategory, updateBabyProfileValues } from '../services/BabyProfileServices';
 import { Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { generateChildProfilePDF } from '../utils/PrintProfile';
+import * as Sharing from 'expo-sharing';
 import {
     ProfileHeader,
     BabyAvatar,
@@ -279,30 +281,42 @@ const BabyProfile = ({ navigation }) => {
         loadProfile();
     }, [baby?.id, i18n?.language]);
 
-    const handleExport = () => {
-        if (selectedSections.size > 0 || selectedItems.size > 0) {
-            // Aquí irá la lógica de exportación a PDF
-            console.log('Exportar selecciones:', { selectedSections, selectedItems });
-            // Por ahora mostrar alerta o acción temporal
-        } else {
-            // Seleccionar todo automáticamente
-            setIsSelectionMode(true);
-            
-            // Obtener todos los IDs dinámicamente (solo elementos con valores)
-            const allSleepItems = sleepItemsWithValues.map(item => item.id);
-            const allEmotionItems = emotionsItemsWithValues.map(item => item.id);
-            const allCareItems = careItemsWithValues.map(item => item.id);
-            const allAutonomyItems = autonomyItemsWithValues.map(item => item.id);
-            const allHealthItems = ['health-1', 'health-2', 'health-3'];
+    const handleExport = async () => {
+        try {
+            if (!baby) {
+                alert('No hay información del bebé para exportar');
+                return;
+            }
 
-            setSelectedSections(new Set(['sleep', 'emotions', 'care', 'autonomy', 'health']));
-            setSelectedItems(new Set([
-                ...allSleepItems,
-                ...allEmotionItems,
-                ...allCareItems,
-                ...allAutonomyItems,
-                ...allHealthItems
-            ]));
+            // Preparar los datos del perfil para el PDF
+            const profileData = {
+                name: baby.name || 'Bebé',
+                age: baby.birthdate ? formatBabyAge(baby.birthdate) : 'No especificada',
+                weight: baby.weight || 'No especificado',
+                conditions: [] // Por ahora vacío, después se puede agregar desde los datos médicos
+            };
+
+            console.log('Generando PDF del perfil...');
+            
+            // Generar el PDF
+            const pdfUri = await generateChildProfilePDF(profileData);
+            
+            console.log('PDF generado en:', pdfUri);
+            
+            // Compartir el PDF
+            if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(pdfUri, {
+                    mimeType: 'application/pdf',
+                    dialogTitle: `Perfil de ${baby.name}`,
+                    UTI: 'com.adobe.pdf'
+                });
+            } else {
+                alert('La función de compartir no está disponible en este dispositivo');
+            }
+            
+        } catch (error) {
+            console.error('Error al exportar PDF:', error);
+            alert('Error al generar el PDF. Por favor, inténtalo de nuevo.');
         }
     };
 
